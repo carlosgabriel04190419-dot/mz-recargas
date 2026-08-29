@@ -1,11 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="mzGemGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#3b7dff"/>
       <stop offset="100%" stop-color="#8b3ffb"/>
     </linearGradient>
   </defs>
   <rect width="100" height="100" rx="22" fill="#0c0f18"/>
-  <polygon points="50,18 78,40 66,86 34,86 22,40" fill="url(#g)"/>
-  <polygon points="50,18 78,40 50,46 22,40" fill="#ffffff" fill-opacity="0.25"/>
+  <polygon points="32,20 68,20 88,40 50,90 12,40" fill="url(#mzGemGrad)" stroke="#0c0f18" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="32,20 12,40 50,40" fill="#ffffff" fill-opacity="0.22"/>
+  <polyline points="12,40 88,40" stroke="#0c0f18" stroke-opacity="0.35" stroke-width="1.6" fill="none"/>
+  <polyline points="32,20 50,90" stroke="#0c0f18" stroke-opacity="0.25" stroke-width="1.2" fill="none"/>
+  <polyline points="68,20 50,90" stroke="#0c0f18" stroke-opacity="0.25" stroke-width="1.2" fill="none"/>
 </svg>

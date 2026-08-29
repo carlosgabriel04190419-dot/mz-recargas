@@ -87,7 +87,7 @@ button { cursor: pointer; font-family: inherit; }
     border-bottom: 1px solid var(--borde);
 }
 .nav-logo-premium { display: flex; align-items: center; gap: 10px; }
-.logo-emblem { width: 40px; height: 40px; flex-shrink: 0; }
+.logo-img { width: 40px; height: 40px; flex-shrink: 0; object-fit: contain; }
 .logo-text { font-size: 20px; font-weight: 800; letter-spacing: 0.3px; }
 .logo-text .text-mz { background: var(--acento-degradado); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .logo-text .text-recargas { color: var(--texto); font-weight: 600; }

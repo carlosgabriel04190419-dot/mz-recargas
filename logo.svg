@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="MZ'Recargas">
+  <defs>
+    <linearGradient id="mzGemGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b7dff"/>
+      <stop offset="100%" stop-color="#8b3ffb"/>
+    </linearGradient>
+  </defs>
+  <polygon points="34,22 66,22 86,40 50,92 14,40" fill="url(#mzGemGrad)" stroke="#0c0f18" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="34,22 14,40 50,40" fill="#ffffff" fill-opacity="0.22"/>
+  <polyline points="14,40 86,40" stroke="#0c0f18" stroke-opacity="0.35" stroke-width="1.6" fill="none"/>
+  <polyline points="34,22 50,92" stroke="#0c0f18" stroke-opacity="0.25" stroke-width="1.2" fill="none"/>
+  <polyline points="66,22 50,92" stroke="#0c0f18" stroke-opacity="0.25" stroke-width="1.2" fill="none"/>
+  <path d="M74 14 L77 20 L83 22 L77 24 L74 30 L71 24 L65 22 L71 20 Z" fill="#ffffff" fill-opacity="0.85"/>
+</svg>
