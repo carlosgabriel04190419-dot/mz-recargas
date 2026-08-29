@@ -5,63 +5,63 @@
 /* MODO CLARO / OSCURO — VARIABLES DE COLOR   */
 /* ========================================== */
 :root {
-    --bg: #14100e;
-    --bg-elevada: #1d1714;
-    --bg-elevada-2: #241c17;
-    --bg-input: #14100e;
-    --bg-nav: rgba(29, 23, 20, 0.95);
-    --bg-footer: #0a0706;
-    --borde: #2e2420;
-    --borde-suave: #4a3a32;
-    --texto: #fff7f2;
-    --texto-secundario: #cbb8ae;
-    --texto-tenue: #8f7d73;
-    --shimmer-1: #241c17;
-    --shimmer-2: #332720;
+    --bg: #0c0f18;
+    --bg-elevada: #131a2a;
+    --bg-elevada-2: #182135;
+    --bg-input: #0c0f18;
+    --bg-nav: rgba(19, 26, 42, 0.95);
+    --bg-footer: #070a12;
+    --borde: #232d47;
+    --borde-suave: #37426b;
+    --texto: #f5f7ff;
+    --texto-secundario: #aab2d6;
+    --texto-tenue: #757ea1;
+    --shimmer-1: #182135;
+    --shimmer-2: #212c4a;
     --sombra-modal: rgba(0,0,0,0.55);
-    --overlay: rgba(10, 7, 6, 0.85);
+    --overlay: rgba(6, 8, 16, 0.85);
 
-    --acento-1: #ff9a1f;
-    --acento-2: #ff3d3d;
+    --acento-1: #3b7dff;
+    --acento-2: #8b3ffb;
     --acento-degradado: linear-gradient(135deg, var(--acento-1) 0%, var(--acento-2) 100%);
     --exito: #2ee6a6;
     --error: #ff4757;
 }
 @media (prefers-color-scheme: light) {
     :root:not([data-theme="dark"]) {
-        --bg: #fbf5f1;
+        --bg: #f2f4fb;
         --bg-elevada: #ffffff;
-        --bg-elevada-2: #f4e9e2;
-        --bg-input: #f6ece5;
+        --bg-elevada-2: #e8ecfa;
+        --bg-input: #eef1fb;
         --bg-nav: rgba(255, 255, 255, 0.95);
-        --bg-footer: #f4e9e2;
-        --borde: #ecdfd6;
-        --borde-suave: #ddc9bb;
-        --texto: #221510;
-        --texto-secundario: #6e564a;
-        --texto-tenue: #937c6e;
-        --shimmer-1: #f0e3da;
-        --shimmer-2: #faf3ee;
-        --sombra-modal: rgba(40,20,10,0.15);
-        --overlay: rgba(30, 16, 10, 0.6);
+        --bg-footer: #e8ecfa;
+        --borde: #dee3f5;
+        --borde-suave: #c5cdec;
+        --texto: #12162a;
+        --texto-secundario: #4d5578;
+        --texto-tenue: #757ea1;
+        --shimmer-1: #e6e9f7;
+        --shimmer-2: #f5f6fc;
+        --sombra-modal: rgba(20,20,45,0.15);
+        --overlay: rgba(15, 16, 32, 0.6);
     }
 }
 :root[data-theme="light"] {
-    --bg: #fbf5f1;
+    --bg: #f2f4fb;
     --bg-elevada: #ffffff;
-    --bg-elevada-2: #f4e9e2;
-    --bg-input: #f6ece5;
+    --bg-elevada-2: #e8ecfa;
+    --bg-input: #eef1fb;
     --bg-nav: rgba(255, 255, 255, 0.95);
-    --bg-footer: #f4e9e2;
-    --borde: #ecdfd6;
-    --borde-suave: #ddc9bb;
-    --texto: #221510;
-    --texto-secundario: #6e564a;
-    --texto-tenue: #937c6e;
-    --shimmer-1: #f0e3da;
-    --shimmer-2: #faf3ee;
-    --sombra-modal: rgba(40,20,10,0.15);
-    --overlay: rgba(30, 16, 10, 0.6);
+    --bg-footer: #e8ecfa;
+    --borde: #dee3f5;
+    --borde-suave: #c5cdec;
+    --texto: #12162a;
+    --texto-secundario: #4d5578;
+    --texto-tenue: #757ea1;
+    --shimmer-1: #e6e9f7;
+    --shimmer-2: #f5f6fc;
+    --sombra-modal: rgba(20,20,45,0.15);
+    --overlay: rgba(15, 16, 32, 0.6);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; scroll-behavior: smooth; }
@@ -114,11 +114,11 @@ button { cursor: pointer; font-family: inherit; }
 /* BOTONES                                    */
 /* ========================================== */
 .btn-primary {
-    background: var(--acento-degradado); color: #1a0e05; border: none;
+    background: var(--acento-degradado); color: #ffffff; border: none;
     padding: 13px 24px; border-radius: 10px; font-weight: 700; font-size: 15px;
-    transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 8px 20px rgba(255, 61, 61, 0.25);
+    transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 8px 20px rgba(139, 63, 251, 0.25);
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(255, 61, 61, 0.35); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(139, 63, 251, 0.35); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .btn-outline {
     background: transparent; color: var(--texto); border: 1.5px solid var(--borde-suave);
@@ -139,7 +139,7 @@ button { cursor: pointer; font-family: inherit; }
 /* ========================================== */
 .hero {
     position: relative; padding: 90px 20px 70px; text-align: center; overflow: hidden;
-    background: radial-gradient(circle at 50% -10%, rgba(255, 154, 31, 0.18), transparent 60%);
+    background: radial-gradient(circle at 50% -10%, rgba(59, 125, 255, 0.18), transparent 60%);
 }
 .hero-badge {
     display: inline-flex; align-items: center; gap: 8px; background: var(--bg-elevada-2);
@@ -169,11 +169,11 @@ button { cursor: pointer; font-family: inherit; }
     border-radius: 16px; padding: 26px 20px; text-align: center; cursor: pointer;
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.paquete-card:hover { transform: translateY(-4px); border-color: var(--acento-1); box-shadow: 0 14px 30px rgba(255, 154, 31, 0.15); }
+.paquete-card:hover { transform: translateY(-4px); border-color: var(--acento-1); box-shadow: 0 14px 30px rgba(59, 125, 255, 0.15); }
 .paquete-card.seleccionado { border-color: var(--acento-1); box-shadow: 0 0 0 2px var(--acento-1); }
 .paquete-card .destacado-tag {
     position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
-    background: var(--acento-degradado); color: #1a0e05; font-size: 11px; font-weight: 700;
+    background: var(--acento-degradado); color: #ffffff; font-size: 11px; font-weight: 700;
     padding: 4px 12px; border-radius: 30px;
 }
 .paquete-icon { font-size: 36px; margin-bottom: 10px; }
@@ -215,7 +215,7 @@ button { cursor: pointer; font-family: inherit; }
 }
 .login-right::before {
     content: ''; position: absolute; width: 500px; height: 500px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,61,61,0.18), transparent 70%);
+    background: radial-gradient(circle, rgba(139,63,251,0.18), transparent 70%);
     top: -150px; right: -150px;
 }
 .login-right h2 { font-size: 26px; font-weight: 800; margin-bottom: 14px; position: relative; }
@@ -247,17 +247,17 @@ button { cursor: pointer; font-family: inherit; }
 /* TARJETAS GENÉRICAS / SALDO / PEDIDOS       */
 /* ========================================== */
 .card { background-color: var(--bg-elevada); border: 1px solid var(--borde); border-radius: 14px; padding: 24px; }
-.saldo-card { background: linear-gradient(135deg, rgba(255,154,31,0.15) 0%, var(--bg-elevada) 100%); border: 1px solid var(--acento-1); padding: 26px; border-radius: 14px; text-align: center; margin-bottom: 24px; }
+.saldo-card { background: linear-gradient(135deg, rgba(59,125,255,0.15) 0%, var(--bg-elevada) 100%); border: 1px solid var(--acento-1); padding: 26px; border-radius: 14px; text-align: center; margin-bottom: 24px; }
 .saldo-card .monto { font-size: 34px; font-weight: 800; color: var(--acento-1); margin: 6px 0; }
 .monto-btn-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 .monto-btn { flex: 1 1 calc(33% - 8px); background-color: var(--bg-input); border: 1px solid var(--borde); color: var(--texto); padding: 12px; border-radius: 10px; font-weight: 700; transition: all 0.15s; }
-.monto-btn:hover, .monto-btn.activo { border-color: var(--acento-1); color: var(--acento-1); background: rgba(255,154,31,0.08); }
+.monto-btn:hover, .monto-btn.activo { border-color: var(--acento-1); color: var(--acento-1); background: rgba(59,125,255,0.08); }
 
 .tabla-pedidos { width: 100%; border-collapse: collapse; }
 .tabla-pedidos th, .tabla-pedidos td { text-align: left; padding: 12px 14px; font-size: 13.5px; border-bottom: 1px solid var(--borde); }
 .tabla-pedidos th { color: var(--texto-tenue); font-weight: 600; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.4px; }
 .estado-pill { display: inline-block; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 700; }
-.estado-pendiente { background: rgba(255,154,31,0.15); color: var(--acento-1); }
+.estado-pendiente { background: rgba(59,125,255,0.15); color: var(--acento-1); }
 .estado-confirmado { background: rgba(46,230,166,0.12); color: var(--exito); }
 .estado-completado { background: rgba(46,230,166,0.2); color: var(--exito); }
 .estado-cancelado { background: rgba(255,71,87,0.12); color: var(--error); }
