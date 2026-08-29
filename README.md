@@ -28,14 +28,9 @@ No hay panel de administración todavía — la tabla de Supabase hace ese papel
 
 ## Puesta en marcha (una sola vez)
 
-1. **Base de datos**: en el proyecto de Supabase de MZ'Recargas, abre el SQL Editor, pega el contenido de `supabase/schema.sql` y dale "Run".
-2. **Conectar el sitio a Supabase**: en `sesion.js`, reemplaza:
-   ```js
-   const supabaseUrl = 'TODO_SUPABASE_URL';
-   const supabaseKey = 'TODO_SUPABASE_ANON_KEY';
-   ```
-   por la **Project URL** y la clave **anon/publishable** de Settings → API de tu proyecto de Supabase (son datos públicos, van bien en el código del sitio).
-3. **Configurar Auth**: en Supabase, Authentication → URL Configuration, agrega la URL donde vayas a publicar el sitio (la de GitHub Pages o tu dominio) en "Site URL" y "Redirect URLs" — si no, el enlace de "recuperar contraseña" no va a funcionar.
+1. ✅ **Base de datos**: ya aplicado — `supabase/schema.sql` está corrido en el proyecto de Supabase de MZ'Recargas (tablas, RLS y triggers listos, con revisión de seguridad hecha con el Advisor de Supabase).
+2. ✅ **Conectar el sitio a Supabase**: `sesion.js` ya tiene la Project URL y la clave publishable reales del proyecto.
+3. **Configurar Auth** (pendiente, hazlo tú): en Supabase, Authentication → URL Configuration, agrega la URL donde publiques el sitio (la de GitHub Pages o tu dominio) en "Site URL" y "Redirect URLs" — si no, el enlace de "recuperar contraseña" no va a funcionar.
 4. **Publicar con GitHub Pages**: en este repositorio, Settings → Pages → Source: "Deploy from a branch" → rama `main`, carpeta `/ (root)`.
 
 ## Pendiente antes de lanzarlo a clientes reales

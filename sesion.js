@@ -15,10 +15,8 @@
 // 4. Para "Cerrar sesión" usa cerrarSesionSegura().
 // ==========================================
 
-// TODO: reemplaza estos dos valores por los de Settings → API del
-// proyecto de Supabase de MZ'Recargas (Project URL y clave anon/publishable).
-const supabaseUrl = 'TODO_SUPABASE_URL';
-const supabaseKey = 'TODO_SUPABASE_ANON_KEY';
+const supabaseUrl = 'https://bvfllkzcvrdzhkzpkryj.supabase.co';
+const supabaseKey = 'sb_publishable_BDJh1MvR9C6YSA7q1Trluw_9Tx2EfGE';
 const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // Escapa texto antes de insertarlo con innerHTML (nickname, etc.) para que
