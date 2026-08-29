@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MZ'Recargas | Nueva contraseña</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <meta name="theme-color" content="#14100e">
+    <meta name="robots" content="noindex, nofollow">
+    <script>try{var t=localStorage.getItem('mzrecargas_tema');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+<body class="login-body">
+
+    <a href="index.html" class="back-link"><span class="material-icons">arrow_back</span> Volver a MZ'Recargas</a>
+
+    <div class="login-container">
+        <div class="login-left">
+            <div class="login-header">
+                <a href="index.html" class="nav-logo-premium">
+                    <div class="logo-emblem" style="width: 38px; height: 38px;">
+                        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                            <defs>
+                                <linearGradient id="gradLogoRes" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#ff9a1f;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#ff3d3d;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <polygon points="50,5 90,35 74,95 26,95 10,35" fill="url(#gradLogoRes)" stroke="#14100e" stroke-width="3" stroke-linejoin="round"/>
+                            <polygon points="50,5 90,35 50,45 10,35" fill="#ffffff" fill-opacity="0.25"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text" style="font-size: 19px;">
+                        <span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span>
+                    </div>
+                </a>
+            </div>
+
+            <h1 class="login-title">Nueva Contraseña</h1>
+            <p class="login-subtitle" id="subtitulo">Verificando tu enlace de recuperación...</p>
+
+            <div id="msg-box" class="msg-box error"></div>
+            <div id="exito-box" class="msg-box exito"></div>
+
+            <form class="login-form" id="form-nueva" style="display:none;">
+                <label>Nueva contraseña</label>
+                <div class="input-group">
+                   <span class="material-icons">lock</span>
+                   <input type="password" id="nueva-password" placeholder="Mínimo 6 caracteres" onkeydown="if(event.key === 'Enter') guardarNuevaPassword()">
+                </div>
+
+                <label>Confirmar contraseña</label>
+                <div class="input-group">
+                   <span class="material-icons">lock</span>
+                   <input type="password" id="nueva-password2" placeholder="Repite tu contraseña" onkeydown="if(event.key === 'Enter') guardarNuevaPassword()">
+                </div>
+
+                <button type="button" id="btn-guardar" class="btn-primary" style="width: 100%;" onclick="guardarNuevaPassword()">Guardar contraseña</button>
+            </form>
+
+            <a href="login.html" id="link-login" style="display:none; margin-top: 18px; text-align:center; color: var(--acento-1); font-weight:600; font-size: 14.5px;">Ir a iniciar sesión →</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="sesion.js"></script>
+    <script>
+        function mostrarError(mensaje) {
+            document.getElementById('exito-box').style.display = 'none';
+            const box = document.getElementById('msg-box');
+            box.style.display = 'block';
+            box.innerText = mensaje;
+        }
+        function mostrarExito(mensaje) {
+            document.getElementById('msg-box').style.display = 'none';
+            const box = document.getElementById('exito-box');
+            box.style.display = 'block';
+            box.innerText = mensaje;
+        }
+
+        let sesionDeRecuperacionLista = false;
+
+        supabaseClient.auth.onAuthStateChange((evento, session) => {
+            if (evento === 'PASSWORD_RECOVERY') {
+                sesionDeRecuperacionLista = true;
+                document.getElementById('subtitulo').innerText = 'Escribe tu nueva contraseña.';
+                document.getElementById('form-nueva').style.display = 'block';
+            }
+        });
+
+        // Si después de 4 segundos no llegó el evento de recuperación, el enlace
+        // ya venció o no es válido — no dejamos a la persona con el formulario colgado.
+        setTimeout(() => {
+            if (!sesionDeRecuperacionLista) {
+                document.getElementById('subtitulo').innerText = 'Este enlace no es válido o ya venció.';
+                mostrarError('Pide un nuevo enlace desde la pantalla de inicio de sesión.');
+                document.getElementById('link-login').style.display = 'block';
+            }
+        }, 4000);
+
+        async function guardarNuevaPassword() {
+            const p1 = document.getElementById('nueva-password').value;
+            const p2 = document.getElementById('nueva-password2').value;
+            const btn = document.getElementById('btn-guardar');
+
+            if (p1.length < 6) return mostrarError('La contraseña debe tener al menos 6 caracteres.');
+            if (p1 !== p2) return mostrarError('Las contraseñas no coinciden.');
+
+            btn.disabled = true; btn.innerText = 'Guardando...';
+            const { error } = await supabaseClient.auth.updateUser({ password: p1 });
+            btn.disabled = false; btn.innerText = 'Guardar contraseña';
+
+            if (error) return mostrarError('No se pudo guardar: ' + error.message);
+
+            document.getElementById('form-nueva').style.display = 'none';
+            mostrarExito('¡Listo! Tu contraseña se actualizó correctamente.');
+            document.getElementById('link-login').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

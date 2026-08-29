@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MZ'Recargas | Acceso</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <meta name="theme-color" content="#14100e">
+    <meta name="description" content="Inicia sesión en MZ'Recargas para recargar saldo y comprar diamantes de Free Fire.">
+    <meta name="robots" content="noindex, nofollow">
+    <script>try{var t=localStorage.getItem('mzrecargas_tema');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+<body class="login-body">
+
+    <a href="index.html" class="back-link"><span class="material-icons">arrow_back</span> Volver a MZ'Recargas</a>
+
+    <div class="login-container">
+        <div class="login-left">
+            <div class="login-header">
+                <a href="index.html" class="nav-logo-premium">
+                    <div class="logo-emblem" style="width: 38px; height: 38px;">
+                        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                            <defs>
+                                <linearGradient id="gradLogoLogin" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#ff9a1f;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#ff3d3d;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <polygon points="50,5 90,35 74,95 26,95 10,35" fill="url(#gradLogoLogin)" stroke="#14100e" stroke-width="3" stroke-linejoin="round"/>
+                            <polygon points="50,5 90,35 50,45 10,35" fill="#ffffff" fill-opacity="0.25"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text" style="font-size: 19px;">
+                        <span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span>
+                    </div>
+                </a>
+            </div>
+
+            <h1 class="login-title">Acceso de Usuario</h1>
+            <p class="login-subtitle">Ingresa para recargar saldo, comprar diamantes y ver tu historial.</p>
+
+            <div id="msg-box" class="msg-box error"></div>
+
+            <form class="login-form">
+                <label>Correo</label>
+                <div class="input-group">
+                    <span class="material-icons">mail</span>
+                    <input type="email" id="login-correo" placeholder="tucorreo@ejemplo.com" onkeydown="if(event.key === 'Enter') manejarLogin()">
+                </div>
+
+                <label>Contraseña</label>
+                <div class="input-group">
+                   <span class="material-icons">lock</span>
+                   <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key === 'Enter') manejarLogin()">
+                   <span class="material-icons" onclick="togglePassword('login-password', this)" style="cursor: pointer;">visibility_off</span>
+                </div>
+
+                <div class="login-options">
+                    <span></span>
+                    <a href="#" onclick="abrirModalRecuperar(event)">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="button" id="btn-login" class="btn-primary" style="width: 100%; margin-bottom: 20px;" onclick="manejarLogin()">Iniciar Sesión</button>
+
+                <button type="button" class="btn-outline" style="width: 100%;" onclick="window.location.href='register.html'">Crear una cuenta</button>
+
+                <p class="terms-text">Al continuar, aceptas nuestros <a href="terminos.html">Términos de Servicio</a> y <a href="privacidad.html">Política de Privacidad</a></p>
+            </form>
+        </div>
+
+        <div class="login-right">
+            <h2>Recarga tus diamantes al instante</h2>
+            <p>Crea tu cuenta, carga saldo con Yape o Plin y compra diamantes de Free Fire en segundos, sin volver a pagar cada vez.</p>
+
+            <ul class="promo-list">
+                <li><span class="material-icons">bolt</span> Entrega rápida a tu cuenta</li>
+                <li><span class="material-icons">account_balance_wallet</span> Saldo precargado, compra en 1 clic</li>
+                <li><span class="material-icons">verified_user</span> Pagos verificados a mano, sin sorpresas</li>
+            </ul>
+
+            <div class="promo-stats">
+                <div class="promo-stat-box">
+                    <h3>100%</h3>
+                    <p>Pago seguro</p>
+                </div>
+                <div class="promo-stat-box">
+                    <h3>&lt; 5 Min</h3>
+                    <p>Entrega Promedio</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: RECUPERAR CONTRASEÑA -->
+    <div id="modal-recuperar" class="modal-overlay">
+        <div class="modal-box">
+            <span class="material-icons close-btn" onclick="cerrarModalRecuperar()">close</span>
+            <div class="modal-header">
+                <h2>Recuperar Contraseña</h2>
+                <p>Te enviaremos un enlace a tu correo para crear una nueva contraseña.</p>
+            </div>
+            <div id="recuperar-msg" class="msg-box"></div>
+            <input type="email" id="recuperar-correo" class="input-form" placeholder="tu-correo@ejemplo.com">
+            <button type="button" id="btn-recuperar" class="btn-primary" style="width:100%;" onclick="enviarRecuperacion()">Enviar Enlace</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="sesion.js"></script>
+    <script>
+        function togglePassword(inputId, iconElement) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") { input.type = "text"; iconElement.innerText = "visibility"; }
+            else { input.type = "password"; iconElement.innerText = "visibility_off"; }
+        }
+
+        function mostrarError(mensaje) {
+            const box = document.getElementById('msg-box');
+            box.className = 'msg-box error';
+            box.style.display = 'block';
+            box.innerText = mensaje;
+        }
+
+        window.onload = async function () {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) window.location.href = 'index.html';
+        };
+
+        async function manejarLogin() {
+            const correo = document.getElementById('login-correo').value.trim().toLowerCase();
+            const password = document.getElementById('login-password').value;
+            const btn = document.getElementById('btn-login');
+
+            if (!correo || !password) return mostrarError('Ingresa tu correo y contraseña.');
+
+            btn.disabled = true; btn.innerText = 'Ingresando...';
+            document.getElementById('msg-box').style.display = 'none';
+
+            const { error } = await supabaseClient.auth.signInWithPassword({ email: correo, password: password });
+
+            if (error) {
+                btn.disabled = false; btn.innerText = 'Iniciar Sesión';
+                if (error.message.includes('Email not confirmed')) return mostrarError('Tu cuenta aún no está confirmada. Revisa tu correo (y la carpeta de spam).');
+                if (error.message.includes('Invalid login credentials')) return mostrarError('Correo o contraseña incorrectos.');
+                return mostrarError('Error: ' + error.message);
+            }
+
+            window.location.href = 'index.html';
+        }
+
+        function abrirModalRecuperar(e) {
+            if (e) e.preventDefault();
+            document.getElementById('recuperar-msg').style.display = 'none';
+            document.getElementById('recuperar-correo').value = document.getElementById('login-correo').value;
+            document.getElementById('modal-recuperar').classList.add('abierto');
+        }
+        function cerrarModalRecuperar() { document.getElementById('modal-recuperar').classList.remove('abierto'); }
+
+        async function enviarRecuperacion() {
+            const correo = document.getElementById('recuperar-correo').value.trim();
+            const msg = document.getElementById('recuperar-msg');
+            const btn = document.getElementById('btn-recuperar');
+            if (!correo || !correo.includes('@')) {
+                msg.className = 'msg-box error'; msg.style.display = 'block';
+                msg.innerText = 'Ingresa un correo válido.'; return;
+            }
+            btn.disabled = true; btn.innerText = 'Enviando...';
+            const { error } = await supabaseClient.auth.resetPasswordForEmail(correo, {
+                redirectTo: window.location.origin + window.location.pathname.replace('login.html', 'restablecer-contrasena.html')
+            });
+            btn.disabled = false; btn.innerText = 'Enviar Enlace';
+            msg.style.display = 'block';
+            if (error) {
+                msg.className = 'msg-box error';
+                msg.innerText = 'No se pudo enviar: ' + error.message;
+            } else {
+                msg.className = 'msg-box exito';
+                msg.innerText = 'Listo. Si el correo existe, te llegará un enlace en unos minutos (revisa spam).';
+            }
+        }
+    </script>
+    <a href="https://wa.me/51000000000?text=%C2%A1Hola%20MZ%27Recargas!%20Necesito%20ayuda%20con%20la%20web." target="_blank" rel="noopener" class="whatsapp-float" aria-label="Escríbenos por WhatsApp" title="¿Necesitas ayuda? Escríbenos">
+        <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
+</body>
+</html>

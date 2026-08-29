@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MZ'Recargas | Recargar Diamantes Free Fire</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <meta name="theme-color" content="#14100e">
+    <meta name="description" content="Recarga saldo y compra diamantes de Free Fire al instante en MZ'Recargas.">
+    <script>try{var t=localStorage.getItem('mzrecargas_tema');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo-premium">
+            <div class="logo-emblem">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                    <defs>
+                        <linearGradient id="gradLogoCat" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ff9a1f;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#ff3d3d;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,5 90,35 74,95 26,95 10,35" fill="url(#gradLogoCat)" stroke="#14100e" stroke-width="3" stroke-linejoin="round"/>
+                    <polygon points="50,5 90,35 50,45 10,35" fill="#ffffff" fill-opacity="0.25"/>
+                </svg>
+            </div>
+            <div class="logo-text"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></div>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="catalogo.html" class="activo">Recargar Diamantes</a>
+            <a href="soporte.html">Soporte</a>
+        </div>
+        <div class="nav-actions">
+            <button class="theme-toggle" onclick="alternarTema()" aria-label="Cambiar tema"><span class="material-icons">dark_mode</span></button>
+            <div class="nav-actions-conectado" data-nav-conectado style="display:none; align-items:center; gap:14px;">
+                <div class="balance-pill"><span class="material-icons">diamond</span><span data-nav-saldo>S/ 0.00</span></div>
+                <div class="nav-user-menu">
+                    <button class="nav-user-btn" id="nav-user-btn" onclick="alternarMenuUsuario()">
+                        <span class="nav-avatar" data-nav-avatar>?</span>
+                        <span data-nav-nickname>Usuario</span>
+                    </button>
+                    <div class="nav-dropdown" id="nav-dropdown">
+                        <a href="perfil.html"><span class="material-icons">person</span> Mi Perfil</a>
+                        <a href="historial.html"><span class="material-icons">receipt_long</span> Mis Pedidos</a>
+                        <button onclick="cerrarSesionSegura()"><span class="material-icons">logout</span> Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding-top: 40px; padding-bottom: 60px;">
+
+        <div class="saldo-card" style="max-width: 420px; margin-left:auto; margin-right:auto;">
+            <p style="color: var(--texto-secundario); font-size: 14px;">Tu saldo disponible</p>
+            <div class="monto" data-nav-saldo>S/ 0.00</div>
+            <button class="btn-primary" onclick="abrirModalRecargar()">Recargar Saldo</button>
+        </div>
+
+        <div class="seccion-header">
+            <h2>Diamantes Free Fire</h2>
+            <p>Elige un paquete, ingresa tu ID de jugador y compra al instante con tu saldo.</p>
+        </div>
+
+        <div id="paquetes-grid" class="paquetes-grid">
+            <p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">Cargando paquetes...</p>
+        </div>
+    </div>
+
+    <footer id="footer-slot"></footer>
+
+    <!-- MODAL: RECARGAR SALDO -->
+    <div id="modal-recargar" class="modal-overlay">
+        <div class="modal-box">
+            <span class="material-icons close-btn" onclick="cerrarModal('modal-recargar')">close</span>
+            <div class="modal-header">
+                <h2>Recargar Saldo</h2>
+                <p>Elige un monto, paga por Yape o Plin y confirma tu recarga.</p>
+            </div>
+            <div id="recargar-msg" class="msg-box"></div>
+
+            <div class="monto-btn-grid" id="montos-rapidos">
+                <button type="button" class="monto-btn" onclick="elegirMontoRapido(10)">S/ 10</button>
+                <button type="button" class="monto-btn" onclick="elegirMontoRapido(20)">S/ 20</button>
+                <button type="button" class="monto-btn" onclick="elegirMontoRapido(50)">S/ 50</button>
+                <button type="button" class="monto-btn" onclick="elegirMontoRapido(100)">S/ 100</button>
+            </div>
+            <input type="number" id="monto-personalizado" class="input-form" placeholder="O ingresa otro monto (S/)" min="1" step="0.01">
+
+            <div class="card" style="margin: 16px 0; padding: 16px;">
+                <p style="font-size: 13.5px; font-weight: 700; margin-bottom: 8px;">Paga por Yape o Plin a:</p>
+                <p style="font-size: 14px; color: var(--texto-secundario);">Yape / Plin: <strong id="pago-numero">[pendiente de configurar]</strong></p>
+                <p style="font-size: 14px; color: var(--texto-secundario);">A nombre de: <strong id="pago-titular">[pendiente de configurar]</strong></p>
+                <p style="font-size: 12.5px; color: var(--texto-tenue); margin-top: 8px;">Después de pagar, dale a "Ya pagué" y envíanos tu comprobante por WhatsApp para acreditar tu saldo más rápido.</p>
+            </div>
+
+            <button type="button" id="btn-recargar" class="btn-primary" style="width:100%;" onclick="confirmarRecarga()">Ya pagué, registrar recarga</button>
+        </div>
+    </div>
+
+    <!-- MODAL: COMPRAR DIAMANTES -->
+    <div id="modal-comprar" class="modal-overlay">
+        <div class="modal-box">
+            <span class="material-icons close-btn" onclick="cerrarModal('modal-comprar')">close</span>
+            <div class="modal-header">
+                <h2>Confirmar Compra</h2>
+                <p id="comprar-resumen"></p>
+            </div>
+            <div id="comprar-msg" class="msg-box"></div>
+
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Tu ID de jugador Free Fire</label>
+            <input type="text" id="comprar-id-ff" class="input-form" placeholder="Ej: 123456789">
+
+            <button type="button" id="btn-comprar" class="btn-primary" style="width:100%;" onclick="confirmarCompra()">Comprar con mi saldo</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="sesion.js"></script>
+    <script>
+        let usuarioActual = null;
+        let paquetes = [];
+        let montoRecargaElegido = 0;
+        let paqueteElegido = null;
+
+        window.onload = async function () {
+            usuarioActual = await verificarSesion();
+            if (!usuarioActual) return;
+            await cargarPaquetes();
+            insertarFooter();
+        };
+
+        async function cargarPaquetes() {
+            const cont = document.getElementById('paquetes-grid');
+            const { data, error } = await supabaseClient
+                .from('paquetes_ff')
+                .select('*')
+                .eq('activo', true)
+                .order('orden', { ascending: true });
+
+            if (error || !data || data.length === 0) {
+                cont.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">No hay paquetes disponibles por ahora.</p>';
+                return;
+            }
+
+            paquetes = data;
+            cont.innerHTML = paquetes.map(p => `
+                <div class="paquete-card" onclick="abrirModalComprar(${p.id})">
+                    ${p.destacado ? '<span class="destacado-tag">Más Popular</span>' : ''}
+                    <div class="paquete-icon">💎</div>
+                    <h3>${escHtml(p.nombre)}</h3>
+                    <div class="precio">${formatearSoles(p.precio)}</div>
+                    <div class="precio-moneda">Free Fire</div>
+                </div>
+            `).join('');
+        }
+
+        function cerrarModal(id) { document.getElementById(id).classList.remove('abierto'); }
+
+        // ---------- RECARGAR SALDO ----------
+        function abrirModalRecargar() {
+            montoRecargaElegido = 0;
+            document.getElementById('monto-personalizado').value = '';
+            document.querySelectorAll('#montos-rapidos .monto-btn').forEach(b => b.classList.remove('activo'));
+            document.getElementById('recargar-msg').style.display = 'none';
+            document.getElementById('modal-recargar').classList.add('abierto');
+        }
+        function elegirMontoRapido(monto) {
+            montoRecargaElegido = monto;
+            document.getElementById('monto-personalizado').value = '';
+            document.querySelectorAll('#montos-rapidos .monto-btn').forEach(b => b.classList.remove('activo'));
+            event.currentTarget.classList.add('activo');
+        }
+        document.addEventListener('input', function (e) {
+            if (e.target.id === 'monto-personalizado' && e.target.value) {
+                montoRecargaElegido = parseFloat(e.target.value);
+                document.querySelectorAll('#montos-rapidos .monto-btn').forEach(b => b.classList.remove('activo'));
+            }
+        });
+
+        async function confirmarRecarga() {
+            const msg = document.getElementById('recargar-msg');
+            const btn = document.getElementById('btn-recargar');
+            const personalizado = parseFloat(document.getElementById('monto-personalizado').value);
+            const monto = personalizado > 0 ? personalizado : montoRecargaElegido;
+
+            if (!monto || monto <= 0) {
+                msg.className = 'msg-box error'; msg.style.display = 'block';
+                msg.innerText = 'Elige o ingresa un monto válido.'; return;
+            }
+
+            btn.disabled = true; btn.innerText = 'Registrando...';
+            const { error } = await supabaseClient.from('pedidos').insert([{
+                usuario_id: usuarioActual.id,
+                tipo: 'recarga_saldo',
+                monto: monto,
+                metodo_pago: 'yape_plin'
+            }]);
+            btn.disabled = false; btn.innerText = 'Ya pagué, registrar recarga';
+
+            msg.style.display = 'block';
+            if (error) {
+                msg.className = 'msg-box error';
+                msg.innerText = 'No se pudo registrar: ' + error.message;
+                return;
+            }
+            msg.className = 'msg-box exito';
+            msg.innerText = 'Recarga registrada. Se acreditará a tu saldo en cuanto confirmemos tu pago.';
+        }
+
+        // ---------- COMPRAR DIAMANTES ----------
+        function abrirModalComprar(paqueteId) {
+            paqueteElegido = paquetes.find(p => p.id === paqueteId);
+            if (!paqueteElegido) return;
+            document.getElementById('comprar-resumen').innerText = `${paqueteElegido.nombre} — ${formatearSoles(paqueteElegido.precio)}`;
+            document.getElementById('comprar-id-ff').value = '';
+            document.getElementById('comprar-msg').style.display = 'none';
+            document.getElementById('modal-comprar').classList.add('abierto');
+        }
+
+        async function confirmarCompra() {
+            const msg = document.getElementById('comprar-msg');
+            const btn = document.getElementById('btn-comprar');
+            const idJugador = document.getElementById('comprar-id-ff').value.trim();
+
+            if (!idJugador) {
+                msg.className = 'msg-box error'; msg.style.display = 'block';
+                msg.innerText = 'Ingresa tu ID de jugador de Free Fire.'; return;
+            }
+
+            btn.disabled = true; btn.innerText = 'Procesando...';
+            const { error } = await supabaseClient.from('pedidos').insert([{
+                usuario_id: usuarioActual.id,
+                tipo: 'compra_diamantes',
+                paquete_id: paqueteElegido.id,
+                id_jugador_ff: idJugador,
+                monto: paqueteElegido.precio
+            }]);
+            btn.disabled = false; btn.innerText = 'Comprar con mi saldo';
+
+            msg.style.display = 'block';
+            if (error) {
+                msg.className = 'msg-box error';
+                msg.innerText = error.message.includes('Saldo insuficiente') ? 'Saldo insuficiente. Recarga tu saldo primero.' : ('No se pudo comprar: ' + error.message);
+                return;
+            }
+            msg.className = 'msg-box exito';
+            msg.innerText = '¡Compra realizada! Tus diamantes se entregarán en tu cuenta en unos minutos.';
+            usuarioActual = await verificarSesion();
+        }
+
+        function insertarFooter() {
+            document.getElementById('footer-slot').outerHTML = `
+            <footer>
+                <div class="footer-grid">
+                    <div class="footer-col">
+                        <h4>MZ'Recargas</h4>
+                        <p>Tu tienda de confianza para recargas de diamantes de Free Fire. Pagos verificados a mano y entrega rápida.</p>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Enlaces</h4>
+                        <ul>
+                            <li><a href="catalogo.html">Recargar Diamantes</a></li>
+                            <li><a href="historial.html">Mis Pedidos</a></li>
+                            <li><a href="soporte.html">Soporte</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="terminos.html">Términos de Servicio</a></li>
+                            <li><a href="privacidad.html">Política de Privacidad</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-bottom">© ${new Date().getFullYear()} MZ'Recargas. Todos los derechos reservados.</div>
+            </footer>`;
+        }
+    </script>
+    <a href="https://wa.me/51000000000?text=%C2%A1Hola%20MZ%27Recargas!%20Necesito%20ayuda%20con%20la%20web." target="_blank" rel="noopener" class="whatsapp-float" aria-label="Escríbenos por WhatsApp" title="¿Necesitas ayuda? Escríbenos">
+        <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
+</body>
+</html>
