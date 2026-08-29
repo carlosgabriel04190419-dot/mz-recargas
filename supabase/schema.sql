@@ -1,7 +1,7 @@
 -- ============================================================
--- MR' Diamonds — esquema inicial
+-- MZ'Recargas — esquema inicial
 -- Pega TODO este archivo en el SQL Editor de Supabase (una sola
--- vez, en el proyecto de MR' Diamonds) y dale "Run".
+-- vez, en el proyecto de MZ'Recargas) y dale "Run".
 -- ============================================================
 
 -- ---------- PERFILES ----------
