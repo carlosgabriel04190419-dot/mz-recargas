@@ -65,14 +65,20 @@
 
     <section class="seccion video-zone">
         <div class="seccion-header">
-            <h2>Paquetes de Diamantes</h2>
-            <p>Elige el paquete que más te convenga. El pago se hace desde tu saldo precargado.</p>
+            <h2>Nuestros Catálogos</h2>
+            <p>Elige el catálogo que prefieras y compra tus diamantes al instante con tu saldo.</p>
         </div>
-        <div id="paquetes-grid" class="paquetes-grid">
-            <p style="grid-column: 1/-1; text-align:center; color: #9aa3c9;">Cargando paquetes...</p>
-        </div>
-        <div style="text-align:center; margin-top: 32px;">
-            <a href="catalogo.html" class="btn-outline">Ver todos los paquetes</a>
+        <div class="catalogos-grid">
+            <a href="catalogo.html?catalogo=ilimitada" class="catalogo-card" style="text-decoration:none; color:inherit;">
+                <img src="banner-ilimitada.jpg" alt="Recargas Ilimitadas">
+                <h3>Recargas Ilimitadas</h3>
+                <span class="catalogo-tag">Sin límite de recargas</span>
+            </a>
+            <a href="catalogo.html?catalogo=promo" class="catalogo-card" style="text-decoration:none; color:inherit;">
+                <img src="banner-promo.jpeg" alt="Promo Primera Vez">
+                <h3>Promo Primera Vez</h3>
+                <span class="catalogo-tag">Precio especial, 1 vez por ID</span>
+            </a>
         </div>
     </section>
 
@@ -117,40 +123,8 @@
         window.onload = async function () {
             const usuario = await verificarSesion(false);
             if (!usuario) pintarNavInvitado();
-            await cargarPaquetesDestacados();
             insertarFooter();
         };
-
-        async function cargarPaquetesDestacados() {
-            const cont = document.getElementById('paquetes-grid');
-            const { data, error } = await supabaseClient
-                .from('paquetes_ff')
-                .select('*')
-                .eq('activo', true)
-                .eq('categoria', 'ilimitada')
-                .order('orden', { ascending: true })
-                .limit(6);
-
-            if (error || !data || data.length === 0) {
-                cont.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: #9aa3c9;">No hay paquetes disponibles por ahora.</p>';
-                return;
-            }
-
-            const tamanos = [100, 300, 500, 1000, 2000, 6000];
-            cont.innerHTML = data.map(p => {
-                const cantidad = tamanos.indexOf(p.diamantes) >= 0 ? tamanos.indexOf(p.diamantes) + 1 : 1;
-                const tamanoIcono = cantidad >= 5 ? 22 : cantidad === 4 ? 28 : 36;
-                return `
-                <a href="catalogo.html" class="paquete-card" style="text-decoration:none; color: inherit;">
-                    ${p.destacado ? '<span class="destacado-tag">Más Popular</span>' : ''}
-                    <div class="paquete-icon"><span style="font-size:${tamanoIcono}px;">${'💎'.repeat(cantidad)}</span></div>
-                    <h3>${escHtml(p.nombre)}</h3>
-                    <div class="precio">${formatearSoles(p.precio)}</div>
-                    <div class="precio-moneda">Free Fire</div>
-                </a>
-            `;
-            }).join('');
-        }
 
         function insertarFooter() {
             document.getElementById('footer-slot').outerHTML = `

@@ -47,65 +47,37 @@
         <div class="saldo-card" style="max-width: 420px; margin-left:auto; margin-right:auto;">
             <p style="color: var(--texto-secundario); font-size: 14px;">Tu saldo disponible</p>
             <div class="monto" data-nav-saldo>S/ 0.00</div>
-            <button class="btn-primary" onclick="abrirModalRecargar()">Recargar Saldo</button>
+            <a href="recargar-saldo.html" class="btn-primary" style="display:inline-block; text-decoration:none;">Recargar Saldo</a>
         </div>
 
         <div class="seccion-header">
-            <h2>Diamantes Free Fire</h2>
-            <p>Elige un catálogo, selecciona tu paquete, ingresa tu ID de jugador y compra al instante con tu saldo.</p>
+            <h2>Elige tu catálogo</h2>
+            <p>Selecciona el catálogo, elige tu paquete e ingresa tu ID de jugador para comprar al instante con tu saldo.</p>
         </div>
 
-        <div class="catalogo-tabs">
-            <button type="button" class="catalogo-tab activo" data-categoria="ilimitada" onclick="cambiarCatalogo('ilimitada')">Recargas Ilimitadas</button>
-            <button type="button" class="catalogo-tab" data-categoria="promo" onclick="cambiarCatalogo('promo')">Promo Primera Vez</button>
+        <div id="vista-selector" class="catalogos-grid">
+            <div class="catalogo-card" onclick="cambiarCatalogo('ilimitada')">
+                <img src="banner-ilimitada.jpg" alt="Recargas Ilimitadas">
+                <h3>Recargas Ilimitadas</h3>
+                <span class="catalogo-tag">Sin límite de recargas</span>
+            </div>
+            <div class="catalogo-card" onclick="cambiarCatalogo('promo')">
+                <img src="banner-promo.jpeg" alt="Promo Primera Vez">
+                <h3>Promo Primera Vez</h3>
+                <span class="catalogo-tag">Precio especial, 1 vez por ID</span>
+            </div>
         </div>
 
-        <div class="catalogo-banner">
-            <img id="catalogo-banner-img" src="banner-ilimitada.jpg" alt="Recargas Ilimitadas">
-        </div>
-
-        <div id="paquetes-grid" class="paquetes-grid">
-            <p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">Cargando paquetes...</p>
+        <div id="vista-paquetes" style="display:none;">
+            <a href="#" onclick="volverASelector(event)" class="back-link-catalogo"><span class="material-icons">arrow_back</span> Volver a catálogos</a>
+            <h3 id="paquetes-titulo" style="text-align:center; margin: 20px 0 26px; font-size:22px; font-weight:800;"></h3>
+            <div id="paquetes-grid" class="paquetes-grid">
+                <p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">Cargando paquetes...</p>
+            </div>
         </div>
     </div>
 
     <footer id="footer-slot"></footer>
-
-    <!-- MODAL: RECARGAR SALDO -->
-    <div id="modal-recargar" class="modal-overlay">
-        <div class="modal-box">
-            <span class="material-icons close-btn" onclick="cerrarModal('modal-recargar')">close</span>
-            <div class="modal-header">
-                <h2>Recargar Saldo</h2>
-                <p>Elige tu método de pago y el monto, paga y avísanos por WhatsApp.</p>
-            </div>
-            <div id="recargar-msg" class="msg-box"></div>
-
-            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Método de pago</label>
-            <div class="monto-btn-grid" id="metodos-pago" style="margin-bottom: 16px;">
-                <button type="button" class="monto-btn activo" data-metodo="yape" onclick="elegirMetodoPago('yape')" style="flex-basis: calc(50% - 5px);">Yape</button>
-                <button type="button" class="monto-btn" data-metodo="plin" onclick="elegirMetodoPago('plin')" style="flex-basis: calc(50% - 5px);">Plin</button>
-            </div>
-
-            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Monto a recargar</label>
-            <div class="monto-btn-grid" id="montos-rapidos">
-                <button type="button" class="monto-btn" onclick="elegirMontoRapido(10)">S/ 10</button>
-                <button type="button" class="monto-btn" onclick="elegirMontoRapido(20)">S/ 20</button>
-                <button type="button" class="monto-btn" onclick="elegirMontoRapido(50)">S/ 50</button>
-                <button type="button" class="monto-btn" onclick="elegirMontoRapido(100)">S/ 100</button>
-            </div>
-            <input type="number" id="monto-personalizado" class="input-form" placeholder="O ingresa otro monto (S/)" min="1" step="0.01">
-
-            <div class="card" style="margin: 16px 0; padding: 16px;">
-                <p style="font-size: 13.5px; font-weight: 700; margin-bottom: 8px;">Paga por Yape o Plin a:</p>
-                <p style="font-size: 14px; color: var(--texto-secundario);">Yape / Plin: <strong id="pago-numero">[pendiente de configurar]</strong></p>
-                <p style="font-size: 14px; color: var(--texto-secundario);">A nombre de: <strong id="pago-titular">[pendiente de configurar]</strong></p>
-                <p style="font-size: 12.5px; color: var(--texto-tenue); margin-top: 8px;">Después de pagar, dale a "Ya pagué" — te llevamos a WhatsApp para que nos envíes tu captura y acreditemos tu saldo más rápido.</p>
-            </div>
-
-            <button type="button" id="btn-recargar" class="btn-primary" style="width:100%;" onclick="confirmarRecarga()">Ya pagué, avisar por WhatsApp</button>
-        </div>
-    </div>
 
     <!-- MODAL: COMPRAR DIAMANTES -->
     <div id="modal-comprar" class="modal-overlay">
@@ -129,15 +101,12 @@
     <script>
         const WHATSAPP_NUMERO = '51901150296';
         const NOMBRES_CATALOGO = { ilimitada: 'Recargas Ilimitadas', promo: 'Promo Primera Vez' };
-        const BANNERS_CATALOGO = { ilimitada: 'banner-ilimitada.jpg', promo: 'banner-promo.jpeg' };
         const TAMANOS_DIAMANTES = [100, 300, 500, 1000, 2000, 6000];
 
         let usuarioActual = null;
         let paquetesTodos = [];
         let paquetes = [];
-        let categoriaActiva = 'ilimitada';
-        let montoRecargaElegido = 0;
-        let metodoPagoElegido = 'yape';
+        let categoriaActiva = null;
         let paqueteElegido = null;
 
         window.onload = async function () {
@@ -145,6 +114,9 @@
             if (!usuarioActual) return;
             await cargarPaquetes();
             insertarFooter();
+
+            const catalogoUrl = new URLSearchParams(window.location.search).get('catalogo');
+            if (catalogoUrl === 'ilimitada' || catalogoUrl === 'promo') cambiarCatalogo(catalogoUrl);
         };
 
         function emojiPorTamano(diamantes) {
@@ -172,15 +144,20 @@
             }
 
             paquetesTodos = data;
-            pintarCatalogo();
         }
 
         function cambiarCatalogo(categoria) {
             categoriaActiva = categoria;
-            document.querySelectorAll('.catalogo-tab').forEach(b => b.classList.toggle('activo', b.dataset.categoria === categoria));
-            document.getElementById('catalogo-banner-img').src = BANNERS_CATALOGO[categoria];
-            document.getElementById('catalogo-banner-img').alt = NOMBRES_CATALOGO[categoria];
+            document.getElementById('vista-selector').style.display = 'none';
+            document.getElementById('vista-paquetes').style.display = 'block';
+            document.getElementById('paquetes-titulo').innerText = NOMBRES_CATALOGO[categoria];
             pintarCatalogo();
+        }
+
+        function volverASelector(e) {
+            if (e) e.preventDefault();
+            document.getElementById('vista-paquetes').style.display = 'none';
+            document.getElementById('vista-selector').style.display = 'grid';
         }
 
         function pintarCatalogo() {
@@ -204,66 +181,6 @@
         }
 
         function cerrarModal(id) { document.getElementById(id).classList.remove('abierto'); }
-
-        // ---------- RECARGAR SALDO ----------
-        function abrirModalRecargar() {
-            montoRecargaElegido = 0;
-            metodoPagoElegido = 'yape';
-            document.getElementById('monto-personalizado').value = '';
-            document.querySelectorAll('#montos-rapidos .monto-btn').forEach(b => b.classList.remove('activo'));
-            document.querySelectorAll('#metodos-pago .monto-btn').forEach(b => b.classList.toggle('activo', b.dataset.metodo === 'yape'));
-            document.getElementById('recargar-msg').style.display = 'none';
-            document.getElementById('modal-recargar').classList.add('abierto');
-        }
-        function elegirMetodoPago(metodo) {
-            metodoPagoElegido = metodo;
-            document.querySelectorAll('#metodos-pago .monto-btn').forEach(b => b.classList.toggle('activo', b.dataset.metodo === metodo));
-        }
-        function elegirMontoRapido(monto) {
-            montoRecargaElegido = monto;
-            document.getElementById('monto-personalizado').value = '';
-            document.querySelectorAll('#montos-rapidos .monto-btn').forEach(b => b.classList.remove('activo'));
-            event.currentTarget.classList.add('activo');
-        }
-        document.addEventListener('input', function (e) {
-            if (e.target.id === 'monto-personalizado' && e.target.value) {
-                montoRecargaElegido = parseFloat(e.target.value);
-                document.querySelectorAll('#montos-rapidos .monto-btn').forEach(b => b.classList.remove('activo'));
-            }
-        });
-
-        async function confirmarRecarga() {
-            const msg = document.getElementById('recargar-msg');
-            const btn = document.getElementById('btn-recargar');
-            const personalizado = parseFloat(document.getElementById('monto-personalizado').value);
-            const monto = personalizado > 0 ? personalizado : montoRecargaElegido;
-
-            if (!monto || monto <= 0) {
-                msg.className = 'msg-box error'; msg.style.display = 'block';
-                msg.innerText = 'Elige o ingresa un monto válido.'; return;
-            }
-
-            btn.disabled = true; btn.innerText = 'Registrando...';
-            const { error } = await supabaseClient.from('pedidos').insert([{
-                usuario_id: usuarioActual.id,
-                tipo: 'recarga_saldo',
-                monto: monto,
-                metodo_pago: metodoPagoElegido
-            }]);
-            btn.disabled = false; btn.innerText = 'Ya pagué, avisar por WhatsApp';
-
-            msg.style.display = 'block';
-            if (error) {
-                msg.className = 'msg-box error';
-                msg.innerText = 'No se pudo registrar: ' + error.message;
-                return;
-            }
-            msg.className = 'msg-box exito';
-            msg.innerText = 'Recarga registrada. Te llevamos a WhatsApp para enviar tu captura y acreditar el saldo más rápido.';
-
-            const metodoTexto = metodoPagoElegido === 'plin' ? 'Plin' : 'Yape';
-            abrirWhatsapp(`¡Hola! Vengo de MZ'Recargas 💎. Acabo de pagar S/ ${monto.toFixed(2)} por ${metodoTexto} para recargar mi saldo. Aquí va mi captura de pago 👇`);
-        }
 
         // ---------- COMPRAR DIAMANTES ----------
         function abrirModalComprar(paqueteId) {

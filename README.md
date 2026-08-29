@@ -35,7 +35,7 @@ No hay panel de administración todavía — la tabla de Supabase hace ese papel
 
 ## Pendiente antes de lanzarlo a clientes reales
 
-- [ ] **Número de Yape/Plin real** — en `catalogo.html`, busca `pago-numero` / `pago-titular` (hoy dice "[pendiente de configurar]").
+- [x] **Datos de pago reales** — en `recargar-saldo.html`. Yape: 901 150 296, a nombre de "Raul Mu*" (apellido oculto a propósito, para que no lo usen en estafas). Plin: QR en `qr-plin.jpeg`.
 - [x] **Número de WhatsApp real** — `wa.me/51901150296` en todas las páginas.
 - [x] **Precios reales de los paquetes** — tabla `paquetes_ff` en Supabase, con dos catálogos (`categoria`: `ilimitada` / `promo`), mismos 6 tamaños de diamantes y precios distintos cada uno.
 - [x] **Logo** — ícono de diamante propio (`logo.svg`) en navbar y favicon.
