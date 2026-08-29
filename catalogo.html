@@ -52,7 +52,16 @@
 
         <div class="seccion-header">
             <h2>Diamantes Free Fire</h2>
-            <p>Elige un paquete, ingresa tu ID de jugador y compra al instante con tu saldo.</p>
+            <p>Elige un catálogo, selecciona tu paquete, ingresa tu ID de jugador y compra al instante con tu saldo.</p>
+        </div>
+
+        <div class="catalogo-tabs">
+            <button type="button" class="catalogo-tab activo" data-categoria="ilimitada" onclick="cambiarCatalogo('ilimitada')">Recargas Ilimitadas</button>
+            <button type="button" class="catalogo-tab" data-categoria="promo" onclick="cambiarCatalogo('promo')">Promo Primera Vez</button>
+        </div>
+
+        <div class="catalogo-banner">
+            <img id="catalogo-banner-img" src="banner-ilimitada.jpg" alt="Recargas Ilimitadas">
         </div>
 
         <div id="paquetes-grid" class="paquetes-grid">
@@ -68,10 +77,17 @@
             <span class="material-icons close-btn" onclick="cerrarModal('modal-recargar')">close</span>
             <div class="modal-header">
                 <h2>Recargar Saldo</h2>
-                <p>Elige un monto, paga por Yape o Plin y confirma tu recarga.</p>
+                <p>Elige tu método de pago y el monto, paga y avísanos por WhatsApp.</p>
             </div>
             <div id="recargar-msg" class="msg-box"></div>
 
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Método de pago</label>
+            <div class="monto-btn-grid" id="metodos-pago" style="margin-bottom: 16px;">
+                <button type="button" class="monto-btn activo" data-metodo="yape" onclick="elegirMetodoPago('yape')" style="flex-basis: calc(50% - 5px);">Yape</button>
+                <button type="button" class="monto-btn" data-metodo="plin" onclick="elegirMetodoPago('plin')" style="flex-basis: calc(50% - 5px);">Plin</button>
+            </div>
+
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Monto a recargar</label>
             <div class="monto-btn-grid" id="montos-rapidos">
                 <button type="button" class="monto-btn" onclick="elegirMontoRapido(10)">S/ 10</button>
                 <button type="button" class="monto-btn" onclick="elegirMontoRapido(20)">S/ 20</button>
@@ -84,10 +100,10 @@
                 <p style="font-size: 13.5px; font-weight: 700; margin-bottom: 8px;">Paga por Yape o Plin a:</p>
                 <p style="font-size: 14px; color: var(--texto-secundario);">Yape / Plin: <strong id="pago-numero">[pendiente de configurar]</strong></p>
                 <p style="font-size: 14px; color: var(--texto-secundario);">A nombre de: <strong id="pago-titular">[pendiente de configurar]</strong></p>
-                <p style="font-size: 12.5px; color: var(--texto-tenue); margin-top: 8px;">Después de pagar, dale a "Ya pagué" y envíanos tu comprobante por WhatsApp para acreditar tu saldo más rápido.</p>
+                <p style="font-size: 12.5px; color: var(--texto-tenue); margin-top: 8px;">Después de pagar, dale a "Ya pagué" — te llevamos a WhatsApp para que nos envíes tu captura y acreditemos tu saldo más rápido.</p>
             </div>
 
-            <button type="button" id="btn-recargar" class="btn-primary" style="width:100%;" onclick="confirmarRecarga()">Ya pagué, registrar recarga</button>
+            <button type="button" id="btn-recargar" class="btn-primary" style="width:100%;" onclick="confirmarRecarga()">Ya pagué, avisar por WhatsApp</button>
         </div>
     </div>
 
@@ -111,9 +127,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="sesion.js"></script>
     <script>
+        const WHATSAPP_NUMERO = '51901150296';
+        const NOMBRES_CATALOGO = { ilimitada: 'Recargas Ilimitadas', promo: 'Promo Primera Vez' };
+        const BANNERS_CATALOGO = { ilimitada: 'banner-ilimitada.jpg', promo: 'banner-promo.jpeg' };
+        const TAMANOS_DIAMANTES = [100, 300, 500, 1000, 2000, 6000];
+
         let usuarioActual = null;
+        let paquetesTodos = [];
         let paquetes = [];
+        let categoriaActiva = 'ilimitada';
         let montoRecargaElegido = 0;
+        let metodoPagoElegido = 'yape';
         let paqueteElegido = null;
 
         window.onload = async function () {
@@ -122,6 +146,17 @@
             await cargarPaquetes();
             insertarFooter();
         };
+
+        function emojiPorTamano(diamantes) {
+            const rango = TAMANOS_DIAMANTES.indexOf(diamantes);
+            const cantidad = rango >= 0 ? rango + 1 : 1;
+            const tamano = cantidad >= 5 ? 22 : cantidad === 4 ? 28 : 36;
+            return `<span style="font-size:${tamano}px;">${'💎'.repeat(cantidad)}</span>`;
+        }
+
+        function abrirWhatsapp(texto) {
+            window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(texto)}`, '_blank');
+        }
 
         async function cargarPaquetes() {
             const cont = document.getElementById('paquetes-grid');
@@ -136,11 +171,31 @@
                 return;
             }
 
-            paquetes = data;
+            paquetesTodos = data;
+            pintarCatalogo();
+        }
+
+        function cambiarCatalogo(categoria) {
+            categoriaActiva = categoria;
+            document.querySelectorAll('.catalogo-tab').forEach(b => b.classList.toggle('activo', b.dataset.categoria === categoria));
+            document.getElementById('catalogo-banner-img').src = BANNERS_CATALOGO[categoria];
+            document.getElementById('catalogo-banner-img').alt = NOMBRES_CATALOGO[categoria];
+            pintarCatalogo();
+        }
+
+        function pintarCatalogo() {
+            const cont = document.getElementById('paquetes-grid');
+            paquetes = paquetesTodos.filter(p => p.categoria === categoriaActiva);
+
+            if (paquetes.length === 0) {
+                cont.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">No hay paquetes disponibles en este catálogo por ahora.</p>';
+                return;
+            }
+
             cont.innerHTML = paquetes.map(p => `
                 <div class="paquete-card" onclick="abrirModalComprar(${p.id})">
                     ${p.destacado ? '<span class="destacado-tag">Más Popular</span>' : ''}
-                    <div class="paquete-icon">💎</div>
+                    <div class="paquete-icon">${emojiPorTamano(p.diamantes)}</div>
                     <h3>${escHtml(p.nombre)}</h3>
                     <div class="precio">${formatearSoles(p.precio)}</div>
                     <div class="precio-moneda">Free Fire</div>
@@ -153,10 +208,16 @@
         // ---------- RECARGAR SALDO ----------
         function abrirModalRecargar() {
             montoRecargaElegido = 0;
+            metodoPagoElegido = 'yape';
             document.getElementById('monto-personalizado').value = '';
             document.querySelectorAll('#montos-rapidos .monto-btn').forEach(b => b.classList.remove('activo'));
+            document.querySelectorAll('#metodos-pago .monto-btn').forEach(b => b.classList.toggle('activo', b.dataset.metodo === 'yape'));
             document.getElementById('recargar-msg').style.display = 'none';
             document.getElementById('modal-recargar').classList.add('abierto');
+        }
+        function elegirMetodoPago(metodo) {
+            metodoPagoElegido = metodo;
+            document.querySelectorAll('#metodos-pago .monto-btn').forEach(b => b.classList.toggle('activo', b.dataset.metodo === metodo));
         }
         function elegirMontoRapido(monto) {
             montoRecargaElegido = monto;
@@ -187,9 +248,9 @@
                 usuario_id: usuarioActual.id,
                 tipo: 'recarga_saldo',
                 monto: monto,
-                metodo_pago: 'yape_plin'
+                metodo_pago: metodoPagoElegido
             }]);
-            btn.disabled = false; btn.innerText = 'Ya pagué, registrar recarga';
+            btn.disabled = false; btn.innerText = 'Ya pagué, avisar por WhatsApp';
 
             msg.style.display = 'block';
             if (error) {
@@ -198,12 +259,15 @@
                 return;
             }
             msg.className = 'msg-box exito';
-            msg.innerText = 'Recarga registrada. Se acreditará a tu saldo en cuanto confirmemos tu pago.';
+            msg.innerText = 'Recarga registrada. Te llevamos a WhatsApp para enviar tu captura y acreditar el saldo más rápido.';
+
+            const metodoTexto = metodoPagoElegido === 'plin' ? 'Plin' : 'Yape';
+            abrirWhatsapp(`¡Hola! Vengo de MZ'Recargas 💎. Acabo de pagar S/ ${monto.toFixed(2)} por ${metodoTexto} para recargar mi saldo. Aquí va mi captura de pago 👇`);
         }
 
         // ---------- COMPRAR DIAMANTES ----------
         function abrirModalComprar(paqueteId) {
-            paqueteElegido = paquetes.find(p => p.id === paqueteId);
+            paqueteElegido = paquetesTodos.find(p => p.id === paqueteId);
             if (!paqueteElegido) return;
             document.getElementById('comprar-resumen').innerText = `${paqueteElegido.nombre} — ${formatearSoles(paqueteElegido.precio)}`;
             document.getElementById('comprar-id-ff').value = '';
@@ -238,8 +302,11 @@
                 return;
             }
             msg.className = 'msg-box exito';
-            msg.innerText = '¡Compra realizada! Tus diamantes se entregarán en tu cuenta en unos minutos.';
+            msg.innerText = '¡Compra realizada! Te llevamos a WhatsApp para avisarle a MZ\'Recargas y recibir tus diamantes en minutos.';
             usuarioActual = await verificarSesion();
+
+            const catalogoTexto = NOMBRES_CATALOGO[paqueteElegido.categoria] || '';
+            abrirWhatsapp(`¡Hola! Vengo de MZ'Recargas 💎. Compré el paquete ${paqueteElegido.nombre} (${catalogoTexto}) por S/ ${Number(paqueteElegido.precio).toFixed(2)}. Mi ID de Free Fire es: ${idJugador}`);
         }
 
         function insertarFooter() {
@@ -270,7 +337,7 @@
             </footer>`;
         }
     </script>
-    <a href="https://wa.me/51000000000?text=%C2%A1Hola%20MZ%27Recargas!%20Necesito%20ayuda%20con%20la%20web." target="_blank" rel="noopener" class="whatsapp-float" aria-label="Escríbenos por WhatsApp" title="¿Necesitas ayuda? Escríbenos">
+    <a href="https://wa.me/51901150296?text=%C2%A1Hola%20MZ%27Recargas!%20Necesito%20ayuda%20con%20la%20web." target="_blank" rel="noopener" class="whatsapp-float" aria-label="Escríbenos por WhatsApp" title="¿Necesitas ayuda? Escríbenos">
         <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
     </a>
 </body>

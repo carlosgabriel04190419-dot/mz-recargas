@@ -62,11 +62,14 @@ $$;
 grant execute on function public.actualizar_mi_perfil(text, text) to authenticated;
 
 -- ---------- CATÁLOGO: paquetes de diamantes Free Fire ----------
+-- Dos catálogos con los mismos tamaños de diamantes y precios distintos:
+-- "ilimitada" (Recargas Ilimitadas) y "promo" (Promo Primera Vez).
 create table public.paquetes_ff (
   id serial primary key,
   nombre text not null,
   diamantes integer not null,
   precio numeric(10,2) not null,
+  categoria text not null default 'ilimitada' check (categoria in ('ilimitada', 'promo')),
   destacado boolean not null default false,
   activo boolean not null default true,
   orden integer not null default 0
@@ -77,15 +80,19 @@ alter table public.paquetes_ff enable row level security;
 create policy "select_paquetes_activos" on public.paquetes_ff
   for select using (activo = true);
 
--- Precios de EJEMPLO — reemplázalos por los reales del cliente
--- desde Table Editor → paquetes_ff antes de publicar el sitio.
-insert into public.paquetes_ff (nombre, diamantes, precio, destacado, orden) values
-  ('100 Diamantes',   100,   4.00,  false, 1),
-  ('310 Diamantes',   310,   12.00, false, 2),
-  ('520 Diamantes',   520,   20.00, true,  3),
-  ('1060 Diamantes',  1060,  38.00, false, 4),
-  ('2180 Diamantes',  2180,  76.00, false, 5),
-  ('5600 Diamantes',  5600,  190.00, true, 6);
+insert into public.paquetes_ff (nombre, diamantes, precio, categoria, destacado, orden) values
+  ('100 Diamantes',  100,  3.00,   'ilimitada', false, 1),
+  ('300 Diamantes',  300,  10.00,  'ilimitada', false, 2),
+  ('500 Diamantes',  500,  15.00,  'ilimitada', false, 3),
+  ('1000 Diamantes', 1000, 28.00,  'ilimitada', true,  4),
+  ('2000 Diamantes', 2000, 50.00,  'ilimitada', false, 5),
+  ('6000 Diamantes', 6000, 130.00, 'ilimitada', false, 6),
+  ('100 Diamantes',  100,  2.00,   'promo', false, 1),
+  ('300 Diamantes',  300,  8.00,   'promo', false, 2),
+  ('500 Diamantes',  500,  12.00,  'promo', false, 3),
+  ('1000 Diamantes', 1000, 25.00,  'promo', true,  4),
+  ('2000 Diamantes', 2000, 45.00,  'promo', false, 5),
+  ('6000 Diamantes', 6000, 110.00, 'promo', false, 6);
 
 -- ---------- PEDIDOS (recargas de saldo y compras de diamantes) ----------
 create table public.pedidos (

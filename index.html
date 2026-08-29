@@ -13,6 +13,11 @@
 </head>
 <body>
 
+    <video class="site-bg-video" autoplay muted loop playsinline aria-hidden="true">
+        <source src="login-bg.mp4" type="video/mp4">
+    </video>
+    <div class="site-bg-overlay"></div>
+
     <nav class="navbar">
         <a href="index.html" class="nav-logo-premium">
             <img src="logo.svg" alt="MZ'Recargas" class="logo-img">
@@ -44,59 +49,63 @@
     </nav>
 
     <section class="hero">
-        <video class="hero-bg-video" autoplay muted loop playsinline aria-hidden="true">
-            <source src="login-bg.mp4" type="video/mp4">
-        </video>
-        <div class="hero-bg-overlay"></div>
-        <div class="hero-content">
-            <div class="hero-badge"><span class="material-icons" style="font-size:16px;">bolt</span> Entrega en menos de 5 minutos</div>
-            <h1>Diamantes de <span>Free Fire</span><br>al instante</h1>
-            <p>Carga tu saldo con Yape o Plin y compra diamantes en segundos. Sin vueltas, sin esperas.</p>
-            <div class="hero-actions">
-                <a href="catalogo.html" class="btn-primary">Recargar Ahora</a>
-                <a href="soporte.html" class="btn-outline">Hablar con Soporte</a>
-            </div>
-            <div class="hero-stats">
-                <div><h3>100%</h3><p>Pago verificado</p></div>
-                <div><h3>&lt; 5 Min</h3><p>Entrega promedio</p></div>
-                <div><h3>24/7</h3><p>Disponible siempre</p></div>
-            </div>
+        <div class="hero-badge"><span class="material-icons" style="font-size:16px;">bolt</span> Entrega en menos de 5 minutos</div>
+        <h1>Diamantes de <span>Free Fire</span><br>al instante</h1>
+        <p>Carga tu saldo con Yape o Plin y compra diamantes en segundos. Sin vueltas, sin esperas.</p>
+        <div class="hero-actions">
+            <a href="catalogo.html" class="btn-primary">Recargar Ahora</a>
+            <a href="soporte.html" class="btn-outline">Hablar con Soporte</a>
+        </div>
+        <div class="hero-stats">
+            <div><h3>100%</h3><p>Pago verificado</p></div>
+            <div><h3>&lt; 5 Min</h3><p>Entrega promedio</p></div>
+            <div><h3>24/7</h3><p>Disponible siempre</p></div>
         </div>
     </section>
 
-    <section class="seccion">
+    <section class="seccion video-zone">
         <div class="seccion-header">
             <h2>Paquetes de Diamantes</h2>
             <p>Elige el paquete que más te convenga. El pago se hace desde tu saldo precargado.</p>
         </div>
         <div id="paquetes-grid" class="paquetes-grid">
-            <p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">Cargando paquetes...</p>
+            <p style="grid-column: 1/-1; text-align:center; color: #9aa3c9;">Cargando paquetes...</p>
         </div>
         <div style="text-align:center; margin-top: 32px;">
             <a href="catalogo.html" class="btn-outline">Ver todos los paquetes</a>
         </div>
     </section>
 
-    <section class="seccion" style="max-width: 900px; margin: 0 auto;">
+    <section class="seccion video-zone" style="max-width: 700px; margin: 0 auto;">
         <div class="seccion-header">
-            <h2>¿Cómo funciona?</h2>
+            <h2>Preguntas Frecuentes</h2>
+            <p>Resolvemos las dudas más comunes sobre recargas, pagos y entrega.</p>
         </div>
-        <div class="paquetes-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px,1fr));">
-            <div class="card" style="text-align:center;">
-                <div class="paquete-icon">1️⃣</div>
-                <h3 style="margin: 10px 0 8px;">Crea tu cuenta</h3>
-                <p style="color: var(--texto-secundario); font-size: 14px;">Regístrate gratis con tu correo en un minuto.</p>
-            </div>
-            <div class="card" style="text-align:center;">
-                <div class="paquete-icon">2️⃣</div>
-                <h3 style="margin: 10px 0 8px;">Recarga tu saldo</h3>
-                <p style="color: var(--texto-secundario); font-size: 14px;">Paga por Yape o Plin y te acreditamos el saldo.</p>
-            </div>
-            <div class="card" style="text-align:center;">
-                <div class="paquete-icon">3️⃣</div>
-                <h3 style="margin: 10px 0 8px;">Compra tus diamantes</h3>
-                <p style="color: var(--texto-secundario); font-size: 14px;">Elige tu paquete, pon tu ID de Free Fire y listo.</p>
-            </div>
+        <div class="faq-list">
+            <details class="faq-item">
+                <summary>¿Cómo recargo mi saldo?<span class="material-icons">expand_more</span></summary>
+                <p>Desde "Recargar Diamantes" eliges un monto y pagas por Yape o Plin. En cuanto verificamos tu pago, te acreditamos el saldo para que compres cuando quieras.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Cuánto demora la entrega de diamantes?<span class="material-icons">expand_more</span></summary>
+                <p>En promedio menos de 5 minutos después de confirmar tu compra, una vez que tu saldo ya está cargado.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Es seguro comprar en MZ'Recargas?<span class="material-icons">expand_more</span></summary>
+                <p>Sí. Usamos cuentas reales con autenticación y cada pago se verifica a mano antes de acreditar el saldo, sin sorpresas.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Qué hago si mi pago no se refleja?<span class="material-icons">expand_more</span></summary>
+                <p>Escríbenos por WhatsApp con tu comprobante de Yape o Plin y lo revisamos al toque.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Necesito crear una cuenta para comprar?<span class="material-icons">expand_more</span></summary>
+                <p>Sí, es gratis y toma un minuto. Así guardamos tu saldo y el historial de todos tus pedidos.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Qué dato necesito para recargar diamantes?<span class="material-icons">expand_more</span></summary>
+                <p>Solo tu ID de jugador de Free Fire, que puedes ver en tu perfil dentro del juego.</p>
+            </details>
         </div>
     </section>
 
@@ -118,23 +127,29 @@
                 .from('paquetes_ff')
                 .select('*')
                 .eq('activo', true)
+                .eq('categoria', 'ilimitada')
                 .order('orden', { ascending: true })
                 .limit(6);
 
             if (error || !data || data.length === 0) {
-                cont.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">No hay paquetes disponibles por ahora.</p>';
+                cont.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: #9aa3c9;">No hay paquetes disponibles por ahora.</p>';
                 return;
             }
 
-            cont.innerHTML = data.map(p => `
+            const tamanos = [100, 300, 500, 1000, 2000, 6000];
+            cont.innerHTML = data.map(p => {
+                const cantidad = tamanos.indexOf(p.diamantes) >= 0 ? tamanos.indexOf(p.diamantes) + 1 : 1;
+                const tamanoIcono = cantidad >= 5 ? 22 : cantidad === 4 ? 28 : 36;
+                return `
                 <a href="catalogo.html" class="paquete-card" style="text-decoration:none; color: inherit;">
                     ${p.destacado ? '<span class="destacado-tag">Más Popular</span>' : ''}
-                    <div class="paquete-icon">💎</div>
+                    <div class="paquete-icon"><span style="font-size:${tamanoIcono}px;">${'💎'.repeat(cantidad)}</span></div>
                     <h3>${escHtml(p.nombre)}</h3>
                     <div class="precio">${formatearSoles(p.precio)}</div>
                     <div class="precio-moneda">Free Fire</div>
                 </a>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function insertarFooter() {
@@ -165,7 +180,7 @@
             </footer>`;
         }
     </script>
-    <a href="https://wa.me/51000000000?text=%C2%A1Hola%20MZ%27Recargas!%20Necesito%20ayuda%20con%20la%20web." target="_blank" rel="noopener" class="whatsapp-float" aria-label="Escríbenos por WhatsApp" title="¿Necesitas ayuda? Escríbenos">
+    <a href="https://wa.me/51901150296?text=%C2%A1Hola%20MZ%27Recargas!%20Necesito%20ayuda%20con%20la%20web." target="_blank" rel="noopener" class="whatsapp-float" aria-label="Escríbenos por WhatsApp" title="¿Necesitas ayuda? Escríbenos">
         <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
     </a>
 </body>

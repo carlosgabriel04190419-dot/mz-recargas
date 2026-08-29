@@ -140,21 +140,23 @@ button { cursor: pointer; font-family: inherit; }
 /* ========================================== */
 /* HERO                                       */
 /* ========================================== */
+/* Video de fondo fijo: cubre desde el hero hasta justo antes del footer */
+.site-bg-video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; transform: scale(1.2); transform-origin: bottom left; }
+.site-bg-overlay { position: fixed; inset: 0; z-index: 1; background: linear-gradient(160deg, rgba(6,8,16,0.8) 0%, rgba(15,10,35,0.62) 55%, rgba(6,8,16,0.84) 100%); }
+.hero, .video-zone, footer { position: relative; z-index: 2; }
+
 .hero {
-    position: relative; padding: 90px 20px 70px; text-align: center; overflow: hidden;
+    padding: 90px 20px 70px; text-align: center; overflow: hidden;
     background: radial-gradient(circle at 50% -10%, rgba(59, 125, 255, 0.18), transparent 60%);
 }
-.hero-bg-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; transform: scale(1.2); transform-origin: bottom left; }
-.hero-bg-overlay { position: absolute; inset: 0; z-index: 1; background: linear-gradient(160deg, rgba(6,8,16,0.72) 0%, rgba(15,10,35,0.5) 55%, rgba(6,8,16,0.78) 100%); }
-.hero-content { position: relative; z-index: 2; }
 .hero-badge {
     display: inline-flex; align-items: center; gap: 8px; background: var(--bg-elevada-2);
     border: 1px solid var(--borde-suave); padding: 7px 16px; border-radius: 30px;
     font-size: 13px; font-weight: 600; color: var(--acento-1); margin-bottom: 22px;
 }
-.hero-content h1 { font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.15; margin-bottom: 18px; color: #f5f7ff; }
-.hero-content h1 span { background: var(--acento-degradado); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.hero-content p { font-size: 17px; color: #c2c9ea; max-width: 560px; margin: 0 auto 32px; }
+.hero h1 { font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.15; margin-bottom: 18px; color: #f5f7ff; }
+.hero h1 span { background: var(--acento-degradado); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p { font-size: 17px; color: #c2c9ea; max-width: 560px; margin: 0 auto 32px; }
 .hero-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 .hero-stats { display: flex; gap: 40px; justify-content: center; margin-top: 56px; flex-wrap: wrap; }
 .hero-stats div { text-align: center; }
@@ -165,6 +167,35 @@ button { cursor: pointer; font-family: inherit; }
 .seccion-header { text-align: center; max-width: 560px; margin: 0 auto 40px; }
 .seccion-header h2 { font-size: 30px; font-weight: 800; margin-bottom: 10px; }
 .seccion-header p { color: var(--texto-secundario); font-size: 15px; }
+.video-zone .seccion-header h2 { color: #f5f7ff; }
+.video-zone .seccion-header p { color: #c2c9ea; }
+
+/* ========================================== */
+/* CATÁLOGOS (RECARGAS ILIMITADAS / PROMO)    */
+/* ========================================== */
+.catalogo-tabs { display: flex; justify-content: center; gap: 10px; margin: 28px 0 24px; flex-wrap: wrap; }
+.catalogo-tab {
+    background: var(--bg-elevada); border: 1px solid var(--borde); color: var(--texto-secundario);
+    padding: 10px 22px; border-radius: 30px; font-weight: 700; font-size: 14.5px; transition: all 0.2s;
+}
+.catalogo-tab:hover { border-color: var(--acento-1); color: var(--texto); }
+.catalogo-tab.activo { background: var(--acento-degradado); border-color: transparent; color: #fff; }
+.catalogo-banner { max-width: 700px; margin: 0 auto 32px; border-radius: 16px; overflow: hidden; border: 1px solid var(--borde); }
+.catalogo-banner img { width: 100%; max-height: 260px; object-fit: cover; display: block; }
+
+/* ========================================== */
+/* PREGUNTAS FRECUENTES                       */
+/* ========================================== */
+.faq-list { display: flex; flex-direction: column; gap: 12px; }
+.faq-item { background-color: var(--bg-elevada); border: 1px solid var(--borde); border-radius: 14px; padding: 0 22px; }
+.faq-item summary {
+    list-style: none; cursor: pointer; padding: 18px 0; font-weight: 700; font-size: 15.5px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--texto);
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary .material-icons { color: var(--texto-tenue); transition: transform 0.2s; flex-shrink: 0; }
+.faq-item[open] summary .material-icons { transform: rotate(180deg); }
+.faq-item p { color: var(--texto-secundario); font-size: 14.5px; line-height: 1.55; padding-bottom: 20px; }
 
 /* ========================================== */
 /* TARJETAS / PAQUETES                        */
