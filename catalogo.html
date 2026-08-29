@@ -71,8 +71,23 @@
         <div id="vista-paquetes" style="display:none;">
             <a href="#" onclick="volverASelector(event)" class="back-link-catalogo"><span class="material-icons">arrow_back</span> Volver a catálogos</a>
             <h3 id="paquetes-titulo" style="text-align:center; margin: 20px 0 26px; font-size:22px; font-weight:800;"></h3>
-            <div id="paquetes-grid" class="paquetes-grid">
-                <p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">Cargando paquetes...</p>
+
+            <div class="paso-card">
+                <div class="paso-titulo"><span class="paso-num">1</span> Ingresa tu ID</div>
+                <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">ID de Jugador (Free Fire)</label>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <input type="text" id="id-jugador-input" class="input-form" placeholder="Ej: 123456789" style="flex:1; min-width:180px; margin-bottom:0;">
+                    <button type="button" class="btn-primary" onclick="validarId()">Validar</button>
+                </div>
+                <div id="id-validado-msg" class="msg-box" style="display:none; margin-top:12px;"></div>
+                <p class="paso-aviso"><span class="material-icons">warning</span> Verifica bien tu ID. No nos hacemos responsables por recargas enviadas a datos incorrectos.</p>
+            </div>
+
+            <div class="paso-card">
+                <div class="paso-titulo"><span class="paso-num">2</span> Elige tu paquete</div>
+                <div id="paquetes-grid" class="paquetes-grid">
+                    <p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">Cargando paquetes...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -88,9 +103,6 @@
                 <p id="comprar-resumen"></p>
             </div>
             <div id="comprar-msg" class="msg-box"></div>
-
-            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Tu ID de jugador Free Fire</label>
-            <input type="text" id="comprar-id-ff" class="input-form" placeholder="Ej: 123456789">
 
             <button type="button" id="btn-comprar" class="btn-primary" style="width:100%;" onclick="confirmarCompra()">Comprar con mi saldo</button>
         </div>
@@ -108,6 +120,7 @@
         let paquetes = [];
         let categoriaActiva = null;
         let paqueteElegido = null;
+        let idJugadorValidado = '';
 
         window.onload = async function () {
             usuarioActual = await verificarSesion();
@@ -182,12 +195,35 @@
 
         function cerrarModal(id) { document.getElementById(id).classList.remove('abierto'); }
 
-        // ---------- COMPRAR DIAMANTES ----------
+        // ---------- PASO 1: ID DE JUGADOR ----------
+        function validarId() {
+            const val = document.getElementById('id-jugador-input').value.trim();
+            const msg = document.getElementById('id-validado-msg');
+            msg.style.display = 'block';
+            if (!val) {
+                msg.className = 'msg-box error';
+                msg.innerText = 'Ingresa tu ID de jugador de Free Fire.';
+                idJugadorValidado = '';
+                return;
+            }
+            idJugadorValidado = val;
+            msg.className = 'msg-box exito';
+            msg.innerText = 'ID listo. Ahora elige tu paquete abajo.';
+        }
+
+        // ---------- PASO 2: COMPRAR DIAMANTES ----------
         function abrirModalComprar(paqueteId) {
+            if (!idJugadorValidado) {
+                const msg = document.getElementById('id-validado-msg');
+                msg.className = 'msg-box error'; msg.style.display = 'block';
+                msg.innerText = 'Primero ingresa y valida tu ID de jugador de Free Fire.';
+                document.getElementById('id-jugador-input').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                document.getElementById('id-jugador-input').focus();
+                return;
+            }
             paqueteElegido = paquetesTodos.find(p => p.id === paqueteId);
             if (!paqueteElegido) return;
-            document.getElementById('comprar-resumen').innerText = `${paqueteElegido.nombre} — ${formatearSoles(paqueteElegido.precio)}`;
-            document.getElementById('comprar-id-ff').value = '';
+            document.getElementById('comprar-resumen').innerText = `${paqueteElegido.nombre} — ${formatearSoles(paqueteElegido.precio)} — ID: ${idJugadorValidado}`;
             document.getElementById('comprar-msg').style.display = 'none';
             document.getElementById('modal-comprar').classList.add('abierto');
         }
@@ -195,19 +231,13 @@
         async function confirmarCompra() {
             const msg = document.getElementById('comprar-msg');
             const btn = document.getElementById('btn-comprar');
-            const idJugador = document.getElementById('comprar-id-ff').value.trim();
-
-            if (!idJugador) {
-                msg.className = 'msg-box error'; msg.style.display = 'block';
-                msg.innerText = 'Ingresa tu ID de jugador de Free Fire.'; return;
-            }
 
             btn.disabled = true; btn.innerText = 'Procesando...';
             const { error } = await supabaseClient.from('pedidos').insert([{
                 usuario_id: usuarioActual.id,
                 tipo: 'compra_diamantes',
                 paquete_id: paqueteElegido.id,
-                id_jugador_ff: idJugador,
+                id_jugador_ff: idJugadorValidado,
                 monto: paqueteElegido.precio
             }]);
             btn.disabled = false; btn.innerText = 'Comprar con mi saldo';
@@ -223,7 +253,7 @@
             usuarioActual = await verificarSesion();
 
             const catalogoTexto = NOMBRES_CATALOGO[paqueteElegido.categoria] || '';
-            abrirWhatsapp(`¡Hola! Vengo de MZ'Recargas 💎. Compré el paquete ${paqueteElegido.nombre} (${catalogoTexto}) por S/ ${Number(paqueteElegido.precio).toFixed(2)}. Mi ID de Free Fire es: ${idJugador}`);
+            abrirWhatsapp(`¡Hola! Vengo de MZ'Recargas 💎. Compré el paquete ${paqueteElegido.nombre} (${catalogoTexto}) por S/ ${Number(paqueteElegido.precio).toFixed(2)}. Mi ID de Free Fire es: ${idJugadorValidado}`);
         }
 
         function insertarFooter() {
