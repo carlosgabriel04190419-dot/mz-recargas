@@ -1,6 +1,6 @@
 // ==========================================
 // sesion.js — Módulo compartido de sesión y datos del usuario
-// MZ'Recargas
+// MR' Diamonds
 //
 // CÓMO USARLO en cada página:
 // 1. Incluir en el <head>, en este orden:
