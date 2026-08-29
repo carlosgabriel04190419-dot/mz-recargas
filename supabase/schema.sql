@@ -19,6 +19,12 @@ alter table public.perfiles enable row level security;
 create policy "select_propio_perfil" on public.perfiles
   for select using (auth.uid() = id);
 
+-- La política RLS de arriba no alcanza sola: sin este GRANT, Postgres
+-- rechaza la consulta antes de siquiera evaluar RLS ("permission denied
+-- for table perfiles"), y el sitio no puede leer el perfil propio al
+-- iniciar sesión.
+grant select on public.perfiles to authenticated;
+
 -- Nadie puede escribir directo en "perfiles" desde el sitio (ni
 -- siquiera el propio dueño de la fila): el saldo solo se mueve a
 -- través de los triggers de más abajo, nunca por una petición
@@ -80,6 +86,8 @@ alter table public.paquetes_ff enable row level security;
 create policy "select_paquetes_activos" on public.paquetes_ff
   for select using (activo = true);
 
+grant select on public.paquetes_ff to anon, authenticated;
+
 insert into public.paquetes_ff (nombre, diamantes, precio, categoria, destacado, orden) values
   ('100 Diamantes',  100,  3.00,   'ilimitada', false, 1),
   ('300 Diamantes',  300,  10.00,  'ilimitada', false, 2),
@@ -115,6 +123,8 @@ create policy "select_mis_pedidos" on public.pedidos
 
 create policy "insertar_mis_pedidos" on public.pedidos
   for insert with check (auth.uid() = usuario_id);
+
+grant select, insert on public.pedidos to authenticated;
 
 -- Nadie puede actualizar pedidos desde el sitio — los estados los
 -- cambia el dueño a mano desde Table Editor (esa conexión sí

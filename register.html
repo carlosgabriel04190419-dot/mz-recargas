@@ -141,6 +141,15 @@
                 return;
             }
 
+            btn.disabled = false; btn.innerText = 'Crear mi cuenta';
+
+            // Supabase no manda un error si el correo ya tiene cuenta (por seguridad, para no
+            // revelar qué correos están registrados): en vez de eso, devuelve un usuario con
+            // "identities" vacío y NO reenvía el correo de confirmación.
+            if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+                return mostrarError('Ya existe una cuenta con este correo. Si ya la confirmaste, inicia sesión. Si no, revisa tu correo (y spam) por el enlace que te llegó al registrarte.');
+            }
+
             document.getElementById('form-registro').style.display = 'none';
             mostrarExito('¡Cuenta creada! Revisa tu correo (y la carpeta de spam) para confirmar tu cuenta antes de iniciar sesión.');
         }
