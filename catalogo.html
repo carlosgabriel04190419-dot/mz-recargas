@@ -89,6 +89,23 @@
                     <p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">Cargando paquetes...</p>
                 </div>
             </div>
+
+            <div class="paso-card" id="paso-confirmar" style="display:none;">
+                <div class="paso-titulo"><span class="paso-num">3</span> Confirmar compra</div>
+                <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px;">
+                    <div style="flex:1; min-width:140px; background:var(--bg-input); border:1px solid var(--borde); border-radius:10px; padding:14px;">
+                        <p style="font-size:12.5px; color:var(--texto-tenue); margin-bottom:4px;">Paquete</p>
+                        <p id="confirmar-paquete-nombre" style="font-weight:700; font-size:16px;"></p>
+                    </div>
+                    <div style="flex:1; min-width:140px; background:var(--bg-input); border:1px solid var(--borde); border-radius:10px; padding:14px;">
+                        <p style="font-size:12.5px; color:var(--texto-tenue); margin-bottom:4px;">Costo</p>
+                        <p id="confirmar-paquete-precio" style="font-weight:700; font-size:16px; color:var(--acento-1);"></p>
+                    </div>
+                </div>
+                <button type="button" class="btn-primary" style="width:100%;" onclick="abrirModalComprar()">
+                    <span class="material-icons" style="font-size:18px; vertical-align:middle;">shopping_cart</span> Comprar ahora
+                </button>
+            </div>
         </div>
     </div>
 
@@ -100,11 +117,26 @@
             <span class="material-icons close-btn" onclick="cerrarModal('modal-comprar')">close</span>
             <div class="modal-header">
                 <h2>Confirmar Compra</h2>
-                <p id="comprar-resumen"></p>
+                <p>Revisa los detalles antes de continuar.</p>
             </div>
             <div id="comprar-msg" class="msg-box"></div>
 
-            <button type="button" id="btn-comprar" class="btn-primary" style="width:100%;" onclick="confirmarCompra()">Comprar con mi saldo</button>
+            <div class="resumen-compra">
+                <div class="resumen-fila"><span>Producto:</span><strong id="rc-producto"></strong></div>
+                <div class="resumen-fila"><span>Diamantes:</span><strong id="rc-diamantes"></strong></div>
+                <div class="resumen-divisor"></div>
+                <div class="resumen-fila"><span>Costo a descontar:</span><strong id="rc-costo" style="color:var(--error);"></strong></div>
+                <div class="resumen-divisor"></div>
+                <div class="resumen-fila"><span>Tu saldo actual:</span><strong id="rc-saldo-actual"></strong></div>
+                <div class="resumen-fila"><span>Saldo restante:</span><strong id="rc-saldo-restante" style="color:var(--exito);"></strong></div>
+            </div>
+
+            <div class="resumen-compra">
+                <div class="resumen-fila"><span>Método de pago:</span><strong>Saldo disponible</strong></div>
+                <div class="resumen-fila"><span>ID de jugador:</span><strong id="rc-id-jugador"></strong></div>
+            </div>
+
+            <button type="button" id="btn-comprar" class="btn-primary" style="width:100%;" onclick="confirmarCompra()">Comprar ahora</button>
         </div>
     </div>
 
@@ -161,6 +193,8 @@
 
         function cambiarCatalogo(categoria) {
             categoriaActiva = categoria;
+            paqueteElegido = null;
+            document.getElementById('paso-confirmar').style.display = 'none';
             document.getElementById('vista-selector').style.display = 'none';
             document.getElementById('vista-paquetes').style.display = 'block';
             document.getElementById('paquetes-titulo').innerText = NOMBRES_CATALOGO[categoria];
@@ -183,7 +217,7 @@
             }
 
             cont.innerHTML = paquetes.map(p => `
-                <div class="paquete-card" onclick="abrirModalComprar(${p.id})">
+                <div class="paquete-card" data-id="${p.id}" onclick="elegirPaquete(${p.id})">
                     ${p.destacado ? '<span class="destacado-tag">Más Popular</span>' : ''}
                     <div class="paquete-icon">${emojiPorTamano(p.diamantes)}</div>
                     <h3>${escHtml(p.nombre)}</h3>
@@ -211,8 +245,8 @@
             msg.innerText = 'ID listo. Ahora elige tu paquete abajo.';
         }
 
-        // ---------- PASO 2: COMPRAR DIAMANTES ----------
-        function abrirModalComprar(paqueteId) {
+        // ---------- PASO 2: ELEGIR PAQUETE ----------
+        function elegirPaquete(paqueteId) {
             if (!idJugadorValidado) {
                 const msg = document.getElementById('id-validado-msg');
                 msg.className = 'msg-box error'; msg.style.display = 'block';
@@ -223,7 +257,31 @@
             }
             paqueteElegido = paquetesTodos.find(p => p.id === paqueteId);
             if (!paqueteElegido) return;
-            document.getElementById('comprar-resumen').innerText = `${paqueteElegido.nombre} — ${formatearSoles(paqueteElegido.precio)} — ID: ${idJugadorValidado}`;
+
+            document.querySelectorAll('.paquete-card').forEach(c => c.classList.remove('seleccionado'));
+            const cardEl = document.querySelector(`.paquete-card[data-id="${paqueteId}"]`);
+            if (cardEl) cardEl.classList.add('seleccionado');
+
+            document.getElementById('confirmar-paquete-nombre').innerText = paqueteElegido.nombre;
+            document.getElementById('confirmar-paquete-precio').innerText = formatearSoles(paqueteElegido.precio);
+            const pasoConfirmar = document.getElementById('paso-confirmar');
+            pasoConfirmar.style.display = 'block';
+            pasoConfirmar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // ---------- PASO 3: CONFIRMAR COMPRA ----------
+        function abrirModalComprar() {
+            if (!paqueteElegido) return;
+            const saldoActual = Number(usuarioActual.saldo);
+            const precio = Number(paqueteElegido.precio);
+
+            document.getElementById('rc-producto').innerText = paqueteElegido.nombre;
+            document.getElementById('rc-diamantes').innerText = paqueteElegido.diamantes.toLocaleString('es-PE') + ' 💎';
+            document.getElementById('rc-costo').innerText = '- ' + formatearSoles(precio);
+            document.getElementById('rc-saldo-actual').innerText = formatearSoles(saldoActual);
+            document.getElementById('rc-saldo-restante').innerText = formatearSoles(saldoActual - precio);
+            document.getElementById('rc-id-jugador').innerText = idJugadorValidado;
+
             document.getElementById('comprar-msg').style.display = 'none';
             document.getElementById('modal-comprar').classList.add('abierto');
         }
