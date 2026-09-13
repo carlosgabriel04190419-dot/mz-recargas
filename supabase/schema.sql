@@ -67,15 +67,21 @@ $$;
 
 grant execute on function public.actualizar_mi_perfil(text, text) to authenticated;
 
--- ---------- CATÁLOGO: paquetes de diamantes Free Fire ----------
--- Dos catálogos con los mismos tamaños de diamantes y precios distintos:
--- "ilimitada" (Recargas Ilimitadas) y "promo" (Promo Primera Vez).
+-- ---------- CATÁLOGO: paquetes de Free Fire ----------
+-- Cuatro catálogos, cada uno con sus propios paquetes:
+-- "ilimitada" (Recargas Ilimitadas) y "promo" (Promo Primera Vez) — diamantes,
+-- mismos tamaños y precios distintos entre sí.
+-- "cajas_tokens" (Cajas de Tokens) y "tokens_evolutivos" (Tokens Evolutivos) —
+-- pendientes de que el cliente defina sus paquetes y precios reales.
+-- "cantidad" es genérico (diamantes, cajas, tokens...); "unidad" es la
+-- etiqueta que se muestra junto a esa cantidad en la web.
 create table public.paquetes_ff (
   id serial primary key,
   nombre text not null,
-  diamantes integer not null,
+  cantidad integer not null,
   precio numeric(10,2) not null,
-  categoria text not null default 'ilimitada' check (categoria in ('ilimitada', 'promo')),
+  categoria text not null default 'ilimitada' check (categoria in ('ilimitada', 'promo', 'cajas_tokens', 'tokens_evolutivos')),
+  unidad text not null default 'Diamantes',
   destacado boolean not null default false,
   activo boolean not null default true,
   orden integer not null default 0
@@ -88,19 +94,21 @@ create policy "select_paquetes_activos" on public.paquetes_ff
 
 grant select on public.paquetes_ff to anon, authenticated;
 
-insert into public.paquetes_ff (nombre, diamantes, precio, categoria, destacado, orden) values
-  ('100 Diamantes',  100,  3.00,   'ilimitada', false, 1),
-  ('300 Diamantes',  300,  10.00,  'ilimitada', false, 2),
-  ('500 Diamantes',  500,  15.00,  'ilimitada', false, 3),
-  ('1000 Diamantes', 1000, 28.00,  'ilimitada', true,  4),
-  ('2000 Diamantes', 2000, 50.00,  'ilimitada', false, 5),
-  ('6000 Diamantes', 6000, 130.00, 'ilimitada', false, 6),
-  ('100 Diamantes',  100,  2.00,   'promo', false, 1),
-  ('300 Diamantes',  300,  8.00,   'promo', false, 2),
-  ('500 Diamantes',  500,  12.00,  'promo', false, 3),
-  ('1000 Diamantes', 1000, 25.00,  'promo', true,  4),
-  ('2000 Diamantes', 2000, 45.00,  'promo', false, 5),
-  ('6000 Diamantes', 6000, 110.00, 'promo', false, 6);
+insert into public.paquetes_ff (nombre, cantidad, precio, categoria, unidad, destacado, orden) values
+  ('100 Diamantes',  100,  3.00,   'ilimitada', 'Diamantes', false, 1),
+  ('300 Diamantes',  300,  10.00,  'ilimitada', 'Diamantes', false, 2),
+  ('500 Diamantes',  500,  15.00,  'ilimitada', 'Diamantes', false, 3),
+  ('1000 Diamantes', 1000, 28.00,  'ilimitada', 'Diamantes', true,  4),
+  ('2000 Diamantes', 2000, 50.00,  'ilimitada', 'Diamantes', false, 5),
+  ('6000 Diamantes', 6000, 130.00, 'ilimitada', 'Diamantes', false, 6),
+  ('100 Diamantes',  100,  2.00,   'promo', 'Diamantes', false, 1),
+  ('300 Diamantes',  300,  8.00,   'promo', 'Diamantes', false, 2),
+  ('500 Diamantes',  500,  12.00,  'promo', 'Diamantes', false, 3),
+  ('1000 Diamantes', 1000, 25.00,  'promo', 'Diamantes', true,  4),
+  ('2000 Diamantes', 2000, 45.00,  'promo', 'Diamantes', false, 5),
+  ('6000 Diamantes', 6000, 110.00, 'promo', 'Diamantes', false, 6);
+  -- 'cajas_tokens' y 'tokens_evolutivos': agregar filas aquí (unidad 'Cajas' /
+  -- 'Tokens') en cuanto el cliente mande los tamaños y precios reales.
 
 -- ---------- PEDIDOS (recargas de saldo y compras de diamantes) ----------
 create table public.pedidos (

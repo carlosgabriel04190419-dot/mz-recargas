@@ -99,7 +99,7 @@
 
             cuerpo.innerHTML = data.map(p => {
                 const fecha = new Date(p.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                const tipoTxt = p.tipo === 'recarga_saldo' ? 'Recarga de saldo' : 'Compra de diamantes';
+                const tipoTxt = p.tipo === 'recarga_saldo' ? 'Recarga de saldo' : 'Compra en catálogo';
                 let detalle = '—';
                 if (p.tipo === 'compra_diamantes') {
                     detalle = escHtml(p.paquetes_ff ? p.paquetes_ff.nombre : 'Paquete') + (p.id_jugador_ff ? ` · ID ${escHtml(p.id_jugador_ff)}` : '');

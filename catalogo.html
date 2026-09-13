@@ -66,6 +66,16 @@
                 <h3>Promo Primera Vez</h3>
                 <span class="catalogo-tag">Precio especial, 1 vez por ID</span>
             </div>
+            <div class="catalogo-card" onclick="cambiarCatalogo('cajas_tokens')">
+                <img src="banner-cajas-tokens.jpg" alt="Cajas de Tokens" style="object-position: 50% 65%;">
+                <h3>Cajas de Tokens</h3>
+                <span class="catalogo-tag">Cajas de tokens evolutivos</span>
+            </div>
+            <div class="catalogo-card" onclick="cambiarCatalogo('tokens_evolutivos')">
+                <img src="banner-tokens-evo.jpg" alt="Tokens Evolutivos">
+                <h3>Tokens Evolutivos</h3>
+                <span class="catalogo-tag">Tokens sueltos para evolucionar</span>
+            </div>
         </div>
 
         <div id="vista-paquetes" style="display:none;">
@@ -123,7 +133,7 @@
 
             <div class="resumen-compra">
                 <div class="resumen-fila"><span>Producto:</span><strong id="rc-producto"></strong></div>
-                <div class="resumen-fila"><span>Diamantes:</span><strong id="rc-diamantes"></strong></div>
+                <div class="resumen-fila"><span id="rc-cantidad-label">Diamantes:</span><strong id="rc-cantidad"></strong></div>
                 <div class="resumen-divisor"></div>
                 <div class="resumen-fila"><span>Costo a descontar:</span><strong id="rc-costo" style="color:var(--error);"></strong></div>
                 <div class="resumen-divisor"></div>
@@ -144,8 +154,21 @@
     <script src="sesion.js"></script>
     <script>
         const WHATSAPP_NUMERO = '51901150296';
-        const NOMBRES_CATALOGO = { ilimitada: 'Recargas Ilimitadas', promo: 'Promo Primera Vez' };
-        const TAMANOS_DIAMANTES = [100, 300, 500, 1000, 2000, 6000];
+        const NOMBRES_CATALOGO = {
+            ilimitada: 'Recargas Ilimitadas',
+            promo: 'Promo Primera Vez',
+            cajas_tokens: 'Cajas de Tokens',
+            tokens_evolutivos: 'Tokens Evolutivos'
+        };
+        // Emoji y tamaños conocidos por catálogo, para escalar el ícono según cantidad.
+        // Los "tamanos" de cajas_tokens/tokens_evolutivos se completan cuando el cliente
+        // defina esos paquetes — mientras tanto se muestra un solo ícono por tarjeta.
+        const CONFIG_CATALOGO = {
+            ilimitada:         { emoji: '💎', tamanos: [100, 300, 500, 1000, 2000, 6000] },
+            promo:             { emoji: '💎', tamanos: [100, 300, 500, 1000, 2000, 6000] },
+            cajas_tokens:      { emoji: '📦', tamanos: [] },
+            tokens_evolutivos: { emoji: '🪙', tamanos: [] }
+        };
 
         let usuarioActual = null;
         let paquetesTodos = [];
@@ -161,14 +184,15 @@
             insertarFooter();
 
             const catalogoUrl = new URLSearchParams(window.location.search).get('catalogo');
-            if (catalogoUrl === 'ilimitada' || catalogoUrl === 'promo') cambiarCatalogo(catalogoUrl);
+            if (catalogoUrl && NOMBRES_CATALOGO[catalogoUrl]) cambiarCatalogo(catalogoUrl);
         };
 
-        function emojiPorTamano(diamantes) {
-            const rango = TAMANOS_DIAMANTES.indexOf(diamantes);
-            const cantidad = rango >= 0 ? rango + 1 : 1;
-            const tamano = cantidad >= 5 ? 22 : cantidad === 4 ? 28 : 36;
-            return `<span style="font-size:${tamano}px;">${'💎'.repeat(cantidad)}</span>`;
+        function emojiPorTamano(categoria, cantidad) {
+            const config = CONFIG_CATALOGO[categoria] || { emoji: '💎', tamanos: [] };
+            const rango = config.tamanos.indexOf(cantidad);
+            const repeticiones = rango >= 0 ? rango + 1 : 1;
+            const tamanoFuente = repeticiones >= 5 ? 22 : repeticiones === 4 ? 28 : 36;
+            return `<span style="font-size:${tamanoFuente}px;">${config.emoji.repeat(repeticiones)}</span>`;
         }
 
         function abrirWhatsapp(texto) {
@@ -219,7 +243,7 @@
             cont.innerHTML = paquetes.map(p => `
                 <div class="paquete-card" data-id="${p.id}" onclick="elegirPaquete(${p.id})">
                     ${p.destacado ? '<span class="destacado-tag">Más Popular</span>' : ''}
-                    <div class="paquete-icon">${emojiPorTamano(p.diamantes)}</div>
+                    <div class="paquete-icon">${emojiPorTamano(p.categoria, p.cantidad)}</div>
                     <h3>${escHtml(p.nombre)}</h3>
                     <div class="precio">${formatearSoles(p.precio)}</div>
                     <div class="precio-moneda">Free Fire</div>
@@ -275,8 +299,10 @@
             const saldoActual = Number(usuarioActual.saldo);
             const precio = Number(paqueteElegido.precio);
 
+            const config = CONFIG_CATALOGO[paqueteElegido.categoria] || { emoji: '💎' };
             document.getElementById('rc-producto').innerText = paqueteElegido.nombre;
-            document.getElementById('rc-diamantes').innerText = paqueteElegido.diamantes.toLocaleString('es-PE') + ' 💎';
+            document.getElementById('rc-cantidad-label').innerText = (paqueteElegido.unidad || 'Cantidad') + ':';
+            document.getElementById('rc-cantidad').innerText = paqueteElegido.cantidad.toLocaleString('es-PE') + ' ' + config.emoji;
             document.getElementById('rc-costo').innerText = '- ' + formatearSoles(precio);
             document.getElementById('rc-saldo-actual').innerText = formatearSoles(saldoActual);
             document.getElementById('rc-saldo-restante').innerText = formatearSoles(saldoActual - precio);
