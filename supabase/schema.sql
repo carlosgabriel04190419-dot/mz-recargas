@@ -67,6 +67,27 @@ $$;
 
 grant execute on function public.actualizar_mi_perfil(text, text) to authenticated;
 
+-- Vista de solo lectura para el Table Editor: junta perfiles con el correo
+-- real de auth.users, para no tener que ir a Authentication -> Users cada
+-- vez. security_invoker=true para que respete los permisos de quien
+-- consulta — no se otorga acceso a anon/authenticated, así que solo la ve
+-- quien entra al panel de Supabase como dueño del proyecto.
+create view public.perfiles_admin
+with (security_invoker = true)
+as
+select
+  p.id,
+  p.nickname,
+  p.celular,
+  p.saldo,
+  p.created_at,
+  u.email,
+  u.email_confirmed_at,
+  u.last_sign_in_at
+from public.perfiles p
+join auth.users u on u.id = p.id
+order by p.created_at desc;
+
 -- ---------- CATÁLOGO: paquetes de Free Fire ----------
 -- Cuatro catálogos, cada uno con sus propios paquetes:
 -- "ilimitada" (Recargas Ilimitadas) y "promo" (Promo Primera Vez) — diamantes,
@@ -106,9 +127,17 @@ insert into public.paquetes_ff (nombre, cantidad, precio, categoria, unidad, des
   ('500 Diamantes',  500,  12.00,  'promo', 'Diamantes', false, 3),
   ('1000 Diamantes', 1000, 25.00,  'promo', 'Diamantes', true,  4),
   ('2000 Diamantes', 2000, 45.00,  'promo', 'Diamantes', false, 5),
-  ('6000 Diamantes', 6000, 110.00, 'promo', 'Diamantes', false, 6);
-  -- 'cajas_tokens' y 'tokens_evolutivos': agregar filas aquí (unidad 'Cajas' /
-  -- 'Tokens') en cuanto el cliente mande los tamaños y precios reales.
+  ('6000 Diamantes', 6000, 110.00, 'promo', 'Diamantes', false, 6),
+  ('200 Fragmentos', 200, 22.00, 'tokens_evolutivos', 'Fragmentos', false, 1),
+  ('300 Fragmentos', 300, 32.00, 'tokens_evolutivos', 'Fragmentos', false, 2),
+  ('400 Fragmentos', 400, 40.00, 'tokens_evolutivos', 'Fragmentos', false, 3),
+  ('500 Fragmentos', 500, 48.00, 'tokens_evolutivos', 'Fragmentos', true,  4),
+  ('600 Fragmentos', 600, 55.00, 'tokens_evolutivos', 'Fragmentos', false, 5),
+  ('700 Fragmentos', 700, 62.00, 'tokens_evolutivos', 'Fragmentos', false, 6),
+  ('800 Fragmentos', 800, 68.00, 'tokens_evolutivos', 'Fragmentos', false, 7),
+  ('900 Fragmentos', 900, 75.00, 'tokens_evolutivos', 'Fragmentos', false, 8);
+  -- 'cajas_tokens': agregar filas aquí (unidad 'Cajas') en cuanto el cliente
+  -- mande los tamaños y precios reales.
 
 -- ---------- PEDIDOS (recargas de saldo y compras de diamantes) ----------
 create table public.pedidos (

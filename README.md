@@ -26,6 +26,12 @@ compartir usuarios ni datos).
 
 No hay panel de administración todavía — la tabla de Supabase hace ese papel por ahora. Es un buen próximo paso si el volumen de pedidos crece.
 
+### Ver el correo de un usuario
+
+`perfiles` no guarda el correo (vive en `auth.users`, aparte, por diseño). Dos formas de verlo en el panel de Supabase:
+- **Authentication → Users**: lista completa, con fecha de registro y último login.
+- **Table Editor → `perfiles_admin`**: una vista de solo lectura que junta `perfiles` con el correo, para no tener que cambiar de sección. Solo la ves tú (dueño del proyecto) — no está expuesta a la web.
+
 ## Puesta en marcha (una sola vez)
 
 1. ✅ **Base de datos**: ya aplicado — `supabase/schema.sql` está corrido en el proyecto de Supabase de MZ'Recargas (tablas, RLS y triggers listos, con revisión de seguridad hecha con el Advisor de Supabase).
@@ -39,7 +45,8 @@ No hay panel de administración todavía — la tabla de Supabase hace ese papel
 - [x] **Número de WhatsApp real** — `wa.me/51901150296` en todas las páginas.
 - [x] **Precios reales de los paquetes** — tabla `paquetes_ff` en Supabase, con dos catálogos (`categoria`: `ilimitada` / `promo`), mismos 6 tamaños de diamantes y precios distintos cada uno.
 - [x] **Logo** — ícono de diamante propio (`logo.svg`) en navbar y favicon.
-- [ ] **Paquetes y precios de "Cajas de Tokens" y "Tokens Evolutivos"** — los catálogos ya están armados (banners, tarjetas en inicio/catálogo, `categoria` en `paquetes_ff` lista para `cajas_tokens` / `tokens_evolutivos`), pero sin filas todavía: hoy muestran "No hay paquetes disponibles en este catálogo por ahora". Falta que el cliente mande los tamaños y precios, e insertarlos en `paquetes_ff` (columna `unidad`: "Cajas" / "Tokens").
+- [x] **Paquetes y precios de "Tokens Evolutivos"** — 8 niveles (200 a 900 Fragmentos), precios propios de MZ'Recargas inspirados en un sitio de referencia que mandó el cliente.
+- [x] **Paquetes y precios de "Cajas de Tokens"** — 6 niveles (50 a 300 Cajas Evolutivas), precios propios de MZ'Recargas. También tiene un campo de "cantidad exacta" (S/ 0.48 por unidad, mínimo 20) para pedidos fuera de esos niveles fijos.
 - [ ] **Dominio propio** (opcional) — si el cliente compra uno, agrega un archivo `CNAME` con el dominio y configúralo en el registrador (igual que se hizo con CarzaD'Cross).
 - [ ] **Términos y Privacidad** (`terminos.html`, `privacidad.html`) — son una plantilla genérica marcada como tal en la propia página, conviene que las revise alguien con criterio legal antes de operar con pagos reales.
 - [ ] **Anti-bots / captcha** en login y registro — no se incluyó en esta primera versión (CarzaD'Cross usa Cloudflare Turnstile, que requiere una cuenta de Cloudflare propia para este dominio). Se puede agregar después si empieza a haber spam de registros.

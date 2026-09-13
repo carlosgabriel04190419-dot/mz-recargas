@@ -102,7 +102,8 @@
                 const tipoTxt = p.tipo === 'recarga_saldo' ? 'Recarga de saldo' : 'Compra en catálogo';
                 let detalle = '—';
                 if (p.tipo === 'compra_diamantes') {
-                    detalle = escHtml(p.paquetes_ff ? p.paquetes_ff.nombre : 'Paquete') + (p.id_jugador_ff ? ` · ID ${escHtml(p.id_jugador_ff)}` : '');
+                    const nombrePaquete = p.paquetes_ff ? p.paquetes_ff.nombre : (p.nota_admin ? p.nota_admin.replace('Cantidad personalizada: ', '') : 'Paquete');
+                    detalle = escHtml(nombrePaquete) + (p.id_jugador_ff ? ` · ID ${escHtml(p.id_jugador_ff)}` : '');
                 }
                 return `<tr>
                     <td>${fecha}</td>

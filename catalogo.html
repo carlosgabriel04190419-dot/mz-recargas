@@ -98,6 +98,21 @@
                 <div id="paquetes-grid" class="paquetes-grid">
                     <p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">Cargando paquetes...</p>
                 </div>
+
+                <div class="cantidad-exacta" id="cantidad-exacta" style="display:none;">
+                    <div class="cantidad-exacta-header">
+                        <div class="paquete-icon" style="font-size:28px; margin-bottom:0;" id="cantidad-exacta-icono"></div>
+                        <div class="cantidad-exacta-info">
+                            <h4>¿Buscas una cantidad exacta?</h4>
+                            <p id="cantidad-exacta-desc"></p>
+                        </div>
+                    </div>
+                    <div class="cantidad-exacta-controles">
+                        <input type="number" id="cantidad-exacta-input" class="input-form" placeholder="Ej: 120" min="1" oninput="actualizarCantidadExacta()">
+                        <div class="cantidad-exacta-precio" id="cantidad-exacta-precio">S/ 0.00</div>
+                        <button type="button" class="btn-primary" onclick="elegirCantidadExacta()">Elegir <span class="material-icons" style="font-size:16px; vertical-align:middle;">arrow_forward</span></button>
+                    </div>
+                </div>
             </div>
 
             <div class="paso-card" id="paso-confirmar" style="display:none;">
@@ -161,13 +176,17 @@
             tokens_evolutivos: 'Tokens Evolutivos'
         };
         // Emoji y tamaños conocidos por catálogo, para escalar el ícono según cantidad.
-        // Los "tamanos" de cajas_tokens/tokens_evolutivos se completan cuando el cliente
-        // defina esos paquetes — mientras tanto se muestra un solo ícono por tarjeta.
         const CONFIG_CATALOGO = {
             ilimitada:         { emoji: '💎', tamanos: [100, 300, 500, 1000, 2000, 6000] },
             promo:             { emoji: '💎', tamanos: [100, 300, 500, 1000, 2000, 6000] },
-            cajas_tokens:      { emoji: '📦', tamanos: [] },
-            tokens_evolutivos: { emoji: '🪙', tamanos: [] }
+            cajas_tokens:      { emoji: '📦', tamanos: [50, 100, 150, 200, 250, 300] },
+            tokens_evolutivos: { emoji: '💠', tamanos: [200, 300, 400, 500, 600, 700, 800, 900] }
+        };
+
+        // Catálogos donde se puede pedir una cantidad exacta (no solo los tamaños
+        // fijos de arriba). "rate" = precio por unidad, "minimo" = cantidad mínima.
+        const CANTIDAD_EXACTA = {
+            cajas_tokens: { rate: 0.48, minimo: 20, unidad: 'Cajas', nombreUnidad: 'Cajas Evolutivas', emoji: '📦' }
         };
 
         let usuarioActual = null;
@@ -190,7 +209,7 @@
         function emojiPorTamano(categoria, cantidad) {
             const config = CONFIG_CATALOGO[categoria] || { emoji: '💎', tamanos: [] };
             const rango = config.tamanos.indexOf(cantidad);
-            const repeticiones = rango >= 0 ? rango + 1 : 1;
+            const repeticiones = Math.min(rango >= 0 ? rango + 1 : 1, 6);
             const tamanoFuente = repeticiones >= 5 ? 22 : repeticiones === 4 ? 28 : 36;
             return `<span style="font-size:${tamanoFuente}px;">${config.emoji.repeat(repeticiones)}</span>`;
         }
@@ -223,6 +242,60 @@
             document.getElementById('vista-paquetes').style.display = 'block';
             document.getElementById('paquetes-titulo').innerText = NOMBRES_CATALOGO[categoria];
             pintarCatalogo();
+
+            const cantExacta = CANTIDAD_EXACTA[categoria];
+            const bloqueCantExacta = document.getElementById('cantidad-exacta');
+            bloqueCantExacta.style.display = cantExacta ? 'block' : 'none';
+            if (cantExacta) {
+                document.getElementById('cantidad-exacta-icono').innerText = cantExacta.emoji;
+                document.getElementById('cantidad-exacta-desc').innerText =
+                    `Escribe cuántas ${cantExacta.nombreUnidad} necesitas — S/ ${cantExacta.rate.toFixed(2)} por unidad, mínimo ${cantExacta.minimo}.`;
+                document.getElementById('cantidad-exacta-input').value = '';
+                document.getElementById('cantidad-exacta-precio').innerText = formatearSoles(0);
+            }
+        }
+
+        function actualizarCantidadExacta() {
+            const cantExacta = CANTIDAD_EXACTA[categoriaActiva];
+            if (!cantExacta) return;
+            const n = parseInt(document.getElementById('cantidad-exacta-input').value) || 0;
+            document.getElementById('cantidad-exacta-precio').innerText = formatearSoles(n * cantExacta.rate);
+        }
+
+        function elegirCantidadExacta() {
+            const cantExacta = CANTIDAD_EXACTA[categoriaActiva];
+            if (!cantExacta) return;
+
+            if (!idJugadorValidado) {
+                const msg = document.getElementById('id-validado-msg');
+                msg.className = 'msg-box error'; msg.style.display = 'block';
+                msg.innerText = 'Primero ingresa y valida tu ID de jugador de Free Fire.';
+                document.getElementById('id-jugador-input').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                document.getElementById('id-jugador-input').focus();
+                return;
+            }
+
+            const n = parseInt(document.getElementById('cantidad-exacta-input').value) || 0;
+            if (n < cantExacta.minimo) {
+                alert(`La cantidad mínima es ${cantExacta.minimo}.`);
+                return;
+            }
+
+            paqueteElegido = {
+                id: null,
+                nombre: `${n} ${cantExacta.nombreUnidad}`,
+                cantidad: n,
+                precio: Math.round(n * cantExacta.rate * 100) / 100,
+                categoria: categoriaActiva,
+                unidad: cantExacta.unidad
+            };
+
+            document.querySelectorAll('.paquete-card').forEach(c => c.classList.remove('seleccionado'));
+            document.getElementById('confirmar-paquete-nombre').innerText = paqueteElegido.nombre;
+            document.getElementById('confirmar-paquete-precio').innerText = formatearSoles(paqueteElegido.precio);
+            const pasoConfirmar = document.getElementById('paso-confirmar');
+            pasoConfirmar.style.display = 'block';
+            pasoConfirmar.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         function volverASelector(e) {
@@ -317,13 +390,17 @@
             const btn = document.getElementById('btn-comprar');
 
             btn.disabled = true; btn.innerText = 'Procesando...';
-            const { error } = await supabaseClient.from('pedidos').insert([{
+            const pedido = {
                 usuario_id: usuarioActual.id,
                 tipo: 'compra_diamantes',
                 paquete_id: paqueteElegido.id,
                 id_jugador_ff: idJugadorValidado,
                 monto: paqueteElegido.precio
-            }]);
+            };
+            // Cantidad exacta: no tiene fila en paquetes_ff, así que se guarda la
+            // descripción en nota_admin para que el historial no quede genérico.
+            if (!paqueteElegido.id) pedido.nota_admin = `Cantidad personalizada: ${paqueteElegido.nombre}`;
+            const { error } = await supabaseClient.from('pedidos').insert([pedido]);
             btn.disabled = false; btn.innerText = 'Comprar con mi saldo';
 
             msg.style.display = 'block';
