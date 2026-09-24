@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MZ'Recargas | Panel Admin</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <meta name="theme-color" content="#0c0f18">
+    <meta name="robots" content="noindex, nofollow">
+    <script>try{var t=localStorage.getItem('mzrecargas_tema');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo-premium">
+            <img src="logo.svg" alt="MZ'Recargas" class="logo-img">
+            <div class="logo-text"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></div>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="catalogo.html">Recargar Diamantes</a>
+        </div>
+        <div class="nav-actions">
+            <button class="theme-toggle" onclick="alternarTema()" aria-label="Cambiar tema"><span class="material-icons">dark_mode</span></button>
+            <div class="nav-actions-conectado" data-nav-conectado style="display:none; align-items:center; gap:14px;">
+                <div class="balance-pill"><span class="material-icons">diamond</span><span data-nav-saldo>S/ 0.00</span></div>
+                <div class="nav-user-menu">
+                    <button class="nav-user-btn" id="nav-user-btn" onclick="alternarMenuUsuario()">
+                        <span class="nav-avatar" data-nav-avatar>?</span>
+                        <span data-nav-nickname>Usuario</span>
+                    </button>
+                    <div class="nav-dropdown" id="nav-dropdown">
+                        <a href="perfil.html"><span class="material-icons">person</span> Mi Perfil</a>
+                        <a href="historial.html"><span class="material-icons">receipt_long</span> Mis Pedidos</a>
+                        <button onclick="cerrarSesionSegura()"><span class="material-icons">logout</span> Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="admin-cargando" class="container" style="padding-top: 80px; text-align:center; color: var(--texto-tenue);">Verificando acceso...</div>
+
+    <div id="admin-panel" class="container" style="padding-top: 40px; padding-bottom: 70px; display:none;">
+        <div class="seccion-header" style="text-align:left; margin: 0 0 26px; max-width:none;">
+            <h2>Panel de Administración</h2>
+            <p>Gestiona pedidos, paquetes y usuarios de MZ'Recargas.</p>
+        </div>
+
+        <div class="admin-tabs">
+            <button class="admin-tab activo" data-tab="dashboard" onclick="cambiarPestana('dashboard')"><span class="material-icons">dashboard</span> Resumen</button>
+            <button class="admin-tab" data-tab="pedidos" onclick="cambiarPestana('pedidos')"><span class="material-icons">receipt_long</span> Pedidos</button>
+            <button class="admin-tab" data-tab="paquetes" onclick="cambiarPestana('paquetes')"><span class="material-icons">inventory_2</span> Paquetes</button>
+            <button class="admin-tab" data-tab="usuarios" onclick="cambiarPestana('usuarios')"><span class="material-icons">group</span> Usuarios</button>
+        </div>
+
+        <!-- ===== RESUMEN ===== -->
+        <div class="admin-vista" id="vista-dashboard">
+            <div class="admin-stats-grid" id="admin-stats-grid">
+                <div class="admin-stat-card"><div class="admin-stat-valor">—</div><div class="admin-stat-label">Recargas pendientes de confirmar</div></div>
+                <div class="admin-stat-card"><div class="admin-stat-valor">—</div><div class="admin-stat-label">Compras pagadas por entregar</div></div>
+                <div class="admin-stat-card"><div class="admin-stat-valor">—</div><div class="admin-stat-label">Usuarios registrados</div></div>
+                <div class="admin-stat-card"><div class="admin-stat-valor">—</div><div class="admin-stat-label">Saldo total en el sistema</div></div>
+            </div>
+        </div>
+
+        <!-- ===== PEDIDOS ===== -->
+        <div class="admin-vista" id="vista-pedidos" style="display:none;">
+            <div class="admin-filtros" id="admin-filtros-pedidos">
+                <button class="admin-filtro activo" data-estado="">Todos</button>
+                <button class="admin-filtro" data-estado="pendiente">Pendientes</button>
+                <button class="admin-filtro" data-estado="confirmado">Confirmados</button>
+                <button class="admin-filtro" data-estado="completado">Completados</button>
+                <button class="admin-filtro" data-estado="cancelado">Cancelados</button>
+            </div>
+            <div class="card" style="overflow-x: auto; padding: 0;">
+                <table class="tabla-pedidos" id="tabla-admin-pedidos">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Tipo</th>
+                            <th>Detalle</th>
+                            <th>Monto</th>
+                            <th>Pago</th>
+                            <th>Estado</th>
+                            <th>Nota</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-admin-pedidos-body">
+                        <tr><td colspan="9" class="tabla-vacia">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== PAQUETES ===== -->
+        <div class="admin-vista" id="vista-paquetes" style="display:none;">
+            <div style="display:flex; justify-content:flex-end; margin-bottom: 16px;">
+                <button class="btn-primary btn-sm" onclick="abrirModalPaquete()"><span class="material-icons" style="font-size:18px; vertical-align:-4px;">add</span> Nuevo paquete</button>
+            </div>
+            <div class="card" style="overflow-x: auto; padding: 0;">
+                <table class="tabla-pedidos" id="tabla-admin-paquetes">
+                    <thead>
+                        <tr>
+                            <th>Categoría</th>
+                            <th>Nombre</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Precio</th>
+                            <th>Destacado</th>
+                            <th>Activo</th>
+                            <th>Orden</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-admin-paquetes-body">
+                        <tr><td colspan="9" class="tabla-vacia">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== USUARIOS ===== -->
+        <div class="admin-vista" id="vista-usuarios" style="display:none;">
+            <div class="card" style="overflow-x: auto; padding: 0;">
+                <table class="tabla-pedidos" id="tabla-admin-usuarios">
+                    <thead>
+                        <tr>
+                            <th>Nickname</th>
+                            <th>Correo</th>
+                            <th>WhatsApp</th>
+                            <th>Saldo</th>
+                            <th>Registrado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-admin-usuarios-body">
+                        <tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: crear/editar paquete -->
+    <div class="modal-overlay" id="modal-paquete">
+        <div class="modal-box" style="max-width: 460px;">
+            <span class="material-icons close-btn" onclick="cerrarModalPaquete()">close</span>
+            <div class="modal-header">
+                <h2 id="modal-paquete-titulo">Nuevo paquete</h2>
+                <p>Se refleja al instante en el catálogo de la web.</p>
+            </div>
+            <div id="modal-paquete-msg" class="msg-box error"></div>
+            <input type="hidden" id="pq-id">
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Categoría</label>
+            <select id="pq-categoria" class="input-form">
+                <option value="ilimitada">Recargas Ilimitadas</option>
+                <option value="promo">Promo Primera Vez</option>
+                <option value="cajas_tokens">Cajas de Tokens</option>
+                <option value="tokens_evolutivos">Tokens Evolutivos</option>
+            </select>
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Nombre</label>
+            <input type="text" id="pq-nombre" class="input-form" placeholder="Ej: 1000 Diamantes">
+            <div style="display:flex; gap:12px;">
+                <div style="flex:1;">
+                    <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Cantidad</label>
+                    <input type="number" id="pq-cantidad" class="input-form" min="1">
+                </div>
+                <div style="flex:1;">
+                    <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Unidad</label>
+                    <input type="text" id="pq-unidad" class="input-form" placeholder="Diamantes">
+                </div>
+            </div>
+            <div style="display:flex; gap:12px;">
+                <div style="flex:1;">
+                    <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Precio (S/)</label>
+                    <input type="number" id="pq-precio" class="input-form" min="0" step="0.01">
+                </div>
+                <div style="flex:1;">
+                    <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Orden</label>
+                    <input type="number" id="pq-orden" class="input-form" min="0">
+                </div>
+            </div>
+            <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom: 12px; cursor:pointer;">
+                <input type="checkbox" id="pq-destacado" style="width:16px; height:16px;"> Marcar como destacado
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom: 18px; cursor:pointer;">
+                <input type="checkbox" id="pq-activo" checked style="width:16px; height:16px;"> Activo (visible en la web)
+            </label>
+            <button type="button" class="btn-primary" id="btn-guardar-paquete" style="width:100%;" onclick="guardarPaquete()">Guardar</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="sesion.js"></script>
+    <script>
+        const ETIQUETAS_ESTADO = { pendiente: 'Pendiente', confirmado: 'Confirmado', completado: 'Completado', cancelado: 'Cancelado' };
+        const ETIQUETAS_CATEGORIA = { ilimitada: 'Recargas Ilimitadas', promo: 'Promo Primera Vez', cajas_tokens: 'Cajas de Tokens', tokens_evolutivos: 'Tokens Evolutivos' };
+        let filtroEstadoActual = '';
+        let cacheePaquetes = [];
+
+        window.onload = async function () {
+            const usuario = await verificarSesion();
+            if (!usuario) return;
+
+            if (!usuario.es_admin) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('admin-cargando').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+
+            document.querySelectorAll('#admin-filtros-pedidos .admin-filtro').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#admin-filtros-pedidos .admin-filtro').forEach(b => b.classList.remove('activo'));
+                    btn.classList.add('activo');
+                    filtroEstadoActual = btn.dataset.estado;
+                    cargarPedidos();
+                });
+            });
+
+            await cargarEstadisticas();
+        };
+
+        function cambiarPestana(tab) {
+            document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
+            document.querySelectorAll('.admin-vista').forEach(v => v.style.display = 'none');
+            document.getElementById('vista-' + tab).style.display = 'block';
+
+            if (tab === 'pedidos') cargarPedidos();
+            else if (tab === 'paquetes') cargarPaquetes();
+            else if (tab === 'usuarios') cargarUsuarios();
+            else if (tab === 'dashboard') cargarEstadisticas();
+        }
+
+        async function cargarEstadisticas() {
+            const { data, error } = await supabaseClient.rpc('admin_estadisticas');
+            if (error || !data || !data[0]) return;
+            const s = data[0];
+            const tarjetas = document.querySelectorAll('#admin-stats-grid .admin-stat-valor');
+            tarjetas[0].textContent = s.pedidos_pendientes;
+            tarjetas[1].textContent = s.pedidos_por_entregar;
+            tarjetas[2].textContent = s.total_usuarios;
+            tarjetas[3].textContent = formatearSoles(s.saldo_total);
+        }
+
+        // ---------- PEDIDOS ----------
+        async function cargarPedidos() {
+            const cuerpo = document.getElementById('tabla-admin-pedidos-body');
+            cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">Cargando...</td></tr>`;
+
+            const { data, error } = await supabaseClient.rpc('admin_listar_pedidos', { p_estado: filtroEstadoActual || null });
+
+            if (error) {
+                cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">No se pudo cargar los pedidos.</td></tr>`;
+                return;
+            }
+            if (!data || data.length === 0) {
+                cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">No hay pedidos en este filtro.</td></tr>`;
+                return;
+            }
+
+            cuerpo.innerHTML = data.map(p => {
+                const fecha = new Date(p.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                const tipoTxt = p.tipo === 'recarga_saldo' ? 'Recarga' : 'Compra';
+                let detalle = '—';
+                if (p.tipo === 'compra_diamantes') {
+                    const nombrePaquete = p.paquete_nombre || (p.nota_admin ? p.nota_admin.replace('Cantidad personalizada: ', '') : 'Paquete');
+                    detalle = escHtml(nombrePaquete) + (p.id_jugador_ff ? `<br><span style="color:var(--texto-tenue); font-size:12px;">ID: ${escHtml(p.id_jugador_ff)}</span>` : '');
+                }
+                const acciones = botonesAccion(p);
+                return `<tr>
+                    <td>${fecha}</td>
+                    <td>${escHtml(p.nickname)}<br><span style="color:var(--texto-tenue); font-size:12px;">${escHtml(p.correo)}</span></td>
+                    <td>${tipoTxt}</td>
+                    <td>${detalle}</td>
+                    <td>${formatearSoles(p.monto)}</td>
+                    <td style="text-transform:capitalize;">${escHtml(p.metodo_pago)}</td>
+                    <td><span class="estado-pill estado-${p.estado}">${ETIQUETAS_ESTADO[p.estado] || p.estado}</span></td>
+                    <td style="max-width:160px; font-size:12.5px; color:var(--texto-secundario);">${escHtml(p.nota_admin || '—')}</td>
+                    <td style="white-space:nowrap;">${acciones}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function botonesAccion(p) {
+            const btns = [];
+            if (p.tipo === 'recarga_saldo' && p.estado === 'pendiente') {
+                btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','confirmado')">Confirmar pago</button>`);
+            }
+            if (p.tipo === 'compra_diamantes' && p.estado === 'confirmado') {
+                btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','completado')">Marcar entregado</button>`);
+            }
+            if (p.estado === 'pendiente' || p.estado === 'confirmado') {
+                btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','cancelado')" style="color:var(--error); border-color:var(--error);">Cancelar</button>`);
+            }
+            return btns.join(' ') || '—';
+        }
+
+        async function cambiarEstadoPedido(id, nuevoEstado) {
+            const etiquetas = { confirmado: '¿Confirmar este pago?', completado: '¿Marcar este pedido como entregado?', cancelado: '¿Cancelar este pedido?' };
+            if (!confirm(etiquetas[nuevoEstado] || '¿Continuar?')) return;
+
+            const { error } = await supabaseClient.rpc('admin_actualizar_pedido', { p_id: id, p_estado: nuevoEstado, p_nota: null });
+            if (error) {
+                alert('No se pudo actualizar: ' + error.message);
+                return;
+            }
+            await cargarPedidos();
+            await cargarEstadisticas();
+        }
+
+        // ---------- PAQUETES ----------
+        async function cargarPaquetes() {
+            const cuerpo = document.getElementById('tabla-admin-paquetes-body');
+            cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">Cargando...</td></tr>`;
+
+            const { data, error } = await supabaseClient.rpc('admin_listar_paquetes');
+            if (error) {
+                cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">No se pudo cargar los paquetes.</td></tr>`;
+                return;
+            }
+            cacheePaquetes = data || [];
+            if (cacheePaquetes.length === 0) {
+                cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">Todavía no hay paquetes.</td></tr>`;
+                return;
+            }
+
+            cuerpo.innerHTML = cacheePaquetes.map(p => `<tr>
+                <td>${ETIQUETAS_CATEGORIA[p.categoria] || p.categoria}</td>
+                <td>${escHtml(p.nombre)}</td>
+                <td>${p.cantidad}</td>
+                <td>${escHtml(p.unidad)}</td>
+                <td>${formatearSoles(p.precio)}</td>
+                <td>${p.destacado ? '⭐' : '—'}</td>
+                <td><span class="estado-pill ${p.activo ? 'estado-confirmado' : 'estado-cancelado'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
+                <td>${p.orden}</td>
+                <td><button class="btn-outline btn-sm" onclick="abrirModalPaquete(${p.id})">Editar</button></td>
+            </tr>`).join('');
+        }
+
+        function abrirModalPaquete(id) {
+            document.getElementById('modal-paquete-msg').style.display = 'none';
+            const paquete = id ? cacheePaquetes.find(p => p.id === id) : null;
+
+            document.getElementById('modal-paquete-titulo').textContent = paquete ? 'Editar paquete' : 'Nuevo paquete';
+            document.getElementById('pq-id').value = paquete ? paquete.id : '';
+            document.getElementById('pq-categoria').value = paquete ? paquete.categoria : 'ilimitada';
+            document.getElementById('pq-nombre').value = paquete ? paquete.nombre : '';
+            document.getElementById('pq-cantidad').value = paquete ? paquete.cantidad : '';
+            document.getElementById('pq-unidad').value = paquete ? paquete.unidad : 'Diamantes';
+            document.getElementById('pq-precio').value = paquete ? paquete.precio : '';
+            document.getElementById('pq-orden').value = paquete ? paquete.orden : (cacheePaquetes.length + 1);
+            document.getElementById('pq-destacado').checked = paquete ? paquete.destacado : false;
+            document.getElementById('pq-activo').checked = paquete ? paquete.activo : true;
+
+            document.getElementById('modal-paquete').classList.add('abierto');
+        }
+
+        function cerrarModalPaquete() {
+            document.getElementById('modal-paquete').classList.remove('abierto');
+        }
+
+        async function guardarPaquete() {
+            const msg = document.getElementById('modal-paquete-msg');
+            msg.style.display = 'none';
+
+            const idRaw = document.getElementById('pq-id').value;
+            const nombre = document.getElementById('pq-nombre').value.trim();
+            const cantidad = parseInt(document.getElementById('pq-cantidad').value, 10);
+            const precio = parseFloat(document.getElementById('pq-precio').value);
+            const orden = parseInt(document.getElementById('pq-orden').value, 10) || 0;
+
+            if (!nombre || !cantidad || cantidad <= 0 || isNaN(precio) || precio < 0) {
+                msg.style.display = 'block';
+                msg.textContent = 'Revisa el nombre, la cantidad y el precio.';
+                return;
+            }
+
+            const btn = document.getElementById('btn-guardar-paquete');
+            btn.disabled = true; btn.textContent = 'Guardando...';
+
+            const { error } = await supabaseClient.rpc('admin_guardar_paquete', {
+                p_id: idRaw ? parseInt(idRaw, 10) : null,
+                p_nombre: nombre,
+                p_cantidad: cantidad,
+                p_precio: precio,
+                p_categoria: document.getElementById('pq-categoria').value,
+                p_unidad: document.getElementById('pq-unidad').value.trim() || 'Diamantes',
+                p_destacado: document.getElementById('pq-destacado').checked,
+                p_activo: document.getElementById('pq-activo').checked,
+                p_orden: orden
+            });
+
+            btn.disabled = false; btn.textContent = 'Guardar';
+
+            if (error) {
+                msg.style.display = 'block';
+                msg.textContent = 'No se pudo guardar: ' + error.message;
+                return;
+            }
+
+            cerrarModalPaquete();
+            await cargarPaquetes();
+        }
+
+        // ---------- USUARIOS ----------
+        async function cargarUsuarios() {
+            const cuerpo = document.getElementById('tabla-admin-usuarios-body');
+            cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>`;
+
+            const { data, error } = await supabaseClient.rpc('admin_listar_usuarios');
+            if (error) {
+                cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">No se pudo cargar los usuarios.</td></tr>`;
+                return;
+            }
+            if (!data || data.length === 0) {
+                cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">No hay usuarios registrados.</td></tr>`;
+                return;
+            }
+
+            cuerpo.innerHTML = data.map(u => `<tr>
+                <td>${escHtml(u.nickname)}</td>
+                <td>${escHtml(u.correo)}</td>
+                <td>${escHtml(u.celular || '—')}</td>
+                <td>${formatearSoles(u.saldo)}</td>
+                <td>${new Date(u.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+            </tr>`).join('');
+        }
+    </script>
+</body>
+</html>

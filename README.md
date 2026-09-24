@@ -20,17 +20,25 @@ compartir usuarios ni datos).
 ### Cómo funciona el saldo y los pedidos
 
 1. El usuario recarga saldo (elige Yape o Plin) desde `catalogo.html` → queda un pedido `pendiente` y se abre WhatsApp con un mensaje ya armado para que te mande el monto y su captura de pago.
-2. **Tú confirmas el pago a mano** en el Table Editor de Supabase (tabla `pedidos`, cambias `estado` a `confirmado`) — un trigger acredita el saldo automáticamente.
+2. **Confirmas el pago** desde `admin.html` (pestaña Pedidos → "Confirmar pago") — un trigger acredita el saldo automáticamente.
 3. El usuario compra un paquete con su saldo (desde cualquiera de los catálogos: "Recargas Ilimitadas", "Promo Primera Vez", "Cajas de Tokens" o "Tokens Evolutivos") → se descuenta al instante, el pedido queda `confirmado` (pagado), y también se abre WhatsApp avisándote qué paquete compró y su ID de Free Fire, a la espera de que entregues lo comprado en el juego.
-4. Cuando ya entregaste los diamantes, marcas ese pedido como `completado` en el Table Editor.
+4. Cuando ya entregaste los diamantes, lo marcas como `completado` desde `admin.html` ("Marcar entregado").
 
-No hay panel de administración todavía — la tabla de Supabase hace ese papel por ahora. Es un buen próximo paso si el volumen de pedidos crece.
+### Panel de administración (`admin.html`)
+
+Solo lo puede abrir la cuenta marcada como admin (columna `es_admin` en `perfiles`; por ahora es la cuenta `mzrecargaspro@gmail.com`) — cualquier otra cuenta que entre a esa URL rebota a `index.html`. Tiene cuatro pestañas:
+- **Resumen**: recargas pendientes, compras pagadas por entregar, usuarios registrados y saldo total en el sistema.
+- **Pedidos**: todos los pedidos de todos los usuarios, con filtro por estado y botones para confirmar pago / marcar entregado / cancelar.
+- **Paquetes**: editar precio, cantidad, destacado y activo/inactivo de cualquier paquete de los 4 catálogos, o crear uno nuevo — se refleja al instante en la web.
+- **Usuarios**: nickname, correo, WhatsApp, saldo y fecha de registro de cada cuenta registrada.
+
+Toda la lógica vive en funciones de Postgres (`admin_listar_pedidos`, `admin_actualizar_pedido`, `admin_listar_paquetes`, `admin_guardar_paquete`, `admin_listar_usuarios`, `admin_estadisticas`) que revisan `es_admin_actual()` antes de hacer nada — aunque alguien intente llamarlas directo a la API sin ser admin, las rechaza.
+
+Para dar acceso de admin a otra cuenta más adelante: `update public.perfiles set es_admin = true where id = '<uuid de la cuenta>';` en el SQL Editor de Supabase.
 
 ### Ver el correo de un usuario
 
-`perfiles` no guarda el correo (vive en `auth.users`, aparte, por diseño). Dos formas de verlo en el panel de Supabase:
-- **Authentication → Users**: lista completa, con fecha de registro y último login.
-- **Table Editor → `perfiles_admin`**: una vista de solo lectura que junta `perfiles` con el correo, para no tener que cambiar de sección. Solo la ves tú (dueño del proyecto) — no está expuesta a la web.
+Ya no hace falta ir a Supabase: la pestaña **Usuarios** de `admin.html` lo muestra directo. (También sigue disponible en el panel de Supabase, en Authentication → Users o en la vista `perfiles_admin` del Table Editor, por si acaso.)
 
 ## Puesta en marcha (una sola vez)
 
@@ -50,3 +58,4 @@ No hay panel de administración todavía — la tabla de Supabase hace ese papel
 - [ ] **Dominio propio** (opcional) — si el cliente compra uno, agrega un archivo `CNAME` con el dominio y configúralo en el registrador (igual que se hizo con CarzaD'Cross).
 - [ ] **Términos y Privacidad** (`terminos.html`, `privacidad.html`) — son una plantilla genérica marcada como tal en la propia página, conviene que las revise alguien con criterio legal antes de operar con pagos reales.
 - [ ] **Anti-bots / captcha** en login y registro — no se incluyó en esta primera versión (CarzaD'Cross usa Cloudflare Turnstile, que requiere una cuenta de Cloudflare propia para este dominio). Se puede agregar después si empieza a haber spam de registros.
+- [x] **Panel de administración** — `admin.html`, ver sección de arriba.

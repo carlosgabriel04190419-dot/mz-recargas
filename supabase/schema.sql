@@ -230,3 +230,226 @@ $$;
 create trigger after_update_pedido
   after update on public.pedidos
   for each row execute function public.acreditar_recarga_confirmada();
+
+-- ---------- PANEL DE ADMINISTRACIÓN (admin.html) ----------
+-- Bandera de administrador en el propio perfil. La política de SELECT
+-- ya existente ("select_propio_perfil") deja que cada quien lea su
+-- propia fila, así que el sitio puede leer "es_admin" al iniciar
+-- sesión sin necesidad de una policy nueva.
+alter table public.perfiles add column es_admin boolean not null default false;
+
+-- Marca como admin a la cuenta dueña de la tienda. Cambia el id por
+-- el de la cuenta real si hace falta (select id from auth.users
+-- where email = '...').
+update public.perfiles set es_admin = true where id = 'ffe9a4e3-27e5-46ef-8ce3-f1566401ebff';
+
+-- Chequeo reutilizable de "¿el que está pidiendo esto es admin?".
+-- security definer para no chocar con RLS al leer perfiles.
+create function public.es_admin_actual()
+returns boolean
+language sql
+security definer set search_path = public
+stable
+as $$
+  select coalesce((select es_admin from public.perfiles where id = auth.uid()), false);
+$$;
+
+-- Listar pedidos (de todos los usuarios), con filtro opcional por estado.
+create function public.admin_listar_pedidos(p_estado text default null)
+returns table (
+  id uuid,
+  created_at timestamptz,
+  tipo text,
+  estado text,
+  monto numeric,
+  metodo_pago text,
+  id_jugador_ff text,
+  nota_admin text,
+  usuario_id uuid,
+  nickname text,
+  correo text,
+  paquete_nombre text
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select pe.id, pe.created_at, pe.tipo, pe.estado, pe.monto, pe.metodo_pago,
+           pe.id_jugador_ff, pe.nota_admin, pe.usuario_id,
+           pf.nickname, u.email::text, pa.nombre
+    from public.pedidos pe
+    join public.perfiles pf on pf.id = pe.usuario_id
+    join auth.users u on u.id = pe.usuario_id
+    left join public.paquetes_ff pa on pa.id = pe.paquete_id
+    where p_estado is null or pe.estado = p_estado
+    order by pe.created_at desc;
+end;
+$$;
+
+-- Cambiar el estado de un pedido (y opcionalmente la nota) — dispara
+-- el mismo trigger de acreditación que ya existía para Table Editor.
+create function public.admin_actualizar_pedido(p_id uuid, p_estado text, p_nota text default null)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  update public.pedidos
+    set estado = p_estado,
+        nota_admin = coalesce(p_nota, nota_admin)
+    where id = p_id;
+end;
+$$;
+
+-- Listar usuarios registrados con su correo (mismo dato que perfiles_admin,
+-- pero accesible desde el sitio para quien sea admin).
+create function public.admin_listar_usuarios()
+returns table (
+  id uuid,
+  nickname text,
+  celular text,
+  saldo numeric,
+  created_at timestamptz,
+  correo text
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select p.id, p.nickname, p.celular, p.saldo, p.created_at, u.email::text
+    from public.perfiles p
+    join auth.users u on u.id = p.id
+    order by p.created_at desc;
+end;
+$$;
+
+-- Listar TODOS los paquetes (incluye inactivos, a diferencia de la
+-- policy pública que solo deja ver "activo = true").
+create function public.admin_listar_paquetes()
+returns table (
+  id integer,
+  nombre text,
+  cantidad integer,
+  precio numeric,
+  categoria text,
+  unidad text,
+  destacado boolean,
+  activo boolean,
+  orden integer
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select pa.id, pa.nombre, pa.cantidad, pa.precio, pa.categoria, pa.unidad, pa.destacado, pa.activo, pa.orden
+    from public.paquetes_ff pa
+    order by pa.categoria, pa.orden;
+end;
+$$;
+
+-- Crear o editar un paquete (p_id null = crear nuevo). Devuelve el id.
+create function public.admin_guardar_paquete(
+  p_id integer,
+  p_nombre text,
+  p_cantidad integer,
+  p_precio numeric,
+  p_categoria text,
+  p_unidad text,
+  p_destacado boolean,
+  p_activo boolean,
+  p_orden integer
+)
+returns integer
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  nuevo_id integer;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  if p_id is null then
+    insert into public.paquetes_ff (nombre, cantidad, precio, categoria, unidad, destacado, activo, orden)
+    values (p_nombre, p_cantidad, p_precio, p_categoria, p_unidad, p_destacado, p_activo, p_orden)
+    returning id into nuevo_id;
+  else
+    update public.paquetes_ff
+      set nombre = p_nombre, cantidad = p_cantidad, precio = p_precio, categoria = p_categoria,
+          unidad = p_unidad, destacado = p_destacado, activo = p_activo, orden = p_orden
+      where id = p_id;
+    nuevo_id := p_id;
+  end if;
+
+  return nuevo_id;
+end;
+$$;
+
+-- Números rápidos para la portada del panel.
+create function public.admin_estadisticas()
+returns table (
+  pedidos_pendientes bigint,
+  pedidos_por_entregar bigint,
+  total_usuarios bigint,
+  saldo_total numeric
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select
+      (select count(*) from public.pedidos where tipo = 'recarga_saldo' and estado = 'pendiente'),
+      (select count(*) from public.pedidos where tipo = 'compra_diamantes' and estado = 'confirmado'),
+      (select count(*) from public.perfiles),
+      (select coalesce(sum(saldo), 0) from public.perfiles);
+end;
+$$;
+
+-- Postgres otorga EXECUTE a PUBLIC (incluye "anon") en toda función
+-- nueva por defecto. Cada función de arriba ya se protege sola con
+-- es_admin_actual(), pero además nadie sin sesión debería ni poder
+-- intentarlo, y es_admin_actual() no necesita ser invocable directo
+-- desde el sitio (solo la usan las otras funciones, internamente).
+revoke execute on function public.es_admin_actual() from public;
+revoke execute on function public.admin_listar_pedidos(text) from public;
+revoke execute on function public.admin_actualizar_pedido(uuid, text, text) from public;
+revoke execute on function public.admin_listar_usuarios() from public;
+revoke execute on function public.admin_listar_paquetes() from public;
+revoke execute on function public.admin_guardar_paquete(integer, text, integer, numeric, text, text, boolean, boolean, integer) from public;
+revoke execute on function public.admin_estadisticas() from public;
+
+grant execute on function public.admin_listar_pedidos(text) to authenticated;
+grant execute on function public.admin_actualizar_pedido(uuid, text, text) to authenticated;
+grant execute on function public.admin_listar_usuarios() to authenticated;
+grant execute on function public.admin_listar_paquetes() to authenticated;
+grant execute on function public.admin_guardar_paquete(integer, text, integer, numeric, text, text, boolean, boolean, integer) to authenticated;
+grant execute on function public.admin_estadisticas() to authenticated;

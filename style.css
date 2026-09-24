@@ -76,7 +76,17 @@ img { max-width: 100%; display: block; }
 button { cursor: pointer; font-family: inherit; }
 ::selection { background: var(--acento-2); color: #fff; }
 
-.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.container { position: relative; z-index: 2; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+/* Fondo con la imagen del catálogo activo (catalogo.html), difuminada */
+.paquetes-bg-img {
+    position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; display: none;
+    filter: blur(9px) brightness(0.55) saturate(1.1); transform: scale(1.1);
+}
+.paquetes-bg-overlay {
+    position: fixed; inset: 0; z-index: 1; display: none;
+    background: linear-gradient(160deg, rgba(6,8,16,0.68) 0%, rgba(15,10,35,0.5) 55%, rgba(6,8,16,0.78) 100%);
+}
 
 /* ========================================== */
 /* NAVBAR                                     */
@@ -187,6 +197,15 @@ button { cursor: pointer; font-family: inherit; }
 }
 .back-link-catalogo { display: inline-flex; align-items: center; gap: 6px; color: var(--texto-secundario); font-size: 14px; font-weight: 600; margin-top: 24px; }
 .back-link-catalogo:hover { color: var(--acento-1); }
+
+/* Con el fondo difuminado del catálogo activo (catalogo.html), el título y
+   el link de "volver" quedan expuestos sobre una imagen siempre oscura —
+   así que se fuerzan claros, sin depender del tema claro/oscuro del sitio. */
+body.fondo-catalogo-activo .seccion-header h2 { color: #f5f7ff; }
+body.fondo-catalogo-activo .seccion-header p { color: #c2c9ea; }
+body.fondo-catalogo-activo .back-link-catalogo { color: rgba(245, 247, 255, 0.85); }
+body.fondo-catalogo-activo .back-link-catalogo:hover { color: #fff; }
+body.fondo-catalogo-activo #paquetes-titulo { color: #f5f7ff; }
 
 .paso-card { background: var(--bg-elevada); border: 1px solid var(--borde); border-radius: 16px; padding: 22px; max-width: 700px; margin: 0 auto 24px; }
 .paso-titulo { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; margin-bottom: 16px; }
@@ -335,17 +354,51 @@ button { cursor: pointer; font-family: inherit; }
 .tabla-vacia { text-align: center; padding: 50px 20px; color: var(--texto-tenue); }
 
 /* ========================================== */
+/* PANEL ADMIN                                */
+/* ========================================== */
+.admin-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; border-bottom: 1px solid var(--borde); padding-bottom: 0; }
+.admin-tab {
+    display: flex; align-items: center; gap: 6px; padding: 11px 18px; font-size: 14px; font-weight: 700;
+    color: var(--texto-tenue); background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.admin-tab .material-icons { font-size: 18px; }
+.admin-tab:hover { color: var(--texto); }
+.admin-tab.activo { color: var(--acento-1); border-bottom-color: var(--acento-1); }
+
+.admin-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.admin-stat-card { background-color: var(--bg-elevada); border: 1px solid var(--borde); border-radius: 14px; padding: 22px; }
+.admin-stat-valor { font-size: 28px; font-weight: 800; color: var(--acento-1); margin-bottom: 6px; }
+.admin-stat-label { font-size: 13px; color: var(--texto-secundario); }
+
+.admin-filtros { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.admin-filtro { background-color: var(--bg-elevada); border: 1px solid var(--borde); color: var(--texto-secundario); padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; }
+.admin-filtro:hover { border-color: var(--acento-1); color: var(--acento-1); }
+.admin-filtro.activo { background: var(--acento-1); border-color: var(--acento-1); color: #fff; }
+
+@media (max-width: 900px) {
+    .admin-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+    .admin-stats-grid { grid-template-columns: 1fr; }
+    .admin-tabs { overflow-x: auto; flex-wrap: nowrap; }
+}
+
+/* ========================================== */
 /* FOOTER                                     */
 /* ========================================== */
 footer { background-color: var(--bg-footer); border-top: 1px solid var(--borde); padding: 50px 20px 26px; margin-top: 60px; }
-.footer-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 40px; max-width: 1100px; margin: 0 auto 30px; }
+.footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 40px; max-width: 1160px; margin: 0 auto 30px; }
+.footer-logo { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
 .footer-col h4 { font-size: 14px; margin-bottom: 16px; }
 .footer-col p { font-size: 13.5px; color: var(--texto-tenue); line-height: 1.7; }
 .footer-col ul li { margin-bottom: 10px; }
 .footer-col ul a { font-size: 13.5px; color: var(--texto-tenue); }
 .footer-col ul a:hover { color: var(--acento-1); }
+.footer-metodos-pago { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.footer-pago-tag { background: var(--bg-elevada-2); border: 1px solid var(--borde-suave); color: var(--texto-secundario); font-size: 11.5px; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
 .footer-bottom { text-align: center; padding-top: 22px; border-top: 1px solid var(--borde); font-size: 12.5px; color: var(--texto-tenue); }
-@media (max-width: 700px) { .footer-grid { grid-template-columns: 1fr; text-align: center; } }
+@media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .footer-grid { grid-template-columns: 1fr; text-align: center; } .footer-logo { justify-content: center; } .footer-metodos-pago { justify-content: center; } }
 
 /* ========================================== */
 /* WHATSAPP FLOTANTE                          */
