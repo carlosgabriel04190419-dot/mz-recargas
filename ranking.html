@@ -3,20 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MZ'Recargas | Diamantes Free Fire al instante</title>
+    <title>MZ'Recargas | Ranking de Compradores</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <meta name="theme-color" content="#0c0f18">
-    <meta name="description" content="Recarga diamantes de Free Fire al instante en MZ'Recargas. Carga tu saldo con Yape o Plin y compra en segundos.">
+    <meta name="description" content="Gana puntos por cada recarga y compra en MZ'Recargas y sube al ranking de compradores.">
     <script>try{var t=localStorage.getItem('mzrecargas_tema');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
-
-    <video class="site-bg-video" autoplay muted loop playsinline aria-hidden="true">
-        <source src="login-bg.mp4" type="video/mp4">
-    </video>
-    <div class="site-bg-overlay"></div>
 
     <nav class="navbar">
         <a href="index.html" class="nav-logo-premium">
@@ -24,7 +19,7 @@
             <div class="logo-text"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></div>
         </a>
         <div class="nav-links">
-            <a href="index.html" class="activo">Inicio</a>
+            <a href="index.html">Inicio</a>
             <a href="catalogo.html">Recargar Diamantes</a>
             <a href="soporte.html">Soporte</a>
         </div>
@@ -48,82 +43,45 @@
         </div>
     </nav>
 
-    <section class="hero">
-        <div class="hero-badge"><span class="material-icons" style="font-size:16px;">bolt</span> Entrega en menos de 5 minutos</div>
-        <h1>Diamantes de <span>Free Fire</span><br>al instante</h1>
-        <p>Carga tu saldo con Yape o Plin y compra diamantes en segundos. Sin vueltas, sin esperas.</p>
-        <div class="hero-actions">
-            <a href="catalogo.html" class="btn-primary">Recargar Ahora</a>
-            <a href="soporte.html" class="btn-outline">Hablar con Soporte</a>
-        </div>
-        <div class="hero-stats">
-            <div><h3>100%</h3><p>Pago verificado</p></div>
-            <div><h3>&lt; 5 Min</h3><p>Entrega promedio</p></div>
-            <div><h3>24/7</h3><p>Disponible siempre</p></div>
-        </div>
-    </section>
-
-    <section class="seccion video-zone">
+    <div class="container" style="max-width: 760px; padding-top: 50px; padding-bottom: 70px;">
         <div class="seccion-header">
-            <h2>Nuestros Catálogos</h2>
-            <p>Elige el catálogo que prefieras y compra al instante con tu saldo.</p>
+            <h2>🏆 Ranking de Compradores</h2>
+            <p>Ganas 1 punto por cada sol que recargas o gastas en MZ'Recargas. Estos son los que más puntos acumulan.</p>
         </div>
-        <div class="catalogos-grid">
-            <a href="catalogo.html?catalogo=ilimitada" class="catalogo-card" style="text-decoration:none; color:inherit;">
-                <img src="banner-ilimitada.jpg" alt="Recargas Ilimitadas">
-                <h3>Recargas Ilimitadas</h3>
-                <span class="catalogo-tag">Sin límite de recargas</span>
-            </a>
-            <a href="catalogo.html?catalogo=promo" class="catalogo-card" style="text-decoration:none; color:inherit;">
-                <img src="banner-promo.jpeg" alt="Promo Primera Vez">
-                <h3>Promo Primera Vez</h3>
-                <span class="catalogo-tag">Precio especial, 1 vez por ID</span>
-            </a>
-            <a href="catalogo.html?catalogo=cajas_tokens" class="catalogo-card" style="text-decoration:none; color:inherit;">
-                <img src="banner-cajas-tokens.jpg" alt="Cajas de Tokens" style="object-position: 50% 78%;">
-                <h3>Cajas de Tokens</h3>
-                <span class="catalogo-tag">Cajas de tokens evolutivos</span>
-            </a>
-            <a href="catalogo.html?catalogo=tokens_evolutivos" class="catalogo-card" style="text-decoration:none; color:inherit;">
-                <img src="banner-tokens-evo.jpg" alt="Tokens Evolutivos">
-                <h3>Tokens Evolutivos</h3>
-                <span class="catalogo-tag">Tokens sueltos para evolucionar</span>
-            </a>
-        </div>
-    </section>
 
-    <section class="seccion video-zone" style="max-width: 700px; margin: 0 auto;">
-        <div class="seccion-header">
-            <h2>Preguntas Frecuentes</h2>
-            <p>Resolvemos las dudas más comunes sobre recargas, pagos y entrega.</p>
+        <div id="podio" class="podio-grid" style="display:none;">
+            <div class="podio-card puesto-2">
+                <div class="podio-medalla">🥈</div>
+                <div class="podio-nickname" id="podio-2-nick">—</div>
+                <div class="podio-puntos" id="podio-2-pts"></div>
+            </div>
+            <div class="podio-card puesto-1">
+                <div class="podio-medalla">🥇</div>
+                <div class="podio-nickname" id="podio-1-nick">—</div>
+                <div class="podio-puntos" id="podio-1-pts"></div>
+            </div>
+            <div class="podio-card puesto-3">
+                <div class="podio-medalla">🥉</div>
+                <div class="podio-nickname" id="podio-3-nick">—</div>
+                <div class="podio-puntos" id="podio-3-pts"></div>
+            </div>
         </div>
-        <div class="faq-list">
-            <details class="faq-item">
-                <summary>¿Cómo recargo mi saldo?<span class="material-icons">expand_more</span></summary>
-                <p>Desde "Recargar Diamantes" eliges un monto y pagas por Yape o Plin. En cuanto verificamos tu pago, te acreditamos el saldo para que compres cuando quieras.</p>
-            </details>
-            <details class="faq-item">
-                <summary>¿Cuánto demora la entrega de diamantes?<span class="material-icons">expand_more</span></summary>
-                <p>En promedio menos de 5 minutos después de confirmar tu compra, una vez que tu saldo ya está cargado.</p>
-            </details>
-            <details class="faq-item">
-                <summary>¿Es seguro comprar en MZ'Recargas?<span class="material-icons">expand_more</span></summary>
-                <p>Sí. Usamos cuentas reales con autenticación y cada pago se verifica a mano antes de acreditar el saldo, sin sorpresas.</p>
-            </details>
-            <details class="faq-item">
-                <summary>¿Qué hago si mi pago no se refleja?<span class="material-icons">expand_more</span></summary>
-                <p>Escríbenos por WhatsApp con tu comprobante de Yape o Plin y lo revisamos al toque.</p>
-            </details>
-            <details class="faq-item">
-                <summary>¿Necesito crear una cuenta para comprar?<span class="material-icons">expand_more</span></summary>
-                <p>Sí, es gratis y toma un minuto. Así guardamos tu saldo y el historial de todos tus pedidos.</p>
-            </details>
-            <details class="faq-item">
-                <summary>¿Qué dato necesito para recargar diamantes?<span class="material-icons">expand_more</span></summary>
-                <p>Solo tu ID de jugador de Free Fire, que puedes ver en tu perfil dentro del juego.</p>
-            </details>
+
+        <div class="card" style="overflow-x: auto; padding: 0;">
+            <table class="tabla-pedidos tabla-ranking" id="tabla-ranking">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Comprador</th>
+                        <th>Puntos</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-ranking-body">
+                    <tr><td colspan="3" class="tabla-vacia">Cargando...</td></tr>
+                </tbody>
+            </table>
         </div>
-    </section>
+    </div>
 
     <footer id="footer-slot"></footer>
 
@@ -134,7 +92,35 @@
             const usuario = await verificarSesion(false);
             if (!usuario) pintarNavInvitado();
             insertarFooter();
+            await cargarRanking();
         };
+
+        async function cargarRanking() {
+            const cuerpo = document.getElementById('tabla-ranking-body');
+            const { data, error } = await supabaseClient.rpc('obtener_ranking', { p_limite: 10 });
+
+            if (error || !data || data.length === 0) {
+                cuerpo.innerHTML = `<tr><td colspan="3" class="tabla-vacia">Todavía no hay puntos acumulados. ¡Sé el primero en el ranking!</td></tr>`;
+                return;
+            }
+
+            const medallas = { 1: '🥇', 2: '🥈', 3: '🥉' };
+            if (data[0]) pintarPodio(1, data[0]);
+            if (data[1]) pintarPodio(2, data[1]);
+            if (data[2]) pintarPodio(3, data[2]);
+            if (data.length >= 1) document.getElementById('podio').style.display = 'grid';
+
+            cuerpo.innerHTML = data.map((u, i) => `<tr>
+                <td>${medallas[i + 1] || (i + 1)}</td>
+                <td>${escHtml(u.nickname)}</td>
+                <td style="font-weight:700; color:var(--acento-1);">${u.puntos.toLocaleString('es-PE')}</td>
+            </tr>`).join('');
+        }
+
+        function pintarPodio(puesto, u) {
+            document.getElementById(`podio-${puesto}-nick`).innerText = u.nickname;
+            document.getElementById(`podio-${puesto}-pts`).innerText = `${u.puntos.toLocaleString('es-PE')} puntos`;
+        }
 
         function insertarFooter() {
             document.getElementById('footer-slot').outerHTML = `

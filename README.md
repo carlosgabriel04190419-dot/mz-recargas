@@ -32,13 +32,22 @@ Solo lo puede abrir la cuenta marcada como admin (columna `es_admin` en `perfile
 - **Paquetes**: editar precio, cantidad, destacado y activo/inactivo de cualquier paquete de los 4 catálogos, o crear uno nuevo — se refleja al instante en la web.
 - **Usuarios**: nickname, correo, WhatsApp, saldo y fecha de registro de cada cuenta registrada.
 
-Toda la lógica vive en funciones de Postgres (`admin_listar_pedidos`, `admin_actualizar_pedido`, `admin_listar_paquetes`, `admin_guardar_paquete`, `admin_listar_usuarios`, `admin_estadisticas`) que revisan `es_admin_actual()` antes de hacer nada — aunque alguien intente llamarlas directo a la API sin ser admin, las rechaza.
+Toda la lógica vive en funciones de Postgres (`admin_listar_pedidos`, `admin_actualizar_pedido`, `admin_listar_paquetes`, `admin_guardar_paquete`, `admin_listar_usuarios`, `admin_estadisticas`, `admin_obtener_promo`, `admin_guardar_promo`) que revisan `es_admin_actual()` antes de hacer nada — aunque alguien intente llamarlas directo a la API sin ser admin, las rechaza.
 
 Para dar acceso de admin a otra cuenta más adelante: `update public.perfiles set es_admin = true where id = '<uuid de la cuenta>';` en el SQL Editor de Supabase.
 
 ### Ver el correo de un usuario
 
 Ya no hace falta ir a Supabase: la pestaña **Usuarios** de `admin.html` lo muestra directo. (También sigue disponible en el panel de Supabase, en Authentication → Users o en la vista `perfiles_admin` del Table Editor, por si acaso.)
+
+### Puntos, ranking, compras en vivo, promo del día y asistente
+
+Ideas tomadas de CarzaD'Cross pero con estilo propio (nada de morado ni de sus textos):
+- **Puntos**: cada usuario gana 1 punto por cada sol que recarga o gasta (columna `puntos` en `perfiles`, se suma sola en los mismos triggers que ya movían el saldo). Se ve en `perfil.html`.
+- **Ranking** (`ranking.html`): página pública (no hace falta iniciar sesión) con podio top 3 y tabla de los que más puntos tienen, vía `obtener_ranking()`. Enlazada desde el pie de página y desde el perfil.
+- **Compras en vivo**: franja debajo del navbar en todas las páginas (menos `admin.html`) con las últimas compras/recargas reales, nickname parcialmente oculto (`ad***`). Se inyecta sola desde `sesion.js`, vía `compras_recientes()` — si no hay compras todavía, simplemente no aparece.
+- **Promo del día**: oferta con precio especial sobre un paquete de diamantes ya existente ("Recargas Ilimitadas" o "Promo Primera Vez"). La configuras tú desde `admin.html` → pestaña "Promo del día" (eliges el paquete, el precio y si está activa). Mientras esté activa, aparece como banner + popup (una vez al día por navegador) en ese catálogo — comprarla no crea un paquete nuevo, solo cobra el precio especial sobre el paquete real.
+- **Asistente**: burbuja de chat flotante en todas las páginas (menos `admin.html`), con preguntas sugeridas y respuestas predeterminadas (no es IA de verdad, es un diccionario de palabras clave en `sesion.js` — `ASISTENTE_FAQ`) para no depender de ninguna API externa ni tener costo por uso. Si no reconoce la pregunta, invita a escribir por WhatsApp.
 
 ## Puesta en marcha (una sola vez)
 

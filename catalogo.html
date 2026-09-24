@@ -85,6 +85,12 @@
             <a href="#" onclick="volverASelector(event)" class="back-link-catalogo"><span class="material-icons">arrow_back</span> Volver a catálogos</a>
             <h3 id="paquetes-titulo" style="text-align:center; margin: 20px 0 26px; font-size:22px; font-weight:800;"></h3>
 
+            <button type="button" id="promo-dia-banner" class="promo-banner" style="display:none;" onclick="abrirPromoDelDia()">
+                <span class="material-icons">local_fire_department</span>
+                <strong id="promo-dia-banner-texto"></strong>
+                <span class="material-icons">arrow_forward</span>
+            </button>
+
             <div class="paso-card">
                 <div class="paso-titulo"><span class="paso-num">1</span> Ingresa tu ID</div>
                 <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">ID de Jugador (Free Fire)</label>
@@ -168,6 +174,23 @@
         </div>
     </div>
 
+    <!-- MODAL: PROMO DEL DÍA -->
+    <div id="modal-promo-dia" class="modal-overlay">
+        <div class="modal-box promo-dia-box">
+            <span class="material-icons close-btn" onclick="cerrarModal('modal-promo-dia')">close</span>
+            <div class="promo-dia-badge"><span class="material-icons" style="font-size:14px;">local_fire_department</span> Promo del día</div>
+            <div class="paquete-icon" id="promo-dia-icono" style="margin-bottom:10px;"></div>
+            <div class="promo-dia-nombre" id="promo-dia-nombre"></div>
+            <div class="promo-dia-cantidad" id="promo-dia-cantidad"></div>
+            <div class="promo-dia-precios">
+                <span class="promo-dia-precio-original" id="promo-dia-precio-original"></span>
+                <span class="promo-dia-precio-promo" id="promo-dia-precio-promo"></span>
+            </div>
+            <button type="button" class="btn-primary" style="width:100%;" onclick="elegirPromoDelDia()">Comprar ahora</button>
+            <button type="button" class="btn-outline" style="width:100%; margin-top:10px;" onclick="cerrarModal('modal-promo-dia')">Ahora no</button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="sesion.js"></script>
     <script>
@@ -204,6 +227,7 @@
         let categoriaActiva = null;
         let paqueteElegido = null;
         let idJugadorValidado = '';
+        let promoActiva = null;
 
         window.onload = async function () {
             usuarioActual = await verificarSesion();
@@ -268,6 +292,75 @@
                 document.getElementById('cantidad-exacta-input').value = '';
                 document.getElementById('cantidad-exacta-precio').innerText = formatearSoles(0);
             }
+
+            cargarPromoDelDia();
+        }
+
+        // ---------- PROMO DEL DÍA (solo catálogos de diamantes) ----------
+        async function cargarPromoDelDia() {
+            const banner = document.getElementById('promo-dia-banner');
+            banner.style.display = 'none';
+            promoActiva = null;
+
+            if (categoriaActiva !== 'ilimitada' && categoriaActiva !== 'promo') return;
+
+            const { data, error } = await supabaseClient.rpc('obtener_promo_del_dia');
+            if (error || !data || data.length === 0) return;
+            const promo = data[0];
+            if (promo.categoria !== categoriaActiva) return;
+
+            promoActiva = promo;
+            banner.style.display = 'flex';
+            document.getElementById('promo-dia-banner-texto').innerText =
+                `Promo del día: ${promo.nombre} a ${formatearSoles(promo.precio_promo)} — toca para ver`;
+
+            const claveVista = `mzrecargas_promo_vista_${new Date().toDateString()}_${promo.paquete_id}`;
+            let yaVista = false;
+            try { yaVista = !!localStorage.getItem(claveVista); } catch (e) {}
+            if (!yaVista) {
+                abrirPromoDelDia();
+                try { localStorage.setItem(claveVista, '1'); } catch (e) {}
+            }
+        }
+
+        function abrirPromoDelDia() {
+            if (!promoActiva) return;
+            document.getElementById('promo-dia-icono').innerHTML = emojiPorTamano(promoActiva.categoria, promoActiva.cantidad);
+            document.getElementById('promo-dia-nombre').innerText = promoActiva.nombre;
+            document.getElementById('promo-dia-cantidad').innerText = `${Number(promoActiva.cantidad).toLocaleString('es-PE')} ${promoActiva.unidad}`;
+            document.getElementById('promo-dia-precio-original').innerText = formatearSoles(promoActiva.precio_original);
+            document.getElementById('promo-dia-precio-promo').innerText = formatearSoles(promoActiva.precio_promo);
+            document.getElementById('modal-promo-dia').classList.add('abierto');
+        }
+
+        function elegirPromoDelDia() {
+            if (!promoActiva) return;
+            cerrarModal('modal-promo-dia');
+
+            if (!idJugadorValidado) {
+                const msg = document.getElementById('id-validado-msg');
+                msg.className = 'msg-box error'; msg.style.display = 'block';
+                msg.innerText = 'Primero ingresa y valida tu ID de jugador de Free Fire.';
+                document.getElementById('id-jugador-input').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                document.getElementById('id-jugador-input').focus();
+                return;
+            }
+
+            paqueteElegido = {
+                id: promoActiva.paquete_id,
+                nombre: promoActiva.nombre,
+                cantidad: promoActiva.cantidad,
+                precio: promoActiva.precio_promo,
+                categoria: promoActiva.categoria,
+                unidad: promoActiva.unidad
+            };
+
+            document.querySelectorAll('.paquete-card').forEach(c => c.classList.remove('seleccionado'));
+            document.getElementById('confirmar-paquete-nombre').innerText = paqueteElegido.nombre;
+            document.getElementById('confirmar-paquete-precio').innerText = formatearSoles(paqueteElegido.precio);
+            const pasoConfirmar = document.getElementById('paso-confirmar');
+            pasoConfirmar.style.display = 'block';
+            pasoConfirmar.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         function actualizarCantidadExacta() {
@@ -465,6 +558,7 @@
                             <li><a href="recargar-saldo.html">Recargar Saldo</a></li>
                             <li><a href="historial.html">Mis Pedidos</a></li>
                             <li><a href="perfil.html">Mi Perfil</a></li>
+                            <li><a href="ranking.html">Ranking</a></li>
                             <li><a href="soporte.html">Soporte</a></li>
                         </ul>
                     </div>

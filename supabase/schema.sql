@@ -196,7 +196,10 @@ begin
       raise exception 'Saldo insuficiente. Recarga tu saldo antes de comprar.';
     end if;
 
-    update public.perfiles set saldo = saldo - new.monto where id = new.usuario_id;
+    update public.perfiles
+      set saldo = saldo - new.monto,
+          puntos = puntos + floor(new.monto)::integer
+      where id = new.usuario_id;
     new.estado := 'confirmado';
   end if;
 
@@ -221,7 +224,10 @@ begin
   if new.tipo = 'recarga_saldo'
      and new.estado = 'confirmado'
      and old.estado is distinct from 'confirmado' then
-    update public.perfiles set saldo = saldo + new.monto where id = new.usuario_id;
+    update public.perfiles
+      set saldo = saldo + new.monto,
+          puntos = puntos + floor(new.monto)::integer
+      where id = new.usuario_id;
   end if;
   return new;
 end;
@@ -453,3 +459,132 @@ grant execute on function public.admin_listar_usuarios() to authenticated;
 grant execute on function public.admin_listar_paquetes() to authenticated;
 grant execute on function public.admin_guardar_paquete(integer, text, integer, numeric, text, text, boolean, boolean, integer) to authenticated;
 grant execute on function public.admin_estadisticas() to authenticated;
+
+-- ---------- PUNTOS DE FIDELIDAD, RANKING Y COMPRAS EN VIVO ----------
+-- 1 punto por cada sol pagado de verdad. Se otorgan dentro de
+-- procesar_nuevo_pedido() y acreditar_recarga_confirmada() (ver arriba),
+-- en el mismo momento en que se reconoce el pago.
+alter table public.perfiles add column puntos integer not null default 0;
+
+-- Ranking público de compradores (nickname + puntos nada más, nunca
+-- correo/saldo/celular). security definer porque perfiles solo deja ver
+-- la fila propia por RLS.
+create function public.obtener_ranking(p_limite integer default 10)
+returns table (nickname text, puntos integer)
+language sql
+security definer set search_path = public
+stable
+as $$
+  select nickname, puntos
+  from public.perfiles
+  where puntos > 0
+  order by puntos desc, created_at asc
+  limit greatest(1, least(coalesce(p_limite, 10), 50));
+$$;
+
+grant execute on function public.obtener_ranking(integer) to anon, authenticated;
+
+-- Feed público de compras recientes, con el nickname parcialmente oculto
+-- (server-side, para no exponer el nickname completo nunca).
+create function public.compras_recientes(p_limite integer default 12)
+returns table (nickname text, texto text, creado_hace timestamptz)
+language sql
+security definer set search_path = public
+stable
+as $$
+  select
+    left(pf.nickname, 2) || repeat('*', greatest(length(pf.nickname) - 2, 2)),
+    case
+      when pe.tipo = 'recarga_saldo' then 'recargó S/ ' || to_char(pe.monto, 'FM999999990.00')
+      else 'compró ' || coalesce(pa.nombre, 'un paquete')
+    end,
+    pe.created_at
+  from public.pedidos pe
+  join public.perfiles pf on pf.id = pe.usuario_id
+  left join public.paquetes_ff pa on pa.id = pe.paquete_id
+  where pe.estado in ('confirmado', 'completado')
+  order by pe.created_at desc
+  limit greatest(1, least(coalesce(p_limite, 12), 30));
+$$;
+
+grant execute on function public.compras_recientes(integer) to anon, authenticated;
+
+-- ---------- PROMO DEL DÍA (diamantes) ----------
+-- Una sola oferta activa a la vez, elegida por el admin sobre un paquete
+-- real de "Recargas Ilimitadas" o "Promo Primera Vez" — así el ID del
+-- paquete sigue siendo válido para el pedido, solo se cobra el precio
+-- especial en vez del precio de lista.
+create table public.promo_diamantes (
+  id integer primary key default 1 check (id = 1),
+  paquete_id integer references public.paquetes_ff(id),
+  precio_promo numeric(10,2),
+  activo boolean not null default false,
+  actualizado_at timestamptz not null default now()
+);
+
+insert into public.promo_diamantes (id, activo) values (1, false);
+
+alter table public.promo_diamantes enable row level security;
+-- Sin policies ni grants directos a la tabla: todo pasa por las funciones
+-- de abajo, para no filtrar la fila cuando está inactiva.
+
+create function public.obtener_promo_del_dia()
+returns table (
+  paquete_id integer,
+  nombre text,
+  cantidad integer,
+  unidad text,
+  categoria text,
+  precio_original numeric,
+  precio_promo numeric
+)
+language sql
+security definer set search_path = public
+stable
+as $$
+  select pa.id, pa.nombre, pa.cantidad, pa.unidad, pa.categoria, pa.precio, pr.precio_promo
+  from public.promo_diamantes pr
+  join public.paquetes_ff pa on pa.id = pr.paquete_id
+  where pr.id = 1 and pr.activo = true and pa.activo = true;
+$$;
+
+grant execute on function public.obtener_promo_del_dia() to anon, authenticated;
+
+create function public.admin_obtener_promo()
+returns table (paquete_id integer, precio_promo numeric, activo boolean)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query select pr.paquete_id, pr.precio_promo, pr.activo from public.promo_diamantes pr where pr.id = 1;
+end;
+$$;
+
+create function public.admin_guardar_promo(p_paquete_id integer, p_precio_promo numeric, p_activo boolean)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  update public.promo_diamantes
+    set paquete_id = p_paquete_id,
+        precio_promo = p_precio_promo,
+        activo = p_activo,
+        actualizado_at = now()
+    where id = 1;
+end;
+$$;
+
+revoke execute on function public.admin_obtener_promo() from public;
+revoke execute on function public.admin_guardar_promo(integer, numeric, boolean) from public;
+grant execute on function public.admin_obtener_promo() to authenticated;
+grant execute on function public.admin_guardar_promo(integer, numeric, boolean) to authenticated;

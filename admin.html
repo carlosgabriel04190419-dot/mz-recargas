@@ -54,6 +54,7 @@
             <button class="admin-tab" data-tab="pedidos" onclick="cambiarPestana('pedidos')"><span class="material-icons">receipt_long</span> Pedidos</button>
             <button class="admin-tab" data-tab="paquetes" onclick="cambiarPestana('paquetes')"><span class="material-icons">inventory_2</span> Paquetes</button>
             <button class="admin-tab" data-tab="usuarios" onclick="cambiarPestana('usuarios')"><span class="material-icons">group</span> Usuarios</button>
+            <button class="admin-tab" data-tab="promo" onclick="cambiarPestana('promo')"><span class="material-icons">local_fire_department</span> Promo del día</button>
         </div>
 
         <!-- ===== RESUMEN ===== -->
@@ -141,6 +142,28 @@
                         <tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- ===== PROMO DEL DÍA ===== -->
+        <div class="admin-vista" id="vista-promo" style="display:none;">
+            <div class="card" style="max-width: 460px;">
+                <p style="color: var(--texto-secundario); font-size: 13.5px; margin-bottom: 20px;">Elige un paquete de diamantes (Recargas Ilimitadas o Promo Primera Vez) y ponle un precio especial por tiempo limitado. Se muestra como oferta destacada — con popup — en ese catálogo mientras esté activa.</p>
+                <div id="promo-admin-msg" class="msg-box error"></div>
+
+                <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Paquete</label>
+                <select id="promo-paquete" class="input-form">
+                    <option value="">Cargando paquetes...</option>
+                </select>
+
+                <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Precio especial (S/)</label>
+                <input type="number" id="promo-precio" class="input-form" min="0" step="0.01">
+
+                <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom: 20px; cursor:pointer;">
+                    <input type="checkbox" id="promo-activo" style="width:16px; height:16px;"> Promo activa (visible en la web)
+                </label>
+
+                <button type="button" class="btn-primary" id="btn-guardar-promo" style="width:100%;" onclick="guardarPromo()">Guardar</button>
             </div>
         </div>
     </div>
@@ -235,6 +258,7 @@
             else if (tab === 'paquetes') cargarPaquetes();
             else if (tab === 'usuarios') cargarUsuarios();
             else if (tab === 'dashboard') cargarEstadisticas();
+            else if (tab === 'promo') cargarPromo();
         }
 
         async function cargarEstadisticas() {
@@ -406,6 +430,73 @@
 
             cerrarModalPaquete();
             await cargarPaquetes();
+        }
+
+        // ---------- PROMO DEL DÍA ----------
+        async function cargarPromo() {
+            const select = document.getElementById('promo-paquete');
+            document.getElementById('promo-admin-msg').style.display = 'none';
+
+            const [{ data: paquetes, error: errPaquetes }, { data: promo, error: errPromo }] = await Promise.all([
+                supabaseClient.rpc('admin_listar_paquetes'),
+                supabaseClient.rpc('admin_obtener_promo')
+            ]);
+
+            if (errPaquetes) {
+                select.innerHTML = '<option value="">No se pudo cargar</option>';
+                return;
+            }
+
+            const diamantes = (paquetes || []).filter(p => p.categoria === 'ilimitada' || p.categoria === 'promo');
+            select.innerHTML = diamantes.map(p =>
+                `<option value="${p.id}">${ETIQUETAS_CATEGORIA[p.categoria]} — ${escHtml(p.nombre)} (precio normal ${formatearSoles(p.precio)})</option>`
+            ).join('');
+
+            const actual = !errPromo && promo && promo[0] ? promo[0] : null;
+            if (actual && actual.paquete_id) {
+                select.value = actual.paquete_id;
+                document.getElementById('promo-precio').value = actual.precio_promo || '';
+                document.getElementById('promo-activo').checked = !!actual.activo;
+            } else {
+                document.getElementById('promo-precio').value = '';
+                document.getElementById('promo-activo').checked = false;
+            }
+        }
+
+        async function guardarPromo() {
+            const msg = document.getElementById('promo-admin-msg');
+            msg.style.display = 'none';
+
+            const paqueteId = parseInt(document.getElementById('promo-paquete').value, 10);
+            const precio = parseFloat(document.getElementById('promo-precio').value);
+            const activo = document.getElementById('promo-activo').checked;
+
+            if (!paqueteId || isNaN(precio) || precio < 0) {
+                msg.style.display = 'block';
+                msg.textContent = 'Elige un paquete y pon un precio válido.';
+                return;
+            }
+
+            const btn = document.getElementById('btn-guardar-promo');
+            btn.disabled = true; btn.textContent = 'Guardando...';
+
+            const { error } = await supabaseClient.rpc('admin_guardar_promo', {
+                p_paquete_id: paqueteId,
+                p_precio_promo: precio,
+                p_activo: activo
+            });
+
+            btn.disabled = false; btn.textContent = 'Guardar';
+
+            if (error) {
+                msg.className = 'msg-box error';
+                msg.style.display = 'block';
+                msg.textContent = 'No se pudo guardar: ' + error.message;
+                return;
+            }
+            msg.className = 'msg-box exito';
+            msg.style.display = 'block';
+            msg.textContent = activo ? 'Promo activa y visible en la web.' : 'Guardado (promo desactivada).';
         }
 
         // ---------- USUARIOS ----------

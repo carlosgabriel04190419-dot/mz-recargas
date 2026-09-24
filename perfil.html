@@ -54,6 +54,14 @@
             <a href="catalogo.html" class="btn-primary" style="display:inline-block;">Recargar Saldo</a>
         </div>
 
+        <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:24px; padding:18px 22px;">
+            <div>
+                <p style="color: var(--texto-secundario); font-size: 13px;">Tus puntos</p>
+                <p style="font-size:22px; font-weight:800; color:var(--acento-1);" id="perfil-puntos">0</p>
+            </div>
+            <a href="ranking.html" class="btn-outline btn-sm">🏆 Ver ranking</a>
+        </div>
+
         <div class="card">
             <div id="msg-box" class="msg-box error"></div>
             <div id="exito-box" class="msg-box exito"></div>
@@ -82,6 +90,7 @@
             document.getElementById('perfil-correo').value = usuario.correo;
             document.getElementById('perfil-nickname').value = usuario.nickname;
             document.getElementById('perfil-celular').value = usuario.celular || '';
+            document.getElementById('perfil-puntos').innerText = (usuario.puntos || 0).toLocaleString('es-PE');
             insertarFooter();
         };
 
@@ -145,6 +154,7 @@
                             <li><a href="recargar-saldo.html">Recargar Saldo</a></li>
                             <li><a href="historial.html">Mis Pedidos</a></li>
                             <li><a href="perfil.html">Mi Perfil</a></li>
+                            <li><a href="ranking.html">Ranking</a></li>
                             <li><a href="soporte.html">Soporte</a></li>
                         </ul>
                     </div>
