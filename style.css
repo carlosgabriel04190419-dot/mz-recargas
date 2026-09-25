@@ -179,6 +179,15 @@ button { cursor: pointer; font-family: inherit; }
 .seccion-header p { color: var(--texto-secundario); font-size: 15px; }
 .video-zone .seccion-header h2 { color: #f5f7ff; }
 .video-zone .seccion-header p { color: #c2c9ea; }
+.video-zone .back-link-catalogo { color: rgba(245, 247, 255, 0.85); }
+.video-zone .back-link-catalogo:hover { color: #fff; }
+.video-zone .historial-paginacion span { color: #c2c9ea; }
+.video-zone .historial-filtros .btn-outline,
+.video-zone .historial-paginacion .btn-outline {
+    background: rgba(255,255,255,0.08); color: #f5f7ff; border-color: rgba(255,255,255,0.3);
+}
+.video-zone .historial-filtros .btn-outline:hover,
+.video-zone .historial-paginacion .btn-outline:hover { border-color: var(--acento-1); color: var(--acento-1); }
 
 /* ========================================== */
 /* CATÁLOGOS (RECARGAS ILIMITADAS / PROMO)    */
@@ -475,6 +484,15 @@ footer { background-color: var(--bg-footer); border-top: 1px solid var(--borde);
 .promo-dia-precios { display: flex; align-items: baseline; justify-content: center; gap: 10px; margin-bottom: 22px; }
 .promo-dia-precio-original { font-size: 16px; color: var(--texto-tenue); text-decoration: line-through; }
 .promo-dia-precio-promo { font-size: 30px; font-weight: 800; color: var(--exito); }
+
+/* ========================================== */
+/* HISTORIAL: FILTROS Y PAGINACIÓN            */
+/* ========================================== */
+.historial-filtros { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.historial-filtros .input-form { margin-bottom: 0; width: auto; flex: 1 1 160px; }
+.historial-paginacion { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 20px; }
+.historial-paginacion span { font-size: 13.5px; color: var(--texto-secundario); font-weight: 600; }
+.historial-paginacion button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ========================================== */
 /* RANKING DE COMPRADORES                     */

@@ -33,6 +33,7 @@
                         <span data-nav-nickname>Usuario</span>
                     </button>
                     <div class="nav-dropdown" id="nav-dropdown">
+                        <a href="recargar-saldo.html"><span class="material-icons">account_balance_wallet</span> Recargar Saldo</a>
                         <a href="perfil.html"><span class="material-icons">person</span> Mi Perfil</a>
                         <a href="historial.html"><span class="material-icons">receipt_long</span> Mis Pedidos</a>
                         <button onclick="cerrarSesionSegura()"><span class="material-icons">logout</span> Cerrar Sesión</button>
@@ -42,7 +43,7 @@
         </div>
     </nav>
 
-    <div class="container" style="max-width: 560px; padding-top: 50px; padding-bottom: 60px;">
+    <div class="container video-zone" style="max-width: 560px; padding-top: 50px; padding-bottom: 60px;">
         <div class="seccion-header" style="margin-bottom: 26px;">
             <h2>Mi Perfil</h2>
             <p>Tus datos y tu saldo en MZ'Recargas.</p>
@@ -76,6 +77,26 @@
             <input type="text" id="perfil-celular" class="input-form" placeholder="Ej: 987654321">
 
             <button type="button" id="btn-guardar" class="btn-primary" style="width:100%; margin-top: 6px;" onclick="guardarPerfil()">Guardar cambios</button>
+        </div>
+
+        <div class="card" style="margin-top:24px;">
+            <div class="seccion-header" style="text-align:left; margin:0 0 20px; max-width:none;">
+                <h2 style="font-size:18px;">Cambiar contraseña</h2>
+                <p style="font-size:13.5px;">Confirma tu contraseña actual y escribe la nueva dos veces.</p>
+            </div>
+            <div id="pass-msg-box" class="msg-box error"></div>
+            <div id="pass-exito-box" class="msg-box exito"></div>
+
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Contraseña antigua</label>
+            <input type="password" id="pass-antigua" class="input-form" autocomplete="current-password">
+
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Contraseña nueva</label>
+            <input type="password" id="pass-nueva" class="input-form" autocomplete="new-password">
+
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Repite la contraseña nueva</label>
+            <input type="password" id="pass-nueva-2" class="input-form" autocomplete="new-password">
+
+            <button type="button" id="btn-cambiar-pass" class="btn-primary" style="width:100%; margin-top: 6px;" onclick="cambiarContrasena()">Cambiar contraseña</button>
         </div>
     </div>
 
@@ -122,6 +143,63 @@
             }
             okBox.style.display = 'block';
             okBox.innerText = 'Datos actualizados.';
+        }
+
+        async function cambiarContrasena() {
+            const antigua = document.getElementById('pass-antigua').value;
+            const nueva = document.getElementById('pass-nueva').value;
+            const nueva2 = document.getElementById('pass-nueva-2').value;
+            const errBox = document.getElementById('pass-msg-box');
+            const okBox = document.getElementById('pass-exito-box');
+            errBox.style.display = 'none'; okBox.style.display = 'none';
+
+            if (!antigua || !nueva || !nueva2) {
+                errBox.style.display = 'block';
+                errBox.innerText = 'Completa los tres campos.';
+                return;
+            }
+            if (nueva.length < 6) {
+                errBox.style.display = 'block';
+                errBox.innerText = 'La contraseña nueva debe tener al menos 6 caracteres.';
+                return;
+            }
+            if (nueva !== nueva2) {
+                errBox.style.display = 'block';
+                errBox.innerText = 'Las dos contraseñas nuevas no coinciden.';
+                return;
+            }
+
+            const btn = document.getElementById('btn-cambiar-pass');
+            btn.disabled = true; btn.innerText = 'Verificando...';
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            const { error: errorLogin } = await supabaseClient.auth.signInWithPassword({
+                email: session.user.email,
+                password: antigua
+            });
+
+            if (errorLogin) {
+                btn.disabled = false; btn.innerText = 'Cambiar contraseña';
+                errBox.style.display = 'block';
+                errBox.innerText = 'Tu contraseña antigua no es correcta.';
+                return;
+            }
+
+            btn.innerText = 'Guardando...';
+            const { error: errorUpdate } = await supabaseClient.auth.updateUser({ password: nueva });
+            btn.disabled = false; btn.innerText = 'Cambiar contraseña';
+
+            if (errorUpdate) {
+                errBox.style.display = 'block';
+                errBox.innerText = 'No se pudo cambiar: ' + errorUpdate.message;
+                return;
+            }
+
+            document.getElementById('pass-antigua').value = '';
+            document.getElementById('pass-nueva').value = '';
+            document.getElementById('pass-nueva-2').value = '';
+            okBox.style.display = 'block';
+            okBox.innerText = 'Contraseña actualizada correctamente.';
         }
 
         function insertarFooter() {

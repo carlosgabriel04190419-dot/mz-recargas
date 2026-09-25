@@ -130,9 +130,25 @@ document.addEventListener('click', function (e) {
 document.addEventListener('DOMContentLoaded', function () {
     if (location.pathname.endsWith('admin.html')) return;
     if (!document.querySelector('.navbar')) return;
+    pintarFondoVideo();
     pintarTickerCompras();
     pintarAsistente();
 });
+
+// Mismo video de fondo del inicio, para que estas páginas no se vean
+// "frías" al lado de index.html. Si la página ya trae el suyo (index.html
+// lo trae hardcodeado), no se duplica. En catalogo.html, cuando se elige
+// un catálogo, el fondo específico de esa categoría (mismo z-index, pero
+// insertado después en el DOM) queda encima y lo tapa por completo.
+function pintarFondoVideo() {
+    if (document.querySelector('.site-bg-video')) return;
+    document.body.insertAdjacentHTML('afterbegin', `
+        <video class="site-bg-video" autoplay muted loop playsinline aria-hidden="true">
+            <source src="login-bg.mp4" type="video/mp4">
+        </video>
+        <div class="site-bg-overlay"></div>
+    `);
+}
 
 function tiempoRelativo(fechaIso) {
     const segundos = Math.floor((Date.now() - new Date(fechaIso).getTime()) / 1000);

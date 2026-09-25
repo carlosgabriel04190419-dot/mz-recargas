@@ -33,6 +33,7 @@
                         <span data-nav-nickname>Usuario</span>
                     </button>
                     <div class="nav-dropdown" id="nav-dropdown">
+                        <a href="recargar-saldo.html"><span class="material-icons">account_balance_wallet</span> Recargar Saldo</a>
                         <a href="perfil.html"><span class="material-icons">person</span> Mi Perfil</a>
                         <a href="historial.html"><span class="material-icons">receipt_long</span> Mis Pedidos</a>
                         <button onclick="cerrarSesionSegura()"><span class="material-icons">logout</span> Cerrar Sesión</button>
@@ -42,10 +43,26 @@
         </div>
     </nav>
 
-    <div class="container" style="padding-top: 50px; padding-bottom: 60px;">
+    <div class="container video-zone" style="padding-top: 50px; padding-bottom: 60px;">
         <div class="seccion-header" style="margin-bottom: 26px;">
             <h2>Mis Pedidos</h2>
             <p>Historial de tus recargas de saldo y compras de diamantes.</p>
+        </div>
+
+        <div class="historial-filtros">
+            <select id="filtro-paquete" class="input-form" onchange="aplicarFiltros()">
+                <option value="">Todos los paquetes</option>
+                <option value="recarga">Recarga de saldo</option>
+                <option value="personalizada">Cantidad personalizada</option>
+            </select>
+            <input type="date" id="filtro-desde" class="input-form" onchange="aplicarFiltros()" title="Desde">
+            <input type="date" id="filtro-hasta" class="input-form" onchange="aplicarFiltros()" title="Hasta">
+            <select id="filtro-tamano" class="input-form" onchange="cambiarTamanoPagina()">
+                <option value="10">10 por página</option>
+                <option value="20">20 por página</option>
+                <option value="50">50 por página</option>
+            </select>
+            <button type="button" class="btn-outline btn-sm" onclick="limpiarFiltros()">Limpiar filtros</button>
         </div>
 
         <div class="card" style="overflow-x: auto; padding: 0;">
@@ -64,6 +81,12 @@
                 </tbody>
             </table>
         </div>
+
+        <div class="historial-paginacion">
+            <button type="button" class="btn-outline btn-sm" id="btn-pag-anterior" onclick="cambiarPagina(-1)">← Anterior</button>
+            <span id="pag-info">Página 1</span>
+            <button type="button" class="btn-outline btn-sm" id="btn-pag-siguiente" onclick="cambiarPagina(1)">Siguiente →</button>
+        </div>
     </div>
 
     <footer id="footer-slot"></footer>
@@ -72,28 +95,120 @@
     <script src="sesion.js"></script>
     <script>
         const ETIQUETAS_ESTADO = { pendiente: 'Pendiente', confirmado: 'Confirmado', completado: 'Completado', cancelado: 'Cancelado' };
+        const ETIQUETAS_CATEGORIA = { ilimitada: 'Recargas Ilimitadas', promo: 'Promo Primera Vez', cajas_tokens: 'Cajas de Tokens', tokens_evolutivos: 'Tokens Evolutivos' };
+
+        let usuarioIdActual = null;
+        let paginaActual = 0;
+        let tamanoPagina = 10;
+        let totalRegistros = 0;
 
         window.onload = async function () {
             const usuario = await verificarSesion();
             if (!usuario) return;
-            await cargarPedidos(usuario.id);
+            usuarioIdActual = usuario.id;
+            await cargarPaquetesFiltro();
+            await cargarPedidos();
             insertarFooter();
         };
 
-        async function cargarPedidos(usuarioId) {
+        async function cargarPaquetesFiltro() {
+            const { data } = await supabaseClient
+                .from('paquetes_ff')
+                .select('id, nombre, categoria')
+                .eq('activo', true)
+                .order('categoria')
+                .order('orden');
+
+            if (!data || data.length === 0) return;
+            const select = document.getElementById('filtro-paquete');
+            const porCategoria = {};
+            data.forEach(p => { (porCategoria[p.categoria] = porCategoria[p.categoria] || []).push(p); });
+
+            Object.keys(porCategoria).forEach(cat => {
+                const grupo = document.createElement('optgroup');
+                grupo.label = ETIQUETAS_CATEGORIA[cat] || cat;
+                porCategoria[cat].forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = 'paquete:' + p.id;
+                    opt.textContent = p.nombre;
+                    grupo.appendChild(opt);
+                });
+                select.appendChild(grupo);
+            });
+        }
+
+        function aplicarFiltros() {
+            paginaActual = 0;
+            cargarPedidos();
+        }
+
+        function cambiarTamanoPagina() {
+            tamanoPagina = parseInt(document.getElementById('filtro-tamano').value, 10) || 10;
+            paginaActual = 0;
+            cargarPedidos();
+        }
+
+        function cambiarPagina(delta) {
+            paginaActual = Math.max(0, paginaActual + delta);
+            cargarPedidos();
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('filtro-paquete').value = '';
+            document.getElementById('filtro-desde').value = '';
+            document.getElementById('filtro-hasta').value = '';
+            document.getElementById('filtro-tamano').value = '10';
+            tamanoPagina = 10;
+            aplicarFiltros();
+        }
+
+        function actualizarPaginacion() {
+            const totalPaginas = Math.max(1, Math.ceil(totalRegistros / tamanoPagina));
+            document.getElementById('pag-info').innerText = `Página ${paginaActual + 1} de ${totalPaginas}`;
+            document.getElementById('btn-pag-anterior').disabled = paginaActual === 0;
+            document.getElementById('btn-pag-siguiente').disabled = paginaActual + 1 >= totalPaginas;
+        }
+
+        async function cargarPedidos() {
             const cuerpo = document.getElementById('tabla-pedidos-body');
-            const { data, error } = await supabaseClient
+            cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>`;
+
+            let query = supabaseClient
                 .from('pedidos')
-                .select('*, paquetes_ff(nombre)')
-                .eq('usuario_id', usuarioId)
-                .order('created_at', { ascending: false });
+                .select('*, paquetes_ff(nombre)', { count: 'exact' })
+                .eq('usuario_id', usuarioIdActual);
+
+            const filtroPaquete = document.getElementById('filtro-paquete').value;
+            if (filtroPaquete === 'recarga') {
+                query = query.eq('tipo', 'recarga_saldo');
+            } else if (filtroPaquete === 'personalizada') {
+                query = query.eq('tipo', 'compra_diamantes').is('paquete_id', null);
+            } else if (filtroPaquete.startsWith('paquete:')) {
+                query = query.eq('paquete_id', parseInt(filtroPaquete.split(':')[1], 10));
+            }
+
+            const desde = document.getElementById('filtro-desde').value;
+            const hasta = document.getElementById('filtro-hasta').value;
+            if (desde) query = query.gte('created_at', desde + 'T00:00:00');
+            if (hasta) query = query.lte('created_at', hasta + 'T23:59:59');
+
+            const inicio = paginaActual * tamanoPagina;
+            query = query.order('created_at', { ascending: false }).range(inicio, inicio + tamanoPagina - 1);
+
+            const { data, error, count } = await query;
 
             if (error) {
                 cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">No se pudo cargar tu historial.</td></tr>`;
                 return;
             }
+
+            totalRegistros = count || 0;
+            actualizarPaginacion();
+
             if (!data || data.length === 0) {
-                cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">Todavía no tienes pedidos. <a href="catalogo.html" style="color: var(--acento-1); font-weight:600;">Recarga diamantes →</a></td></tr>`;
+                cuerpo.innerHTML = (totalRegistros === 0 && paginaActual === 0)
+                    ? `<tr><td colspan="5" class="tabla-vacia">Todavía no tienes pedidos. <a href="catalogo.html" style="color: var(--acento-1); font-weight:600;">Recarga diamantes →</a></td></tr>`
+                    : `<tr><td colspan="5" class="tabla-vacia">No hay pedidos con este filtro.</td></tr>`;
                 return;
             }
 
