@@ -72,11 +72,15 @@
                    <input type="password" id="reg-password2" placeholder="Repite tu contraseña" onkeydown="if(event.key === 'Enter') manejarRegistro()">
                 </div>
 
+                <label class="consent-check" for="reg-acepto">
+                    <input type="checkbox" id="reg-acepto">
+                    <span>Leí y acepto los <a href="terminos.html" target="_blank" rel="noopener">Términos de Servicio</a> y la <a href="privacidad.html" target="_blank" rel="noopener">Política de Privacidad</a>, y autorizo el tratamiento de mis datos personales como se explica en ella.</span>
+                </label>
+
                 <button type="button" id="btn-registro" class="btn-primary" style="width: 100%; margin: 6px 0 20px;" onclick="manejarRegistro()">Crear mi cuenta</button>
 
                 <button type="button" class="btn-outline" style="width: 100%;" onclick="window.location.href='login.html'">Ya tengo una cuenta</button>
 
-                <p class="terms-text">Al registrarte, aceptas nuestros <a href="terminos.html">Términos de Servicio</a> y <a href="privacidad.html">Política de Privacidad</a></p>
             </form>
         </div>
 
@@ -115,6 +119,9 @@
         }
 
         const codigoReferido = new URLSearchParams(window.location.search).get('ref');
+        // Versión vigente de los Términos y la Política (la fecha de su "Última actualización").
+        // Si cambias esos textos de fondo, sube esta fecha para que quede registrado qué versión aceptó cada persona.
+        const VERSION_LEGAL = '2026-10-05';
 
         window.onload = async function () {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -132,13 +139,14 @@
             if (!nickname || !correo || !password) return mostrarError('Completa todos los campos.');
             if (password.length < 6) return mostrarError('La contraseña debe tener al menos 6 caracteres.');
             if (password !== password2) return mostrarError('Las contraseñas no coinciden.');
+            if (!document.getElementById('reg-acepto').checked) return mostrarError('Para crear tu cuenta debes aceptar los Términos de Servicio y la Política de Privacidad.');
 
             btn.disabled = true; btn.innerText = 'Creando cuenta...';
 
             const { data, error } = await supabaseClient.auth.signUp({
                 email: correo,
                 password: password,
-                options: { data: { nickname: nickname, ref: codigoReferido || undefined } }
+                options: { data: { nickname: nickname, ref: codigoReferido || undefined, version_terminos: VERSION_LEGAL } }
             });
 
             if (error) {

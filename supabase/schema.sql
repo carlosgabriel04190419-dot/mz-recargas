@@ -1108,3 +1108,48 @@ create policy "insertar_mis_pedidos" on public.pedidos
       or tipo = 'compra_diamantes'
     )
   );
+
+
+-- ---------- CONSTANCIA DE ACEPTACIÓN DE TÉRMINOS Y PRIVACIDAD ----------
+-- register.html exige marcar la casilla y manda la versión vigente como
+-- metadata "version_terminos". La fecha la pone el servidor (now()), no el
+-- navegador, para que el consentimiento se pueda demostrar. Las cuentas
+-- creadas antes de esto quedan con estas dos columnas en null.
+alter table public.perfiles add column acepto_terminos_at timestamptz;
+alter table public.perfiles add column version_terminos text;
+
+create or replace function public.manejar_nuevo_usuario()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_codigo text;
+  v_referido_por uuid;
+  v_version text;
+begin
+  loop
+    v_codigo := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
+    exit when not exists (select 1 from public.perfiles where codigo_referido = v_codigo);
+  end loop;
+
+  select id into v_referido_por from public.perfiles
+    where codigo_referido = upper(coalesce(new.raw_user_meta_data->>'ref', ''))
+    limit 1;
+
+  -- La fecha la pone el servidor; del cliente solo viene la versión (se
+  -- recorta a 20 caracteres y solo se guarda si realmente la mandó).
+  v_version := nullif(left(trim(coalesce(new.raw_user_meta_data->>'version_terminos', '')), 20), '');
+
+  insert into public.perfiles (id, nickname, codigo_referido, referido_por, acepto_terminos_at, version_terminos)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'nickname', split_part(new.email, '@', 1)),
+    v_codigo,
+    v_referido_por,
+    case when v_version is not null then now() end,
+    v_version
+  );
+  return new;
+end;
+$$;

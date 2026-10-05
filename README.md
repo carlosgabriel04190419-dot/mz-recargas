@@ -80,6 +80,12 @@ Los datos de acceso de cada cuenta **no** se guardan en la web: se los pasas tú
 - [x] **Paquetes y precios de "Tokens Evolutivos"** — 8 niveles (200 a 900 Fragmentos), precios propios de MZ'Recargas inspirados en un sitio de referencia que mandó el cliente.
 - [x] **Paquetes y precios de "Cajas de Tokens"** — 6 niveles (50 a 300 Cajas Evolutivas), precios propios de MZ'Recargas. También tiene un campo de "cantidad exacta" (S/ 0.48 por unidad, mínimo 20) para pedidos fuera de esos niveles fijos.
 - [ ] **Dominio propio** (opcional) — si el cliente compra uno, agrega un archivo `CNAME` con el dominio y configúralo en el registrador (igual que se hizo con CarzaD'Cross).
-- [ ] **Términos y Privacidad** (`terminos.html`, `privacidad.html`) — son una plantilla genérica marcada como tal en la propia página, conviene que las revise alguien con criterio legal antes de operar con pagos reales.
+- [~] **Términos y Privacidad** (`terminos.html`, `privacidad.html`) — reescritos (5 de octubre de 2026) para describir lo que el sitio hace de verdad y conforme a la Ley 29733 de Protección de Datos Personales y la normativa de consumo del Perú. **No son asesoría legal**: antes de operar a escala conviene que los revise un abogado peruano. Lo que falta, y que el texto no puede resolver solo:
+  - **Libro de Reclamaciones virtual**: obligatorio para tiendas en línea que venden a consumidores en Perú (con enlace visible en el sitio). Aún no existe en la web.
+  - **Identificar al titular del negocio** (nombre o razón social, RUC/DNI y domicilio). Hoy el sitio solo se presenta con el nombre comercial.
+  - **Registro del banco de datos personales** ante la Autoridad Nacional de Protección de Datos Personales (trámite gratuito en línea).
+  - Las cuentas ya registradas antes del 5/10/2026 no tienen constancia de consentimiento (`perfiles.acepto_terminos_at` es `null` para ellas).
+  - Vender cuentas de Free Fire va contra los términos de Garena; los Términos de MZ'Recargas advierten ese riesgo al comprador.
+  - Si cambias el fondo de los textos legales, sube `VERSION_LEGAL` en `register.html` para que quede registrado qué versión aceptó cada persona.
 - [ ] **Anti-bots / captcha** en login y registro — no se incluyó en esta primera versión (CarzaD'Cross usa Cloudflare Turnstile, que requiere una cuenta de Cloudflare propia para este dominio). Se puede agregar después si empieza a haber spam de registros.
 - [x] **Panel de administración** — `admin.html`, ver sección de arriba.
