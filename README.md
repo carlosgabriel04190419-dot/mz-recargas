@@ -23,6 +23,9 @@ compartir usuarios ni datos).
 2. **Confirmas el pago** desde `admin.html` (pestaña Pedidos → "Confirmar pago") — un trigger acredita el saldo automáticamente.
 3. El usuario compra un paquete con su saldo (desde cualquiera de los catálogos: "Recargas Ilimitadas", "Promo Primera Vez", "Cajas de Tokens" o "Tokens Evolutivos") → se descuenta al instante, el pedido queda `confirmado` (pagado), y también se abre WhatsApp avisándote qué paquete compró y su ID de Free Fire, a la espera de que entregues lo comprado en el juego.
 4. Cuando ya entregaste los diamantes, lo marcas como `completado` desde `admin.html` ("Marcar entregado").
+5. Si cancelas una compra que ya estaba cobrada (`confirmado`, aún sin entregar), el sistema le **devuelve el saldo** al cliente y le quita los puntos de esa compra. Un pedido `completado` o `cancelado` ya no se puede reabrir ni cambiar (así no se puede acreditar ni devolver dos veces).
+
+**Los precios los valida el servidor**: aunque alguien manipule el navegador, la base de datos solo acepta una compra si el monto coincide con el precio real del paquete (o con el precio de la promo del día si está activa), o con S/ 0.48 × cantidad en las cajas de cantidad exacta. Si cambias un precio mientras un cliente tiene la página abierta, a ese cliente le sale un aviso y se actualiza la lista sola.
 
 ### Panel de administración (`admin.html`)
 

@@ -379,16 +379,21 @@
             if ((p.tipo === 'compra_diamantes' || p.tipo === 'compra_cuenta') && p.estado === 'confirmado') {
                 btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','completado')">Marcar entregado</button>`);
             }
-            // Una compra de cuenta ya está cobrada y la cuenta vendida: no se cancela desde aquí.
-            if ((p.estado === 'pendiente' || p.estado === 'confirmado') && p.tipo !== 'compra_cuenta') {
-                btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','cancelado')" style="color:var(--error); border-color:var(--error);">Cancelar</button>`);
+            if (p.estado === 'pendiente' || p.estado === 'confirmado') {
+                btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','cancelado','${p.tipo}','${p.estado}')" style="color:var(--error); border-color:var(--error);">Cancelar</button>`);
             }
             return btns.join(' ') || '—';
         }
 
-        async function cambiarEstadoPedido(id, nuevoEstado) {
+        async function cambiarEstadoPedido(id, nuevoEstado, tipo, estadoActual) {
             const etiquetas = { confirmado: '¿Confirmar este pago?', completado: '¿Marcar este pedido como entregado?', cancelado: '¿Cancelar este pedido?' };
-            if (!confirm(etiquetas[nuevoEstado] || '¿Continuar?')) return;
+            let pregunta = etiquetas[nuevoEstado] || '¿Continuar?';
+            // Una compra ya cobrada (confirmada) que se cancela devuelve el saldo al cliente.
+            if (nuevoEstado === 'cancelado' && estadoActual === 'confirmado' && (tipo === 'compra_diamantes' || tipo === 'compra_cuenta')) {
+                pregunta = '¿Cancelar este pedido? Se le devuelve el saldo al cliente.';
+                if (tipo === 'compra_cuenta') pregunta += '\n\nLa cuenta seguirá como "Agotada": si quieres venderla de nuevo, ponla como Disponible en la pestaña Cuentas.';
+            }
+            if (!confirm(pregunta)) return;
 
             const { error } = await supabaseClient.rpc('admin_actualizar_pedido', { p_id: id, p_estado: nuevoEstado, p_nota: null });
             if (error) {

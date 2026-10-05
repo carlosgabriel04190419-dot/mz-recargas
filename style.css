@@ -570,17 +570,21 @@ footer { background-color: var(--bg-footer); border-top: 1px solid var(--borde);
    desbordaba. Se compacta: logo más chico, saldo sin ícono y el usuario
    queda solo como avatar. */
 @media (max-width: 560px) {
-    .navbar { padding: 10px 12px; gap: 6px; }
-    .logo-img { width: 32px; height: 32px; }
-    .logo-text { font-size: 16px; }
-    .nav-logo-premium { gap: 6px; min-width: 0; }
-    .nav-actions { gap: 6px; }
-    .nav-actions-conectado { gap: 6px !important; }
-    .nav-mobile-toggle { font-size: 22px; padding: 4px; }
-    .theme-toggle { width: 34px; height: 34px; }
-    .balance-pill { padding: 5px 11px; font-size: 13px; white-space: nowrap; }
+    .navbar { padding: 10px 10px; gap: 4px; }
+    .logo-img { width: 30px; height: 30px; }
+    .logo-text { font-size: 15px; letter-spacing: 0; white-space: nowrap; }
+    .nav-logo-premium { gap: 5px; flex-shrink: 0; }
+    .nav-actions { gap: 4px; }
+    .nav-actions-conectado { gap: 4px !important; }
+    .nav-mobile-toggle { font-size: 22px; padding: 2px; line-height: 1; }
+    .theme-toggle { width: 32px; height: 32px; }
+    .balance-pill { padding: 5px 9px; font-size: 12.5px; white-space: nowrap; }
     .balance-pill .material-icons { display: none; }
     .nav-user-btn { padding: 3px; }
     .nav-user-btn [data-nav-nickname] { display: none; }
-    .btn-sm { white-space: nowrap; }
+    .nav-actions .btn-sm { white-space: nowrap; padding: 7px 11px; font-size: 12.5px; }
+}
+/* Pantallas diminutas (320px): solo el ícono del logo, el texto no cabe. */
+@media (max-width: 340px) {
+    .logo-text { display: none; }
 }

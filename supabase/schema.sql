@@ -948,3 +948,163 @@ begin
       (select coalesce(sum(saldo), 0) from public.perfiles);
 end;
 $$;
+
+-- ---------- PRECIO VALIDADO EN EL SERVIDOR ----------
+-- Antes, el trigger descontaba el "monto" que mandara el navegador sin
+-- compararlo con el precio real: alguien con sesión podía comprar un paquete
+-- caro mandando monto 0.01. Ahora el precio se valida contra la base de datos
+-- (los clientes legítimos mandan exactamente estos precios, así que siguen
+-- funcionando igual). Reemplaza la versión de más arriba.
+create or replace function public.procesar_nuevo_pedido()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  saldo_actual numeric(10,2);
+  v_paquete public.paquetes_ff%rowtype;
+  v_precio_valido boolean;
+  v_cantidad integer;
+begin
+  if new.tipo = 'compra_diamantes' then
+    if new.id_jugador_ff is null or length(trim(new.id_jugador_ff)) = 0 then
+      raise exception 'Falta el ID del jugador de Free Fire';
+    end if;
+
+    if new.paquete_id is not null then
+      -- Paquete normal: el monto tiene que ser el precio de lista, o el precio
+      -- de la promo del día si esa promo está activa y es justo ese paquete.
+      select * into v_paquete from public.paquetes_ff where id = new.paquete_id;
+      if not found or not v_paquete.activo then
+        raise exception 'Este paquete ya no está disponible';
+      end if;
+
+      v_precio_valido := (new.monto = v_paquete.precio);
+      if not v_precio_valido then
+        select coalesce(pr.activo and pr.paquete_id = new.paquete_id and pr.precio_promo = new.monto, false)
+          into v_precio_valido
+          from public.promo_diamantes pr where pr.id = 1;
+        v_precio_valido := coalesce(v_precio_valido, false);
+      end if;
+      if not v_precio_valido then
+        raise exception 'El precio de este paquete cambió. Recarga la página e inténtalo de nuevo.';
+      end if;
+    else
+      -- Cantidad exacta (solo Cajas de Tokens): S/ 0.48 por caja, mínimo 20.
+      -- La cantidad viaja en nota_admin ("Cantidad personalizada: N Cajas Evolutivas")
+      -- y el monto tiene que cuadrar exactamente con esa cantidad.
+      if new.nota_admin is null or new.nota_admin !~ '^Cantidad personalizada: [0-9]{1,6} Cajas Evolutivas$' then
+        raise exception 'Compra no válida';
+      end if;
+      v_cantidad := substring(new.nota_admin from '^Cantidad personalizada: ([0-9]{1,6}) Cajas Evolutivas$')::integer;
+      if v_cantidad < 20 or new.monto <> round(v_cantidad * 0.48, 2) then
+        raise exception 'Compra no válida';
+      end if;
+    end if;
+
+    select saldo into saldo_actual
+      from public.perfiles where id = new.usuario_id for update;
+
+    if saldo_actual < new.monto then
+      raise exception 'Saldo insuficiente. Recarga tu saldo antes de comprar.';
+    end if;
+
+    update public.perfiles
+      set saldo = saldo - new.monto,
+          puntos = puntos + floor(new.monto)::integer
+      where id = new.usuario_id;
+    new.estado := 'confirmado';
+
+    perform public.otorgar_bono_referido(new.usuario_id, new.id);
+  end if;
+
+  return new;
+end;
+$$;
+
+-- ---------- REEMBOLSO AL CANCELAR UNA COMPRA YA COBRADA ----------
+-- Si el admin cancela una compra (diamantes o cuenta) que estaba "confirmada"
+-- (cobrada, pero aún sin entregar), se le devuelve el saldo al cliente y se le
+-- quitan los puntos que había ganado por esa compra. (El bono de referidos
+-- ya otorgado no se revierte.) Reemplaza la versión de más arriba.
+create or replace function public.acreditar_recarga_confirmada()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if new.tipo = 'recarga_saldo'
+     and new.estado = 'confirmado'
+     and old.estado is distinct from 'confirmado' then
+    update public.perfiles
+      set saldo = saldo + new.monto,
+          puntos = puntos + floor(new.monto)::integer
+      where id = new.usuario_id;
+
+    perform public.otorgar_bono_referido(new.usuario_id, new.id);
+
+  elsif new.tipo in ('compra_diamantes', 'compra_cuenta')
+        and old.estado = 'confirmado'
+        and new.estado = 'cancelado' then
+    update public.perfiles
+      set saldo = saldo + new.monto,
+          puntos = greatest(0, puntos - floor(new.monto)::integer)
+      where id = new.usuario_id;
+  end if;
+  return new;
+end;
+$$;
+
+-- ---------- ESTADOS DE UN PEDIDO: SOLO TRANSICIONES VÁLIDAS ----------
+-- pendiente -> confirmado | cancelado,  confirmado -> completado | cancelado.
+-- "completado" y "cancelado" son finales. Sin esto, un pedido se podía volver a
+-- "pendiente"/"confirmado" y acreditar (o devolver) el saldo dos veces.
+-- Reemplaza la versión de más arriba.
+create or replace function public.admin_actualizar_pedido(p_id uuid, p_estado text, p_nota text default null)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_actual text;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if p_estado is null then
+    raise exception 'Falta el estado del pedido';
+  end if;
+
+  select estado into v_actual from public.pedidos where id = p_id for update;
+  if not found then
+    raise exception 'Ese pedido no existe';
+  end if;
+
+  if p_estado <> v_actual and not (
+       (v_actual = 'pendiente'  and p_estado in ('confirmado', 'cancelado'))
+    or (v_actual = 'confirmado' and p_estado in ('completado', 'cancelado'))
+  ) then
+    raise exception 'No se puede pasar un pedido de "%" a "%"', v_actual, p_estado;
+  end if;
+
+  update public.pedidos
+    set estado = p_estado,
+        nota_admin = coalesce(p_nota, nota_admin)
+    where id = p_id;
+end;
+$$;
+
+-- ---------- INSERCIÓN DIRECTA DESDE EL SITIO, MÁS ESTRICTA ----------
+-- Solo recargas "pendientes" (las confirma el admin) o compras de diamantes
+-- (que valida el trigger de arriba), y sin colgarse de una cuenta ajena.
+-- Reemplaza la policy de más arriba.
+drop policy "insertar_mis_pedidos" on public.pedidos;
+create policy "insertar_mis_pedidos" on public.pedidos
+  for insert with check (
+    auth.uid() = usuario_id
+    and cuenta_id is null
+    and (
+      (tipo = 'recarga_saldo' and estado = 'pendiente')
+      or tipo = 'compra_diamantes'
+    )
+  );
