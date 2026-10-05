@@ -49,6 +49,18 @@ Ideas tomadas de CarzaD'Cross pero con estilo propio (nada de morado ni de sus t
 - **Promo del día**: oferta con precio especial sobre un paquete de diamantes ya existente ("Recargas Ilimitadas" o "Promo Primera Vez"). La configuras tú desde `admin.html` → pestaña "Promo del día" (eliges el paquete, el precio y si está activa). Mientras esté activa, aparece como banner + popup (una vez al día por navegador) en ese catálogo — comprarla no crea un paquete nuevo, solo cobra el precio especial sobre el paquete real.
 - **Asistente**: burbuja de chat flotante en todas las páginas (menos `admin.html`), con preguntas sugeridas y respuestas predeterminadas (no es IA de verdad, es un diccionario de palabras clave en `sesion.js` — `ASISTENTE_FAQ`) para no depender de ninguna API externa ni tener costo por uso. Si no reconoce la pregunta, invita a escribir por WhatsApp.
 
+### Programa de referidos
+
+Cada cuenta tiene un código corto propio (`perfiles.codigo_referido`, se genera solo al registrarse). En `perfil.html` hay una tarjeta "Invita y gana" con el link listo para copiar y compartir (`register.html?ref=CODIGO`). Si alguien se registra con ese link, queda guardado quién lo invitó (`perfiles.referido_por`), y la PRIMERA vez que esa persona tiene un pago de verdad (recarga confirmada o compra), tanto el invitado como quien invitó ganan 20 puntos cada uno — no se premia solo por registrarse, para que no se pueda inflar con cuentas falsas. La lógica vive en `otorgar_bono_referido()`, enganchada a los mismos triggers que ya movían el saldo y los puntos.
+
+### Catálogo de cuentas de Free Fire
+
+Quinto catálogo ("Cuentas Free Fire", banner `banner-cuentas.jpg`) para vender cuentas ya armadas. Se maneja desde `admin.html` → pestaña **Cuentas**: creas una cuenta con título, características (una por línea, salen con ✓ en la tarjeta), precio y estado (Disponible / Agotada); puedes editarla, marcarla agotada/disponible a mano o eliminarla (solo si nunca se vendió).
+
+Cuando un cliente le da "Comprar", pasa todo en una sola operación (`comprar_cuenta()`): se descuenta el precio de su saldo, se crea un pedido `compra_cuenta` ya confirmado, la cuenta queda **Agotada** al instante (si dos personas compran a la vez, a la segunda le dice que ya no está disponible) y se abre WhatsApp con un mensaje armado ("Compré la cuenta X por S/ Y, pedido #...") para que le pases los datos de acceso. El pedido te aparece en la pestaña Pedidos como "Cuenta"; cuando ya le entregaste los datos, le das "Marcar entregado". El precio siempre sale de la base de datos, no del navegador.
+
+Los datos de acceso de cada cuenta **no** se guardan en la web: se los pasas tú por WhatsApp.
+
 ## Puesta en marcha (una sola vez)
 
 1. ✅ **Base de datos**: ya aplicado — `supabase/schema.sql` está corrido en el proyecto de Supabase de MZ'Recargas (tablas, RLS y triggers listos, con revisión de seguridad hecha con el Advisor de Supabase).

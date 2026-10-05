@@ -588,3 +588,363 @@ revoke execute on function public.admin_obtener_promo() from public;
 revoke execute on function public.admin_guardar_promo(integer, numeric, boolean) from public;
 grant execute on function public.admin_obtener_promo() to authenticated;
 grant execute on function public.admin_guardar_promo(integer, numeric, boolean) to authenticated;
+
+-- ---------- PROGRAMA DE REFERIDOS ----------
+-- Código corto propio de cada cuenta (para compartir en el link) y a quién
+-- refirió, si vino de un link de invitación (register.html?ref=CODIGO).
+alter table public.perfiles add column codigo_referido text unique;
+alter table public.perfiles add column referido_por uuid references public.perfiles(id);
+
+-- Reemplaza la versión original de más arriba: ahora también genera el
+-- código corto y guarda quién invitó (register.html manda el código como
+-- metadata "ref" al registrarse).
+create or replace function public.manejar_nuevo_usuario()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_codigo text;
+  v_referido_por uuid;
+begin
+  loop
+    v_codigo := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
+    exit when not exists (select 1 from public.perfiles where codigo_referido = v_codigo);
+  end loop;
+
+  select id into v_referido_por from public.perfiles
+    where codigo_referido = upper(coalesce(new.raw_user_meta_data->>'ref', ''))
+    limit 1;
+
+  insert into public.perfiles (id, nickname, codigo_referido, referido_por)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'nickname', split_part(new.email, '@', 1)),
+    v_codigo,
+    v_referido_por
+  );
+  return new;
+end;
+$$;
+
+-- Bono de referidos: +20 puntos para el referido y +20 para quien lo invitó,
+-- pero solo la PRIMERA vez que el referido tiene un pago de verdad (recarga
+-- confirmada o compra) — así no se puede farmear solo creando cuentas.
+-- No tiene GRANT a nadie a propósito: solo la deben llamar los triggers de
+-- abajo (si un cliente pudiera llamarla directo por la API, cualquiera se
+-- podría regalar puntos pasando cualquier usuario_id/pedido_id).
+create function public.otorgar_bono_referido(p_usuario_id uuid, p_pedido_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_referido_por uuid;
+  v_tuvo_otro_pago boolean;
+begin
+  select referido_por into v_referido_por from public.perfiles where id = p_usuario_id;
+  if v_referido_por is null then
+    return;
+  end if;
+
+  select exists(
+    select 1 from public.pedidos
+    where usuario_id = p_usuario_id and estado in ('confirmado', 'completado') and id <> p_pedido_id
+  ) into v_tuvo_otro_pago;
+
+  if v_tuvo_otro_pago then
+    return;
+  end if;
+
+  update public.perfiles set puntos = puntos + 20 where id = p_usuario_id;
+  update public.perfiles set puntos = puntos + 20 where id = v_referido_por;
+end;
+$$;
+
+revoke execute on function public.otorgar_bono_referido(uuid, uuid) from public;
+
+-- Reemplaza las versiones de más arriba: además de sumar los puntos
+-- normales, engancha el bono de referidos en los mismos dos momentos.
+create or replace function public.procesar_nuevo_pedido()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  saldo_actual numeric(10,2);
+begin
+  if new.tipo = 'compra_diamantes' then
+    if new.id_jugador_ff is null or length(trim(new.id_jugador_ff)) = 0 then
+      raise exception 'Falta el ID del jugador de Free Fire';
+    end if;
+
+    select saldo into saldo_actual
+      from public.perfiles where id = new.usuario_id for update;
+
+    if saldo_actual < new.monto then
+      raise exception 'Saldo insuficiente. Recarga tu saldo antes de comprar.';
+    end if;
+
+    update public.perfiles
+      set saldo = saldo - new.monto,
+          puntos = puntos + floor(new.monto)::integer
+      where id = new.usuario_id;
+    new.estado := 'confirmado';
+
+    perform public.otorgar_bono_referido(new.usuario_id, new.id);
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.acreditar_recarga_confirmada()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if new.tipo = 'recarga_saldo'
+     and new.estado = 'confirmado'
+     and old.estado is distinct from 'confirmado' then
+    update public.perfiles
+      set saldo = saldo + new.monto,
+          puntos = puntos + floor(new.monto)::integer
+      where id = new.usuario_id;
+
+    perform public.otorgar_bono_referido(new.usuario_id, new.id);
+  end if;
+  return new;
+end;
+$$;
+
+-- ---------- CATÁLOGO DE CUENTAS DE FREE FIRE ----------
+-- Cada cuenta es única (una sola unidad): se publica desde admin.html y,
+-- cuando alguien la compra, queda "agotado" en el mismo instante.
+create table public.cuentas_ff (
+  id serial primary key,
+  titulo text not null check (length(trim(titulo)) > 0),
+  descripcion text not null default '',
+  precio numeric(10,2) not null check (precio > 0),
+  estado text not null default 'disponible' check (estado in ('disponible', 'agotado')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.cuentas_ff enable row level security;
+
+create policy "ver_cuentas" on public.cuentas_ff for select using (true);
+
+-- Solo lectura pública y solo de estas columnas; todo lo demás (crear,
+-- editar, vender) pasa por las funciones de más abajo.
+revoke all on public.cuentas_ff from anon, authenticated;
+grant select (id, titulo, descripcion, precio, estado, created_at) on public.cuentas_ff to anon, authenticated;
+
+-- Los pedidos ahora pueden ser de tipo "compra_cuenta" y guardan qué cuenta fue.
+alter table public.pedidos drop constraint pedidos_tipo_check;
+alter table public.pedidos add constraint pedidos_tipo_check
+  check (tipo in ('recarga_saldo', 'compra_diamantes', 'compra_cuenta'));
+alter table public.pedidos add column cuenta_id integer references public.cuentas_ff(id) on delete set null;
+
+-- Desde el sitio solo se pueden insertar recargas y compras de diamantes
+-- directo; las compras de cuentas SOLO por comprar_cuenta() (así el precio
+-- sale de la base de datos y no de lo que mande el navegador).
+drop policy "insertar_mis_pedidos" on public.pedidos;
+create policy "insertar_mis_pedidos" on public.pedidos
+  for insert with check (auth.uid() = usuario_id and tipo in ('recarga_saldo', 'compra_diamantes'));
+
+-- Compra de una cuenta con saldo. Todo en una sola transacción y con la fila
+-- de la cuenta bloqueada: si dos personas le dan "Comprar" a la vez, la
+-- segunda recibe "ya no está disponible" en vez de venderse dos veces.
+create function public.comprar_cuenta(p_cuenta_id integer)
+returns table (pedido_id uuid, titulo text, precio numeric)
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_cuenta public.cuentas_ff%rowtype;
+  v_saldo numeric(10,2);
+  v_pedido uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Debes iniciar sesión para comprar';
+  end if;
+
+  select * into v_cuenta from public.cuentas_ff where id = p_cuenta_id for update;
+  if not found then
+    raise exception 'Esta cuenta no existe';
+  end if;
+  if v_cuenta.estado <> 'disponible' then
+    raise exception 'Esta cuenta ya no está disponible';
+  end if;
+
+  select saldo into v_saldo from public.perfiles where id = auth.uid() for update;
+  if v_saldo is null then
+    raise exception 'No se encontró tu perfil';
+  end if;
+  if v_saldo < v_cuenta.precio then
+    raise exception 'Saldo insuficiente. Recarga tu saldo antes de comprar.';
+  end if;
+
+  update public.perfiles
+    set saldo = saldo - v_cuenta.precio,
+        puntos = puntos + floor(v_cuenta.precio)::integer
+    where id = auth.uid();
+
+  insert into public.pedidos (usuario_id, tipo, cuenta_id, monto, metodo_pago, estado, nota_admin)
+  values (auth.uid(), 'compra_cuenta', v_cuenta.id, v_cuenta.precio, 'saldo', 'confirmado', 'Cuenta: ' || v_cuenta.titulo)
+  returning id into v_pedido;
+
+  update public.cuentas_ff set estado = 'agotado' where id = v_cuenta.id;
+
+  perform public.otorgar_bono_referido(auth.uid(), v_pedido);
+
+  return query select v_pedido, v_cuenta.titulo, v_cuenta.precio;
+end;
+$$;
+
+revoke execute on function public.comprar_cuenta(integer) from public;
+grant execute on function public.comprar_cuenta(integer) to authenticated;
+
+-- Admin: listar, crear/editar y eliminar cuentas.
+create function public.admin_listar_cuentas()
+returns table (
+  id integer,
+  titulo text,
+  descripcion text,
+  precio numeric,
+  estado text,
+  created_at timestamptz
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select c.id, c.titulo, c.descripcion, c.precio, c.estado, c.created_at
+    from public.cuentas_ff c
+    order by (c.estado = 'disponible') desc, c.id desc;
+end;
+$$;
+
+-- Crear (p_id null) o editar una cuenta. Devuelve el id.
+create function public.admin_guardar_cuenta(
+  p_id integer,
+  p_titulo text,
+  p_descripcion text,
+  p_precio numeric,
+  p_estado text
+)
+returns integer
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_id integer;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if p_titulo is null or length(trim(p_titulo)) = 0 then
+    raise exception 'Falta el título de la cuenta';
+  end if;
+  if p_precio is null or p_precio <= 0 then
+    raise exception 'El precio debe ser mayor a 0';
+  end if;
+
+  if p_id is null then
+    insert into public.cuentas_ff (titulo, descripcion, precio, estado)
+    values (trim(p_titulo), coalesce(p_descripcion, ''), p_precio, coalesce(p_estado, 'disponible'))
+    returning id into v_id;
+  else
+    update public.cuentas_ff
+      set titulo = trim(p_titulo),
+          descripcion = coalesce(p_descripcion, ''),
+          precio = p_precio,
+          estado = coalesce(p_estado, estado)
+      where id = p_id;
+    v_id := p_id;
+  end if;
+
+  return v_id;
+end;
+$$;
+
+-- Eliminar solo si nunca se vendió (una vendida queda como historial: se
+-- marca "agotado" y listo).
+create function public.admin_eliminar_cuenta(p_id integer)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if exists (select 1 from public.pedidos where cuenta_id = p_id) then
+    raise exception 'Esta cuenta ya tiene una compra registrada; márcala como agotada en vez de eliminarla';
+  end if;
+  delete from public.cuentas_ff where id = p_id;
+end;
+$$;
+
+revoke execute on function public.admin_listar_cuentas() from public;
+revoke execute on function public.admin_guardar_cuenta(integer, text, text, numeric, text) from public;
+revoke execute on function public.admin_eliminar_cuenta(integer) from public;
+grant execute on function public.admin_listar_cuentas() to authenticated;
+grant execute on function public.admin_guardar_cuenta(integer, text, text, numeric, text) to authenticated;
+grant execute on function public.admin_eliminar_cuenta(integer) to authenticated;
+
+-- Reemplazan las versiones de más arriba para que contemplen las cuentas:
+-- el ticker decía "compró un paquete" y el resumen del admin no contaba las
+-- cuentas pagadas por entregar.
+create or replace function public.compras_recientes(p_limite integer default 12)
+returns table (nickname text, texto text, creado_hace timestamptz)
+language sql
+security definer set search_path = public
+stable
+as $$
+  select
+    left(pf.nickname, 2) || repeat('*', greatest(length(pf.nickname) - 2, 2)),
+    case
+      when pe.tipo = 'recarga_saldo' then 'recargó S/ ' || to_char(pe.monto, 'FM999999990.00')
+      when pe.tipo = 'compra_cuenta' then 'compró una cuenta de Free Fire'
+      else 'compró ' || coalesce(pa.nombre, 'un paquete')
+    end,
+    pe.created_at
+  from public.pedidos pe
+  join public.perfiles pf on pf.id = pe.usuario_id
+  left join public.paquetes_ff pa on pa.id = pe.paquete_id
+  where pe.estado in ('confirmado', 'completado')
+  order by pe.created_at desc
+  limit greatest(1, least(coalesce(p_limite, 12), 30));
+$$;
+
+create or replace function public.admin_estadisticas()
+returns table (
+  pedidos_pendientes bigint,
+  pedidos_por_entregar bigint,
+  total_usuarios bigint,
+  saldo_total numeric
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select
+      (select count(*) from public.pedidos where tipo = 'recarga_saldo' and estado = 'pendiente'),
+      (select count(*) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado = 'confirmado'),
+      (select count(*) from public.perfiles),
+      (select coalesce(sum(saldo), 0) from public.perfiles);
+end;
+$$;

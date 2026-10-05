@@ -54,6 +54,7 @@
             <button class="admin-tab activo" data-tab="dashboard" onclick="cambiarPestana('dashboard')"><span class="material-icons">dashboard</span> Resumen</button>
             <button class="admin-tab" data-tab="pedidos" onclick="cambiarPestana('pedidos')"><span class="material-icons">receipt_long</span> Pedidos</button>
             <button class="admin-tab" data-tab="paquetes" onclick="cambiarPestana('paquetes')"><span class="material-icons">inventory_2</span> Paquetes</button>
+            <button class="admin-tab" data-tab="cuentas" onclick="cambiarPestana('cuentas')"><span class="material-icons">badge</span> Cuentas</button>
             <button class="admin-tab" data-tab="usuarios" onclick="cambiarPestana('usuarios')"><span class="material-icons">group</span> Usuarios</button>
             <button class="admin-tab" data-tab="promo" onclick="cambiarPestana('promo')"><span class="material-icons">local_fire_department</span> Promo del día</button>
         </div>
@@ -121,6 +122,30 @@
                     </thead>
                     <tbody id="tabla-admin-paquetes-body">
                         <tr><td colspan="9" class="tabla-vacia">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== CUENTAS ===== -->
+        <div class="admin-vista" id="vista-cuentas" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom: 16px;">
+                <p style="color: var(--texto-secundario); font-size: 13.5px; max-width: 560px;">Publica cuentas de Free Fire para vender. Cuando un cliente compra una, queda <strong>Agotada</strong> sola y te llega el pedido aquí (pestaña Pedidos) y por WhatsApp para que le pases los datos.</p>
+                <button class="btn-primary btn-sm" onclick="abrirModalCuentaAdmin()"><span class="material-icons" style="font-size:18px; vertical-align:-4px;">add</span> Nueva cuenta</button>
+            </div>
+            <div class="card" style="overflow-x: auto; padding: 0;">
+                <table class="tabla-pedidos" id="tabla-admin-cuentas">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Características</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-admin-cuentas-body">
+                        <tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -218,6 +243,37 @@
         </div>
     </div>
 
+    <!-- Modal: crear/editar cuenta -->
+    <div class="modal-overlay" id="modal-cuenta-admin">
+        <div class="modal-box" style="max-width: 480px;">
+            <span class="material-icons close-btn" onclick="cerrarModalCuentaAdmin()">close</span>
+            <div class="modal-header">
+                <h2 id="modal-cuenta-admin-titulo">Nueva cuenta</h2>
+                <p>Se publica al instante en el catálogo "Cuentas Free Fire".</p>
+            </div>
+            <div id="modal-cuenta-admin-msg" class="msg-box error"></div>
+            <input type="hidden" id="ct-id">
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Título</label>
+            <input type="text" id="ct-titulo" class="input-form" placeholder="Ej: Cuenta Nivel 72 - Heroico" maxlength="120">
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Características <span style="font-weight:400; color:var(--texto-tenue);">(una por línea)</span></label>
+            <textarea id="ct-descripcion" class="input-form" rows="6" style="resize: vertical; line-height:1.5;" placeholder="Nivel 72&#10;Rango Heroico&#10;12 skins de arma&#10;Vinculada a Facebook"></textarea>
+            <div style="display:flex; gap:12px;">
+                <div style="flex:1;">
+                    <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Precio (S/)</label>
+                    <input type="number" id="ct-precio" class="input-form" min="0" step="0.01">
+                </div>
+                <div style="flex:1;">
+                    <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Estado</label>
+                    <select id="ct-estado" class="input-form">
+                        <option value="disponible">Disponible</option>
+                        <option value="agotado">Agotada</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="btn-primary" id="btn-guardar-cuenta" style="width:100%;" onclick="guardarCuentaAdmin()">Guardar</button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="sesion.js"></script>
     <script>
@@ -257,6 +313,7 @@
 
             if (tab === 'pedidos') cargarPedidos();
             else if (tab === 'paquetes') cargarPaquetes();
+            else if (tab === 'cuentas') cargarCuentasAdmin();
             else if (tab === 'usuarios') cargarUsuarios();
             else if (tab === 'dashboard') cargarEstadisticas();
             else if (tab === 'promo') cargarPromo();
@@ -291,9 +348,11 @@
 
             cuerpo.innerHTML = data.map(p => {
                 const fecha = new Date(p.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                const tipoTxt = p.tipo === 'recarga_saldo' ? 'Recarga' : 'Compra';
+                const tipoTxt = p.tipo === 'recarga_saldo' ? 'Recarga' : p.tipo === 'compra_cuenta' ? 'Cuenta' : 'Compra';
                 let detalle = '—';
-                if (p.tipo === 'compra_diamantes') {
+                if (p.tipo === 'compra_cuenta') {
+                    detalle = escHtml((p.nota_admin || 'Cuenta Free Fire').replace(/^Cuenta: /, ''));
+                } else if (p.tipo === 'compra_diamantes') {
                     const nombrePaquete = p.paquete_nombre || (p.nota_admin ? p.nota_admin.replace('Cantidad personalizada: ', '') : 'Paquete');
                     detalle = escHtml(nombrePaquete) + (p.id_jugador_ff ? `<br><span style="color:var(--texto-tenue); font-size:12px;">ID: ${escHtml(p.id_jugador_ff)}</span>` : '');
                 }
@@ -306,7 +365,7 @@
                     <td>${formatearSoles(p.monto)}</td>
                     <td style="text-transform:capitalize;">${escHtml(p.metodo_pago)}</td>
                     <td><span class="estado-pill estado-${p.estado}">${ETIQUETAS_ESTADO[p.estado] || p.estado}</span></td>
-                    <td style="max-width:160px; font-size:12.5px; color:var(--texto-secundario);">${escHtml(p.nota_admin || '—')}</td>
+                    <td style="max-width:160px; font-size:12.5px; color:var(--texto-secundario);">${escHtml(p.tipo === 'compra_cuenta' ? '—' : (p.nota_admin || '—'))}</td>
                     <td style="white-space:nowrap;">${acciones}</td>
                 </tr>`;
             }).join('');
@@ -317,10 +376,11 @@
             if (p.tipo === 'recarga_saldo' && p.estado === 'pendiente') {
                 btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','confirmado')">Confirmar pago</button>`);
             }
-            if (p.tipo === 'compra_diamantes' && p.estado === 'confirmado') {
+            if ((p.tipo === 'compra_diamantes' || p.tipo === 'compra_cuenta') && p.estado === 'confirmado') {
                 btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','completado')">Marcar entregado</button>`);
             }
-            if (p.estado === 'pendiente' || p.estado === 'confirmado') {
+            // Una compra de cuenta ya está cobrada y la cuenta vendida: no se cancela desde aquí.
+            if ((p.estado === 'pendiente' || p.estado === 'confirmado') && p.tipo !== 'compra_cuenta') {
                 btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','cancelado')" style="color:var(--error); border-color:var(--error);">Cancelar</button>`);
             }
             return btns.join(' ') || '—';
@@ -431,6 +491,124 @@
 
             cerrarModalPaquete();
             await cargarPaquetes();
+        }
+
+        // ---------- CUENTAS ----------
+        let cuentasAdmin = [];
+
+        async function cargarCuentasAdmin() {
+            const cuerpo = document.getElementById('tabla-admin-cuentas-body');
+            cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>`;
+
+            const { data, error } = await supabaseClient.rpc('admin_listar_cuentas');
+            if (error) {
+                cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">No se pudo cargar las cuentas.</td></tr>`;
+                return;
+            }
+            cuentasAdmin = data || [];
+            if (cuentasAdmin.length === 0) {
+                cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">Todavía no has publicado cuentas. Dale a "Nueva cuenta".</td></tr>`;
+                return;
+            }
+
+            cuerpo.innerHTML = cuentasAdmin.map(c => {
+                const disponible = c.estado === 'disponible';
+                const lineas = String(c.descripcion || '').split('\n').map(l => l.trim()).filter(Boolean);
+                const resumen = lineas.slice(0, 3).map(escHtml).join('<br>') + (lineas.length > 3 ? `<br><span style="color:var(--texto-tenue);">+${lineas.length - 3} más</span>` : '');
+                return `<tr>
+                    <td style="font-weight:700;">${escHtml(c.titulo)}</td>
+                    <td style="font-size:12.5px; color:var(--texto-secundario); min-width:180px;">${resumen || '—'}</td>
+                    <td>${formatearSoles(c.precio)}</td>
+                    <td><span class="estado-pill ${disponible ? 'estado-confirmado' : 'estado-cancelado'}">${disponible ? 'Disponible' : 'Agotada'}</span></td>
+                    <td style="white-space:nowrap;">
+                        <button class="btn-outline btn-sm" onclick="abrirModalCuentaAdmin(${c.id})">Editar</button>
+                        <button class="btn-outline btn-sm" onclick="alternarEstadoCuenta(${c.id})">${disponible ? 'Marcar agotada' : 'Marcar disponible'}</button>
+                        <button class="btn-outline btn-sm" onclick="eliminarCuentaAdmin(${c.id})" style="color:var(--error); border-color:var(--error);">Eliminar</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function abrirModalCuentaAdmin(id) {
+            document.getElementById('modal-cuenta-admin-msg').style.display = 'none';
+            const cuenta = id ? cuentasAdmin.find(c => c.id === id) : null;
+
+            document.getElementById('modal-cuenta-admin-titulo').textContent = cuenta ? 'Editar cuenta' : 'Nueva cuenta';
+            document.getElementById('ct-id').value = cuenta ? cuenta.id : '';
+            document.getElementById('ct-titulo').value = cuenta ? cuenta.titulo : '';
+            document.getElementById('ct-descripcion').value = cuenta ? cuenta.descripcion : '';
+            document.getElementById('ct-precio').value = cuenta ? cuenta.precio : '';
+            document.getElementById('ct-estado').value = cuenta ? cuenta.estado : 'disponible';
+
+            document.getElementById('modal-cuenta-admin').classList.add('abierto');
+        }
+
+        function cerrarModalCuentaAdmin() {
+            document.getElementById('modal-cuenta-admin').classList.remove('abierto');
+        }
+
+        async function guardarCuentaAdmin() {
+            const msg = document.getElementById('modal-cuenta-admin-msg');
+            msg.style.display = 'none';
+
+            const idRaw = document.getElementById('ct-id').value;
+            const titulo = document.getElementById('ct-titulo').value.trim();
+            const descripcion = document.getElementById('ct-descripcion').value.trim();
+            const precio = parseFloat(document.getElementById('ct-precio').value);
+
+            if (!titulo || isNaN(precio) || precio <= 0) {
+                msg.style.display = 'block';
+                msg.textContent = 'Pon un título y un precio mayor a 0.';
+                return;
+            }
+
+            const btn = document.getElementById('btn-guardar-cuenta');
+            btn.disabled = true; btn.textContent = 'Guardando...';
+
+            const { error } = await supabaseClient.rpc('admin_guardar_cuenta', {
+                p_id: idRaw ? parseInt(idRaw, 10) : null,
+                p_titulo: titulo,
+                p_descripcion: descripcion,
+                p_precio: precio,
+                p_estado: document.getElementById('ct-estado').value
+            });
+
+            btn.disabled = false; btn.textContent = 'Guardar';
+
+            if (error) {
+                msg.style.display = 'block';
+                msg.textContent = 'No se pudo guardar: ' + error.message;
+                return;
+            }
+
+            cerrarModalCuentaAdmin();
+            await cargarCuentasAdmin();
+        }
+
+        async function alternarEstadoCuenta(id) {
+            const cuenta = cuentasAdmin.find(c => c.id === id);
+            if (!cuenta) return;
+            const nuevoEstado = cuenta.estado === 'disponible' ? 'agotado' : 'disponible';
+            if (nuevoEstado === 'disponible' && !confirm('¿Volver a poner esta cuenta como disponible? Hazlo solo si de verdad no se entregó a nadie.')) return;
+
+            const { error } = await supabaseClient.rpc('admin_guardar_cuenta', {
+                p_id: cuenta.id,
+                p_titulo: cuenta.titulo,
+                p_descripcion: cuenta.descripcion,
+                p_precio: cuenta.precio,
+                p_estado: nuevoEstado
+            });
+            if (error) { alert('No se pudo cambiar el estado: ' + error.message); return; }
+            await cargarCuentasAdmin();
+        }
+
+        async function eliminarCuentaAdmin(id) {
+            const cuenta = cuentasAdmin.find(c => c.id === id);
+            if (!cuenta || !confirm(`¿Eliminar "${cuenta.titulo}"? Esto no se puede deshacer.`)) return;
+
+            const { error } = await supabaseClient.rpc('admin_eliminar_cuenta', { p_id: id });
+            if (error) { alert(error.message); return; }
+            await cargarCuentasAdmin();
         }
 
         // ---------- PROMO DEL DÍA ----------

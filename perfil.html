@@ -63,6 +63,18 @@
             <a href="ranking.html" class="btn-outline btn-sm">🏆 Ver ranking</a>
         </div>
 
+        <div class="card" style="margin-bottom:24px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                <span style="font-size:22px;">🎁</span>
+                <p style="font-weight:800; font-size:15px;">Invita y gana</p>
+            </div>
+            <p style="color: var(--texto-secundario); font-size:13px; margin-bottom:16px;">Comparte tu link — cuando tu invitado se registre y haga su primera recarga o compra, ganan <strong style="color:var(--exito);">20 puntos</strong> cada uno.</p>
+            <div class="referido-link-box">
+                <input type="text" id="referido-link" class="input-form" readonly>
+                <button type="button" class="btn-primary btn-sm" id="btn-copiar-referido" onclick="copiarLinkReferido()">Copiar</button>
+            </div>
+        </div>
+
         <div class="card">
             <div id="msg-box" class="msg-box error"></div>
             <div id="exito-box" class="msg-box exito"></div>
@@ -112,6 +124,7 @@
             document.getElementById('perfil-nickname').value = usuario.nickname;
             document.getElementById('perfil-celular').value = usuario.celular || '';
             document.getElementById('perfil-puntos').innerText = (usuario.puntos || 0).toLocaleString('es-PE');
+            pintarLinkReferido(usuario);
             insertarFooter();
         };
 
@@ -202,6 +215,27 @@
             okBox.innerText = 'Contraseña actualizada correctamente.';
         }
 
+        function pintarLinkReferido(usuario) {
+            const base = window.location.origin + window.location.pathname.replace(/perfil\.html$/, '');
+            document.getElementById('referido-link').value = base + 'register.html?ref=' + (usuario.codigo_referido || '');
+        }
+
+        function copiarLinkReferido() {
+            const input = document.getElementById('referido-link');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            const btn = document.getElementById('btn-copiar-referido');
+            const original = btn.textContent;
+            const marcarCopiado = () => { btn.textContent = '¡Copiado!'; setTimeout(() => { btn.textContent = original; }, 1800); };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(input.value).then(marcarCopiado).catch(() => { document.execCommand('copy'); marcarCopiado(); });
+            } else {
+                document.execCommand('copy');
+                marcarCopiado();
+            }
+        }
+
         function insertarFooter() {
             document.getElementById('footer-slot').outerHTML = `
             <footer>
@@ -224,6 +258,7 @@
                             <li><a href="catalogo.html?catalogo=promo">Promo Primera Vez</a></li>
                             <li><a href="catalogo.html?catalogo=cajas_tokens">Cajas de Tokens</a></li>
                             <li><a href="catalogo.html?catalogo=tokens_evolutivos">Tokens Evolutivos</a></li>
+                            <li><a href="catalogo.html?catalogo=cuentas">Cuentas Free Fire</a></li>
                         </ul>
                     </div>
                     <div class="footer-col">

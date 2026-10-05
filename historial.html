@@ -54,6 +54,7 @@
                 <option value="">Todos los paquetes</option>
                 <option value="recarga">Recarga de saldo</option>
                 <option value="personalizada">Cantidad personalizada</option>
+                <option value="cuenta">Cuentas Free Fire</option>
             </select>
             <input type="date" id="filtro-desde" class="input-form" onchange="aplicarFiltros()" title="Desde">
             <input type="date" id="filtro-hasta" class="input-form" onchange="aplicarFiltros()" title="Hasta">
@@ -181,6 +182,8 @@
             const filtroPaquete = document.getElementById('filtro-paquete').value;
             if (filtroPaquete === 'recarga') {
                 query = query.eq('tipo', 'recarga_saldo');
+            } else if (filtroPaquete === 'cuenta') {
+                query = query.eq('tipo', 'compra_cuenta');
             } else if (filtroPaquete === 'personalizada') {
                 query = query.eq('tipo', 'compra_diamantes').is('paquete_id', null);
             } else if (filtroPaquete.startsWith('paquete:')) {
@@ -214,9 +217,11 @@
 
             cuerpo.innerHTML = data.map(p => {
                 const fecha = new Date(p.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                const tipoTxt = p.tipo === 'recarga_saldo' ? 'Recarga de saldo' : 'Compra en catálogo';
+                const tipoTxt = p.tipo === 'recarga_saldo' ? 'Recarga de saldo' : p.tipo === 'compra_cuenta' ? 'Compra de cuenta' : 'Compra en catálogo';
                 let detalle = '—';
-                if (p.tipo === 'compra_diamantes') {
+                if (p.tipo === 'compra_cuenta') {
+                    detalle = escHtml((p.nota_admin || 'Cuenta Free Fire').replace(/^Cuenta: /, ''));
+                } else if (p.tipo === 'compra_diamantes') {
                     const nombrePaquete = p.paquetes_ff ? p.paquetes_ff.nombre : (p.nota_admin ? p.nota_admin.replace('Cantidad personalizada: ', '') : 'Paquete');
                     detalle = escHtml(nombrePaquete) + (p.id_jugador_ff ? ` · ID ${escHtml(p.id_jugador_ff)}` : '');
                 }
@@ -252,6 +257,7 @@
                             <li><a href="catalogo.html?catalogo=promo">Promo Primera Vez</a></li>
                             <li><a href="catalogo.html?catalogo=cajas_tokens">Cajas de Tokens</a></li>
                             <li><a href="catalogo.html?catalogo=tokens_evolutivos">Tokens Evolutivos</a></li>
+                            <li><a href="catalogo.html?catalogo=cuentas">Cuentas Free Fire</a></li>
                         </ul>
                     </div>
                     <div class="footer-col">

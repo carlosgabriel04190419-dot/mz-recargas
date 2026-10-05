@@ -7,6 +7,13 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <meta name="theme-color" content="#0c0f18">
     <meta name="description" content="Recarga saldo y compra diamantes de Free Fire al instante en MZ'Recargas.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MZ'Recargas">
+    <meta property="og:title" content="MZ'Recargas | Recargar Diamantes Free Fire">
+    <meta property="og:description" content="Recarga saldo y compra diamantes de Free Fire al instante en MZ'Recargas.">
+    <meta property="og:image" content="https://carlosgabriel04190419-dot.github.io/mz-recargas/banner-ilimitada.jpg">
+    <meta property="og:url" content="https://carlosgabriel04190419-dot.github.io/mz-recargas/catalogo.html">
+    <meta name="twitter:card" content="summary_large_image">
     <script>try{var t=localStorage.getItem('mzrecargas_tema');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
@@ -79,6 +86,20 @@
                 <img src="banner-tokens-evo.jpg" alt="Tokens Evolutivos">
                 <h3>Tokens Evolutivos</h3>
                 <span class="catalogo-tag">Tokens sueltos para evolucionar</span>
+            </div>
+            <div class="catalogo-card" onclick="cambiarCatalogo('cuentas')">
+                <img src="banner-cuentas.jpg" alt="Cuentas de Free Fire">
+                <h3>Cuentas Free Fire</h3>
+                <span class="catalogo-tag">Cuentas listas para jugar</span>
+            </div>
+        </div>
+
+        <div id="vista-cuentas" style="display:none;">
+            <a href="#" onclick="volverASelector(event)" class="back-link-catalogo"><span class="material-icons">arrow_back</span> Volver a catálogos</a>
+            <h3 id="cuentas-titulo" style="text-align:center; margin: 20px 0 8px; font-size:22px; font-weight:800;">Cuentas Free Fire</h3>
+            <p class="cuentas-aviso">Cada cuenta es única: apenas se vende, queda <strong>agotada</strong>. Al comprar, te llevamos a WhatsApp para entregarte los datos de acceso.</p>
+            <div id="cuentas-grid" class="cuentas-grid">
+                <p class="cuentas-vacio">Cargando cuentas...</p>
             </div>
         </div>
 
@@ -175,6 +196,39 @@
         </div>
     </div>
 
+    <!-- MODAL: COMPRAR CUENTA -->
+    <div id="modal-cuenta" class="modal-overlay">
+        <div class="modal-box">
+            <span class="material-icons close-btn" onclick="cerrarModal('modal-cuenta')">close</span>
+            <div class="modal-header">
+                <h2 id="mc-encabezado">Confirmar Compra</h2>
+                <p id="mc-subencabezado">Revisa los detalles antes de continuar.</p>
+            </div>
+            <div id="mc-msg" class="msg-box"></div>
+
+            <div id="mc-resumen">
+                <div class="resumen-compra">
+                    <div class="resumen-fila"><span>Cuenta:</span><strong id="mc-titulo" style="text-align:right;"></strong></div>
+                    <div class="resumen-divisor"></div>
+                    <div class="resumen-fila"><span>Costo a descontar:</span><strong id="mc-costo" style="color:var(--error);"></strong></div>
+                    <div class="resumen-divisor"></div>
+                    <div class="resumen-fila"><span>Tu saldo actual:</span><strong id="mc-saldo-actual"></strong></div>
+                    <div class="resumen-fila"><span>Saldo restante:</span><strong id="mc-saldo-restante" style="color:var(--exito);"></strong></div>
+                </div>
+                <div class="resumen-compra">
+                    <div class="resumen-fila"><span>Método de pago:</span><strong>Saldo disponible</strong></div>
+                    <div class="resumen-fila"><span>Entrega:</span><strong>Por WhatsApp</strong></div>
+                </div>
+            </div>
+
+            <a id="mc-recargar" href="recargar-saldo.html" class="btn-outline" style="display:none; width:100%; text-align:center; margin-bottom:10px;">Recargar saldo</a>
+            <button type="button" id="mc-btn-comprar" class="btn-primary" style="width:100%;" onclick="confirmarCompraCuenta()">Comprar cuenta</button>
+            <button type="button" id="mc-btn-whatsapp" class="btn-primary" style="display:none; width:100%;" onclick="abrirWhatsappCuenta()">
+                <span class="material-icons" style="font-size:18px; vertical-align:middle;">chat</span> Abrir WhatsApp
+            </button>
+        </div>
+    </div>
+
     <!-- MODAL: PROMO DEL DÍA -->
     <div id="modal-promo-dia" class="modal-overlay">
         <div class="modal-box promo-dia-box">
@@ -200,13 +254,15 @@
             ilimitada: 'Recargas Ilimitadas',
             promo: 'Promo Primera Vez',
             cajas_tokens: 'Cajas de Tokens',
-            tokens_evolutivos: 'Tokens Evolutivos'
+            tokens_evolutivos: 'Tokens Evolutivos',
+            cuentas: 'Cuentas Free Fire'
         };
         const BANNERS_CATALOGO = {
             ilimitada: 'banner-ilimitada.jpg',
             promo: 'banner-promo.jpeg',
             cajas_tokens: 'banner-cajas-tokens.jpg',
-            tokens_evolutivos: 'banner-tokens-evo.jpg'
+            tokens_evolutivos: 'banner-tokens-evo.jpg',
+            cuentas: 'banner-cuentas.jpg'
         };
         // Emoji y tamaños conocidos por catálogo, para escalar el ícono según cantidad.
         const CONFIG_CATALOGO = {
@@ -273,15 +329,26 @@
             paqueteElegido = null;
             document.getElementById('paso-confirmar').style.display = 'none';
             document.getElementById('vista-selector').style.display = 'none';
-            document.getElementById('vista-paquetes').style.display = 'block';
-            document.getElementById('paquetes-titulo').innerText = NOMBRES_CATALOGO[categoria];
-            pintarCatalogo();
 
             const bgImg = document.getElementById('paquetes-bg-img');
             bgImg.src = BANNERS_CATALOGO[categoria];
             bgImg.style.display = 'block';
             document.getElementById('paquetes-bg-overlay').style.display = 'block';
             document.body.classList.add('fondo-catalogo-activo');
+
+            // Las cuentas no llevan ID de jugador ni paquetes: tienen su propia vista.
+            if (categoria === 'cuentas') {
+                document.getElementById('vista-paquetes').style.display = 'none';
+                document.getElementById('vista-cuentas').style.display = 'block';
+                promoActiva = null;
+                cargarCuentas();
+                return;
+            }
+
+            document.getElementById('vista-cuentas').style.display = 'none';
+            document.getElementById('vista-paquetes').style.display = 'block';
+            document.getElementById('paquetes-titulo').innerText = NOMBRES_CATALOGO[categoria];
+            pintarCatalogo();
 
             const cantExacta = CANTIDAD_EXACTA[categoria];
             const bloqueCantExacta = document.getElementById('cantidad-exacta');
@@ -410,10 +477,131 @@
         function volverASelector(e) {
             if (e) e.preventDefault();
             document.getElementById('vista-paquetes').style.display = 'none';
+            document.getElementById('vista-cuentas').style.display = 'none';
             document.getElementById('vista-selector').style.display = 'grid';
             document.getElementById('paquetes-bg-img').style.display = 'none';
             document.getElementById('paquetes-bg-overlay').style.display = 'none';
             document.body.classList.remove('fondo-catalogo-activo');
+        }
+
+        // ---------- CUENTAS DE FREE FIRE ----------
+        let cuentasCargadas = [];
+        let cuentaElegida = null;
+        let compraCuentaHecha = null;
+
+        async function cargarCuentas() {
+            const cont = document.getElementById('cuentas-grid');
+            cont.innerHTML = '<p class="cuentas-vacio">Cargando cuentas...</p>';
+
+            const { data, error } = await supabaseClient
+                .from('cuentas_ff')
+                .select('id, titulo, descripcion, precio, estado')
+                .order('id', { ascending: false });
+
+            if (error) {
+                cont.innerHTML = '<p class="cuentas-vacio">No se pudieron cargar las cuentas. Intenta de nuevo en un momento.</p>';
+                return;
+            }
+            // Las disponibles primero, las agotadas al final.
+            cuentasCargadas = (data || []).sort((a, b) => (b.estado === 'disponible') - (a.estado === 'disponible'));
+
+            if (cuentasCargadas.length === 0) {
+                cont.innerHTML = '<p class="cuentas-vacio">Por ahora no hay cuentas publicadas. ¡Vuelve pronto!</p>';
+                return;
+            }
+
+            cont.innerHTML = cuentasCargadas.map(c => {
+                const disponible = c.estado === 'disponible';
+                const caracteristicas = String(c.descripcion || '').split('\n').map(l => l.trim()).filter(Boolean);
+                return `
+                <div class="cuenta-card ${disponible ? '' : 'agotada'}">
+                    <div class="cuenta-card-cabecera">
+                        <h3>${escHtml(c.titulo)}</h3>
+                        <span class="estado-pill ${disponible ? 'estado-confirmado' : 'estado-cancelado'}">${disponible ? 'Disponible' : 'Agotada'}</span>
+                    </div>
+                    ${caracteristicas.length ? `<ul class="cuenta-caracteristicas">${caracteristicas.map(l => `<li>${escHtml(l)}</li>`).join('')}</ul>` : ''}
+                    <div class="cuenta-card-pie">
+                        <div class="cuenta-precio">${formatearSoles(c.precio)}</div>
+                        ${disponible
+                            ? `<button type="button" class="btn-primary btn-sm" onclick="abrirModalCuenta(${c.id})"><span class="material-icons" style="font-size:16px; vertical-align:-3px;">shopping_cart</span> Comprar</button>`
+                            : `<button type="button" class="btn-outline btn-sm" disabled>Agotada</button>`}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function abrirModalCuenta(id) {
+            cuentaElegida = cuentasCargadas.find(c => c.id === id);
+            if (!cuentaElegida) return;
+            compraCuentaHecha = null;
+
+            const saldoActual = Number(usuarioActual.saldo);
+            const precio = Number(cuentaElegida.precio);
+
+            document.getElementById('mc-encabezado').innerText = 'Confirmar Compra';
+            document.getElementById('mc-subencabezado').innerText = 'Revisa los detalles antes de continuar.';
+            document.getElementById('mc-titulo').innerText = cuentaElegida.titulo;
+            document.getElementById('mc-costo').innerText = '- ' + formatearSoles(precio);
+            document.getElementById('mc-saldo-actual').innerText = formatearSoles(saldoActual);
+            document.getElementById('mc-saldo-restante').innerText = formatearSoles(saldoActual - precio);
+            document.getElementById('mc-resumen').style.display = 'block';
+
+            const msg = document.getElementById('mc-msg');
+            const alcanza = saldoActual >= precio;
+            if (alcanza) {
+                msg.style.display = 'none';
+            } else {
+                msg.className = 'msg-box error'; msg.style.display = 'block';
+                msg.innerText = `Te faltan ${formatearSoles(precio - saldoActual)} de saldo para comprar esta cuenta.`;
+            }
+            document.getElementById('mc-recargar').style.display = alcanza ? 'none' : 'block';
+            const btn = document.getElementById('mc-btn-comprar');
+            btn.style.display = alcanza ? 'block' : 'none';
+            btn.disabled = false; btn.innerText = 'Comprar cuenta';
+            document.getElementById('mc-btn-whatsapp').style.display = 'none';
+
+            document.getElementById('modal-cuenta').classList.add('abierto');
+        }
+
+        async function confirmarCompraCuenta() {
+            if (!cuentaElegida) return;
+            const msg = document.getElementById('mc-msg');
+            const btn = document.getElementById('mc-btn-comprar');
+            btn.disabled = true; btn.innerText = 'Procesando...';
+
+            const { data, error } = await supabaseClient.rpc('comprar_cuenta', { p_cuenta_id: cuentaElegida.id });
+
+            if (error) {
+                btn.disabled = false; btn.innerText = 'Comprar cuenta';
+                msg.className = 'msg-box error'; msg.style.display = 'block';
+                msg.innerText = error.message.includes('Saldo insuficiente')
+                    ? 'Saldo insuficiente. Recarga tu saldo primero.'
+                    : error.message.includes('ya no está disponible')
+                        ? 'Alguien más acaba de comprar esta cuenta. Elige otra disponible.'
+                        : 'No se pudo comprar: ' + error.message;
+                if (error.message.includes('ya no está disponible')) cargarCuentas();
+                return;
+            }
+
+            const fila = Array.isArray(data) ? data[0] : data;
+            compraCuentaHecha = { titulo: fila.titulo, precio: fila.precio, pedido: String(fila.pedido_id).slice(0, 8).toUpperCase() };
+
+            document.getElementById('mc-encabezado').innerText = '¡Compra realizada!';
+            document.getElementById('mc-subencabezado').innerText = 'Ahora avísanos por WhatsApp para entregarte los datos de la cuenta.';
+            document.getElementById('mc-resumen').style.display = 'none';
+            msg.className = 'msg-box exito'; msg.style.display = 'block';
+            msg.innerText = `Pedido #${compraCuentaHecha.pedido} confirmado. Escríbenos por WhatsApp y te pasamos los datos de la cuenta.`;
+            btn.style.display = 'none';
+            document.getElementById('mc-btn-whatsapp').style.display = 'block';
+
+            usuarioActual = await verificarSesion();
+            cargarCuentas();
+            abrirWhatsappCuenta();
+        }
+
+        function abrirWhatsappCuenta() {
+            if (!compraCuentaHecha) return;
+            abrirWhatsapp(`¡Hola! Vengo de MZ'Recargas 🎮. Compré la cuenta "${compraCuentaHecha.titulo}" por S/ ${Number(compraCuentaHecha.precio).toFixed(2)} (pedido #${compraCuentaHecha.pedido}). Quedo atento a los datos de acceso, gracias.`);
         }
 
         function pintarCatalogo() {
@@ -551,6 +739,7 @@
                             <li><a href="catalogo.html?catalogo=promo">Promo Primera Vez</a></li>
                             <li><a href="catalogo.html?catalogo=cajas_tokens">Cajas de Tokens</a></li>
                             <li><a href="catalogo.html?catalogo=tokens_evolutivos">Tokens Evolutivos</a></li>
+                            <li><a href="catalogo.html?catalogo=cuentas">Cuentas Free Fire</a></li>
                         </ul>
                     </div>
                     <div class="footer-col">

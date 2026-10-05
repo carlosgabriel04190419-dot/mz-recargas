@@ -8,6 +8,13 @@
     <meta name="theme-color" content="#0c0f18">
     <meta name="description" content="Crea tu cuenta en MZ'Recargas para recargar saldo y comprar diamantes de Free Fire.">
     <meta name="robots" content="noindex, nofollow">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MZ'Recargas">
+    <meta property="og:title" content="MZ'Recargas | Crear cuenta">
+    <meta property="og:description" content="Crea tu cuenta en MZ'Recargas para recargar saldo y comprar diamantes de Free Fire.">
+    <meta property="og:image" content="https://carlosgabriel04190419-dot.github.io/mz-recargas/banner-ilimitada.jpg">
+    <meta property="og:url" content="https://carlosgabriel04190419-dot.github.io/mz-recargas/register.html">
+    <meta name="twitter:card" content="summary_large_image">
     <script>try{var t=localStorage.getItem('mzrecargas_tema');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
@@ -35,6 +42,7 @@
             <h1 class="login-title">Crear Cuenta</h1>
             <p class="login-subtitle">Regístrate para empezar a recargar tus diamantes.</p>
 
+            <div id="ref-box" class="msg-box exito" style="display:none;">🎉 Te invitó un amigo — al crear tu cuenta y recargar, ambos ganan puntos.</div>
             <div id="msg-box" class="msg-box error"></div>
             <div id="exito-box" class="msg-box exito"></div>
 
@@ -106,9 +114,12 @@
             box.innerText = mensaje;
         }
 
+        const codigoReferido = new URLSearchParams(window.location.search).get('ref');
+
         window.onload = async function () {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) window.location.href = 'index.html';
+            if (codigoReferido) document.getElementById('ref-box').style.display = 'block';
         };
 
         async function manejarRegistro() {
@@ -127,7 +138,7 @@
             const { data, error } = await supabaseClient.auth.signUp({
                 email: correo,
                 password: password,
-                options: { data: { nickname: nickname } }
+                options: { data: { nickname: nickname, ref: codigoReferido || undefined } }
             });
 
             if (error) {

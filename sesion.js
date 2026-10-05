@@ -128,12 +128,53 @@ document.addEventListener('click', function (e) {
 // salvo en admin.html o en páginas sin navbar (login, registro, 404).
 // ==========================================
 document.addEventListener('DOMContentLoaded', function () {
+    if (document.querySelector('.navbar')) pintarMenuMovil();
+
     if (location.pathname.endsWith('admin.html')) return;
     if (!document.querySelector('.navbar')) return;
     pintarFondoVideo();
     pintarTickerCompras();
     pintarAsistente();
 });
+
+// Menú de hamburguesa para mobile — el CSS ya escondía ".nav-links" debajo
+// de 860px pero nunca existió el botón para volver a verlos. Se arma solo,
+// clonando los links que ya existen en cada página (así no hay que tocar
+// el HTML de cada una ni mantener la lista de páginas dos veces).
+function pintarMenuMovil() {
+    const nav = document.querySelector('.navbar');
+    const navLinks = nav.querySelector('.nav-links');
+    const navActions = nav.querySelector('.nav-actions');
+    if (!navLinks || !navActions) return;
+
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'nav-mobile-toggle';
+    boton.setAttribute('aria-label', 'Abrir menú');
+    boton.innerHTML = '<span class="material-icons">menu</span>';
+    navActions.insertBefore(boton, navActions.firstChild);
+
+    const panel = document.createElement('div');
+    panel.className = 'nav-mobile-panel';
+    panel.innerHTML = navLinks.innerHTML;
+    nav.appendChild(panel);
+
+    function cerrarMenuMovil() {
+        panel.classList.remove('abierto');
+        boton.querySelector('.material-icons').textContent = 'menu';
+    }
+
+    boton.addEventListener('click', function () {
+        const abierto = panel.classList.toggle('abierto');
+        boton.querySelector('.material-icons').textContent = abierto ? 'close' : 'menu';
+    });
+    panel.querySelectorAll('a').forEach(a => a.addEventListener('click', cerrarMenuMovil));
+    document.addEventListener('click', function (e) {
+        if (panel.classList.contains('abierto') && !panel.contains(e.target) && e.target !== boton && !boton.contains(e.target)) {
+            cerrarMenuMovil();
+        }
+    });
+}
 
 // Mismo video de fondo del inicio, para que estas páginas no se vean
 // "frías" al lado de index.html. Si la página ya trae el suyo (index.html
@@ -186,6 +227,7 @@ async function pintarTickerCompras() {
 
 // ---------- ASISTENTE (respuestas predeterminadas, sin IA real) ----------
 const ASISTENTE_FAQ = [
+    { patrones: ['cuentas de free', 'cuenta de free', 'comprar cuenta', 'comprar una cuenta', 'venden cuenta', 'cuentas disponibles', 'cuentas free'], respuesta: 'Sí, vendemos cuentas de Free Fire ya armadas. Entra a "Recargar Diamantes" → "Cuentas Free Fire", elige la que te guste y cómprala con tu saldo. Apenas compras te llevamos a WhatsApp para pasarte los datos de acceso.' },
     { patrones: ['recargar', 'recarga', 'saldo', 'yape', 'plin'], respuesta: 'Para recargar saldo entra a "Recargar Diamantes", elige un monto y paga con Yape o Plin. En cuanto verificamos tu pago se acredita tu saldo.' },
     { patrones: ['demora', 'tiempo', 'entrega', 'cuando llega', 'cuánto tarda'], respuesta: 'La entrega es en menos de 5 minutos en promedio después de confirmada tu compra.' },
     { patrones: ['metodo', 'método', 'pago', 'como pago', 'cómo pago'], respuesta: 'Aceptamos Yape y Plin, verificados a mano antes de acreditar tu saldo.' },
