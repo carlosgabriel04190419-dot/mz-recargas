@@ -1,14 +1,115 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="MZ'Recargas">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="125 15 620 495" role="img" aria-label="MZ'Recargas">
   <defs>
-    <linearGradient id="mzGemGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3b7dff"/>
-      <stop offset="100%" stop-color="#8b3ffb"/>
+    <linearGradient id="gMesa" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2f9ff"/>
+      <stop offset="1" stop-color="#8fc4ff"/>
     </linearGradient>
+    <linearGradient id="gCian" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b9ecff"/>
+      <stop offset="1" stop-color="#3fa4ff"/>
+    </linearGradient>
+    <linearGradient id="gAzul" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#69a6ff"/>
+      <stop offset="1" stop-color="#2f5fe0"/>
+    </linearGradient>
+    <linearGradient id="gAzulOscuro" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b73f0"/>
+      <stop offset="1" stop-color="#1c2f9a"/>
+    </linearGradient>
+    <linearGradient id="gVioleta" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8f7dff"/>
+      <stop offset="1" stop-color="#5a2fd6"/>
+    </linearGradient>
+    <linearGradient id="gVioletaClaro" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c3a8ff"/>
+      <stop offset="1" stop-color="#8a58f5"/>
+    </linearGradient>
+    <linearGradient id="gMorado" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6a3de8"/>
+      <stop offset="1" stop-color="#3a1a9c"/>
+    </linearGradient>
+    <linearGradient id="gContorno" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#bfe6ff"/>
+      <stop offset="0.5" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d4b8ff"/>
+    </linearGradient>
+    <radialGradient id="gResplandor" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#9ec9ff" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#5b7bff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#7a3ff2" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gHaz" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6ea8ff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="1" stop-color="#b48cff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="gHalo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="0.25" stop-color="#bcdcff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#4a8bff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="fDesenfoque" x="-20%" y="-200%" width="140%" height="500%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
   </defs>
-  <polygon points="34,22 66,22 86,40 50,92 14,40" fill="url(#mzGemGrad)" stroke="#0c0f18" stroke-width="3" stroke-linejoin="round"/>
-  <polygon points="34,22 14,40 50,40" fill="#ffffff" fill-opacity="0.22"/>
-  <polyline points="14,40 86,40" stroke="#0c0f18" stroke-opacity="0.35" stroke-width="1.6" fill="none"/>
-  <polyline points="34,22 50,92" stroke="#0c0f18" stroke-opacity="0.25" stroke-width="1.2" fill="none"/>
-  <polyline points="66,22 50,92" stroke="#0c0f18" stroke-opacity="0.25" stroke-width="1.2" fill="none"/>
-  <path d="M74 14 L77 20 L83 22 L77 24 L74 30 L71 24 L65 22 L71 20 Z" fill="#ffffff" fill-opacity="0.85"/>
+
+  <!-- Resplandor bajo la punta -->
+  <ellipse cx="435" cy="484" rx="215" ry="26" fill="url(#gResplandor)"/>
+  <ellipse cx="435" cy="486" rx="190" ry="9" fill="url(#gHaz)" filter="url(#fDesenfoque)"/>
+  <ellipse cx="435" cy="486" rx="120" ry="2.2" fill="url(#gHaz)"/>
+  <circle cx="435" cy="484" r="22" fill="url(#gHalo)"/>
+
+  <!-- Pabellón (parte de abajo, hacia la punta) -->
+  <g stroke-linejoin="round">
+    <polygon points="158,216 250,216 435,485" fill="url(#gAzulOscuro)"/>
+    <polygon points="250,216 340,216 435,485" fill="url(#gAzul)"/>
+    <polygon points="340,216 435,216 435,485" fill="url(#gCian)"/>
+    <polygon points="435,216 530,216 435,485" fill="url(#gAzul)"/>
+    <polygon points="530,216 620,216 435,485" fill="url(#gVioleta)"/>
+    <polygon points="620,216 712,216 435,485" fill="url(#gMorado)"/>
+    <!-- facetas bajas junto a la cintura -->
+    <polygon points="250,216 340,216 339,300" fill="#9cc2ff" fill-opacity="0.38"/>
+    <polygon points="340,216 435,216 404,308" fill="#e9fbff" fill-opacity="0.55"/>
+    <polygon points="435,216 530,216 466,308" fill="#7ea2ff" fill-opacity="0.35"/>
+    <polygon points="530,216 620,216 531,300" fill="#d9c8ff" fill-opacity="0.38"/>
+    <polygon points="158,216 250,216 267,290" fill="#0b1a66" fill-opacity="0.35"/>
+    <polygon points="620,216 712,216 602,290" fill="#1c0b66" fill-opacity="0.38"/>
+    <!-- reflejo central -->
+    <polygon points="405,216 465,216 443,340 435,420 427,340" fill="#ffffff" fill-opacity="0.34"/>
+  </g>
+
+  <!-- Cintura (borde ancho) -->
+  <polygon points="145,203 725,203 712,216 158,216" fill="#d9ecff" fill-opacity="0.9"/>
+
+  <!-- Corona (parte de arriba) -->
+  <g stroke-linejoin="round">
+    <polygon points="145,203 262,100 228,203" fill="url(#gAzul)"/>
+    <polygon points="262,100 305,100 318,203 228,203" fill="url(#gAzulOscuro)"/>
+    <polygon points="305,100 372,100 318,203" fill="url(#gCian)"/>
+    <polygon points="372,100 435,203 318,203" fill="url(#gAzul)"/>
+    <polygon points="372,100 498,100 435,203" fill="url(#gCian)"/>
+    <polygon points="498,100 552,203 435,203" fill="url(#gVioleta)"/>
+    <polygon points="565,100 498,100 552,203" fill="url(#gVioletaClaro)"/>
+    <polygon points="565,100 608,100 642,203 552,203" fill="url(#gMorado)"/>
+    <polygon points="608,100 725,203 642,203" fill="url(#gVioleta)"/>
+    <!-- triángulos de las esquinas -->
+    <polygon points="262,100 340,68 305,100" fill="#a9d3ff"/>
+    <polygon points="608,100 530,68 565,100" fill="#d3bdff"/>
+    <!-- mesa -->
+    <polygon points="340,68 530,68 565,100 305,100" fill="url(#gMesa)"/>
+  </g>
+
+  <!-- Aristas de cristal -->
+  <g fill="none" stroke="url(#gContorno)" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M145,203 L262,100 L340,68 L530,68 L608,100 L725,203 L712,216 L435,485 L158,216 Z" stroke-width="6"/>
+    <path d="M145,203 L725,203 M158,216 L712,216" stroke-width="3.5"/>
+    <path d="M305,100 L565,100 M262,100 L305,100 M565,100 L608,100 M340,68 L305,100 M530,68 L565,100" stroke-width="3" stroke-opacity="0.9"/>
+    <path d="M305,100 L318,203 M372,100 L318,203 M372,100 L435,203 M498,100 L435,203 M498,100 L552,203 M565,100 L552,203 M262,100 L228,203 M608,100 L642,203" stroke-width="3" stroke-opacity="0.85"/>
+    <path d="M250,216 L435,485 M340,216 L435,485 M435,216 L435,485 M530,216 L435,485 M620,216 L435,485" stroke-width="3" stroke-opacity="0.8"/>
+  </g>
+
+  <!-- Destello -->
+  <circle cx="632" cy="92" r="44" fill="url(#gHalo)" fill-opacity="0.9"/>
+  <path d="M632,22 L640,85 L726,92 L640,99 L632,164 L624,99 L546,92 L624,85 Z" fill="#ffffff" stroke="#5f9bff" stroke-width="2.4" stroke-opacity="0.7" stroke-linejoin="round"/>
+  <circle cx="632" cy="92" r="13" fill="#ffffff"/>
 </svg>
