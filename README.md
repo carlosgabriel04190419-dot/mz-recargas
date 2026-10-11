@@ -81,7 +81,7 @@ Los datos de acceso de cada cuenta **no** se guardan en la web: se los pasas tú
 - [x] **Logo** — ícono de diamante propio (`logo.svg`) en navbar y favicon.
 - [x] **Paquetes y precios de "Tokens Evolutivos"** — 8 niveles (200 a 900 Fragmentos), precios propios de MZ'Recargas inspirados en un sitio de referencia que mandó el cliente.
 - [x] **Paquetes y precios de "Cajas de Tokens"** — 6 niveles (50 a 300 Cajas Evolutivas), precios propios de MZ'Recargas. También tiene un campo de "cantidad exacta" (S/ 0.48 por unidad, mínimo 20) para pedidos fuera de esos niveles fijos.
-- [ ] **Dominio propio** (opcional) — si el cliente compra uno, agrega un archivo `CNAME` con el dominio y configúralo en el registrador (igual que se hizo con CarzaD'Cross).
+- [ ] **Dominio propio e indexación en Google** (opcional) — ver la sección "Salir con dominio propio y aparecer en Google" más abajo; ya está todo preparado, es un solo comando.
 - [~] **Términos y Privacidad** (`terminos.html`, `privacidad.html`) — reescritos (5 de octubre de 2026) para describir lo que el sitio hace de verdad y conforme a la Ley 29733 de Protección de Datos Personales y la normativa de consumo del Perú. **No son asesoría legal**: antes de operar a escala conviene que los revise un abogado peruano. Lo que falta, y que el texto no puede resolver solo:
   - **Libro de Reclamaciones virtual**: obligatorio para tiendas en línea que venden a consumidores en Perú (con enlace visible en el sitio). Aún no existe en la web.
   - **Identificar al titular del negocio** (nombre o razón social, RUC/DNI y domicilio). Hoy el sitio solo se presenta con el nombre comercial.
@@ -91,3 +91,30 @@ Los datos de acceso de cada cuenta **no** se guardan en la web: se los pasas tú
   - Si cambias el fondo de los textos legales, sube `VERSION_LEGAL` en `register.html` para que quede registrado qué versión aceptó cada persona.
 - [ ] **Anti-bots / captcha** en login y registro — no se incluyó en esta primera versión (CarzaD'Cross usa Cloudflare Turnstile, que requiere una cuenta de Cloudflare propia para este dominio). Se puede agregar después si empieza a haber spam de registros.
 - [x] **Panel de administración** — `admin.html`, ver sección de arriba.
+
+## Pie de página (una sola fuente)
+
+El pie de página vive en `scripts/footer.html` y se copia, como HTML estático, a las 9 páginas que lo llevan (`index`, `catalogo`, `soporte`, `ranking`, `historial`, `perfil`, `recargar-saldo`, `terminos`, `privacidad`). **Para cambiarlo** (por ejemplo, agregar el enlace al Libro de Reclamaciones o las redes sociales) edita `scripts/footer.html` y corre:
+
+```
+python3 scripts/sincronizar-footer.py
+```
+
+No lo edites a mano en cada página: el script lo vuelve a pisar. Es HTML normal (no JavaScript), así que los buscadores ven sus enlaces legales; el año se actualiza solo.
+
+## Salir con dominio propio y aparecer en Google
+
+Qué ya está listo en el sitio:
+- `robots.txt` y `sitemap.xml` (con las 4 páginas que conviene indexar: inicio, soporte, términos y privacidad).
+- `<link rel="canonical">`, título, descripción y vista previa al compartir (Open Graph) en cada página pública, y datos estructurados (Organization y WebSite) en el inicio.
+- Páginas privadas con `noindex` (admin, pedidos, perfil, recargar saldo, login, registro, nueva contraseña). `catalogo.html` y `ranking.html` también van con `noindex`: el catálogo exige iniciar sesión (Google no podría verlo) y el ranking muestra nicknames de clientes.
+
+Cuando tengas el dominio:
+1. `python3 scripts/configurar-dominio.py https://www.tudominio.com` (agrega `--prueba` para ver qué cambiaría sin escribir nada). Cambia la dirección en canonical, og:url, og:image, datos estructurados, sitemap y robots, y crea el archivo `CNAME`.
+2. En GitHub: Settings → Pages → Custom domain (el mismo dominio) y activa "Enforce HTTPS". En el registrador del dominio, apunta el DNS a GitHub Pages.
+3. En Supabase: Authentication → URL Configuration → pon la nueva dirección en "Site URL" y en "Redirect URLs" (si no, fallan la confirmación de correo y "olvidé mi contraseña").
+4. En [Google Search Console](https://search.google.com/search-console) agrega el sitio (verificación por DNS) y envía `https://www.tudominio.com/sitemap.xml`. Haz lo mismo en Bing Webmaster Tools si quieres.
+5. Sube los cambios (`git push`).
+
+Aparte de lo técnico, para posicionar de verdad: el catálogo con precios hoy solo se ve con sesión iniciada, así que Google no puede leerlo. Si quieres que "recarga diamantes free fire perú" te encuentre, lo ideal es dejar que cualquiera vea el catálogo y sus precios y pedir el inicio de sesión recién al comprar. Hasta entonces solo se indexan el inicio y las páginas legales.
+

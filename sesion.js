@@ -134,6 +134,9 @@ document.addEventListener('click', function (e) {
 // salvo en admin.html o en páginas sin navbar (login, registro, 404).
 // ==========================================
 document.addEventListener('DOMContentLoaded', function () {
+    // El pie de página trae el año escrito a mano (HTML estático); aquí se pone el vigente.
+    document.querySelectorAll('[data-anio]').forEach(el => { el.textContent = new Date().getFullYear(); });
+
     if (document.querySelector('.navbar')) pintarMenuMovil();
 
     if (location.pathname.endsWith('admin.html')) return;
