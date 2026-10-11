@@ -138,10 +138,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (location.pathname.endsWith('admin.html')) return;
     if (!document.querySelector('.navbar')) return;
+    medirAlturaBarra();
     pintarFondoVideo();
     pintarTickerCompras();
     pintarAsistente();
 });
+
+// Guarda el alto real de la barra en --nav-h para que la cinta de compras en
+// vivo se pegue justo debajo (el alto cambia con el tamaño de pantalla y con
+// el menú del celular abierto).
+function medirAlturaBarra() {
+    const nav = document.querySelector('.navbar');
+    if (!nav) return;
+    const poner = () => document.documentElement.style.setProperty('--nav-h', nav.offsetHeight + 'px');
+    poner();
+    if (window.ResizeObserver) new ResizeObserver(poner).observe(nav, { box: 'border-box' });
+    window.addEventListener('resize', poner);
+    window.addEventListener('load', poner);
+}
 
 // Menú de hamburguesa para mobile — el CSS ya escondía ".nav-links" debajo
 // de 860px pero nunca existió el botón para volver a verlos. Se arma solo,

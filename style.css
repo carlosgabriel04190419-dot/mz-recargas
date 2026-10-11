@@ -110,7 +110,7 @@ button { cursor: pointer; font-family: inherit; }
 .nav-links a:hover, .nav-links a.activo { color: var(--acento-1); }
 
 .nav-actions { display: flex; align-items: center; gap: 14px; }
-.balance-pill { display: flex; align-items: center; gap: 10px; background-color: var(--bg-elevada-2); border: 1px solid var(--borde-suave); padding: 6px 15px; border-radius: 30px; font-weight: 600; font-size: 14px; }
+.balance-pill { display: flex; align-items: center; gap: 10px; background-color: var(--bg-elevada-2); border: 1px solid var(--borde-suave); padding: 6px 15px; border-radius: 30px; font-weight: 600; font-size: 14px; white-space: nowrap; flex-shrink: 0; }
 .balance-pill .material-icons { color: var(--acento-1); font-size: 18px; }
 .theme-toggle { background: var(--bg-elevada-2); border: 1px solid var(--borde); color: var(--texto-secundario); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .nav-user-menu { position: relative; }
@@ -222,6 +222,15 @@ button { cursor: pointer; font-family: inherit; }
 /* Con 5 tarjetas en 2 columnas, la última queda sola: la centramos. */
 @media (min-width: 544px) {
     .catalogos-grid .catalogo-card:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; width: calc(50% - 12px); }
+}
+/* Celulares: dos columnas más compactas, para que las portadas no ocupen
+   toda la pantalla. */
+@media (max-width: 700px) {
+    .catalogos-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 440px; margin-top: 22px; }
+    .catalogos-grid .catalogo-card:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; width: calc(50% - 6px); }
+    .catalogo-card { border-radius: 14px; }
+    .catalogo-card h3 { padding: 11px 8px 6px; font-size: 14.5px; line-height: 1.25; }
+    .catalogo-card .catalogo-tag { margin: 0 6px 12px; padding: 4px 10px; font-size: 11px; }
 }
 
 /* ========================================== */
@@ -657,16 +666,29 @@ footer { background-color: var(--bg-footer); border-top: 1px solid var(--borde);
 @media (max-width: 860px) {
     .nav-links { display: none; }
     .nav-mobile-toggle { display: block; }
+
+    /* El menú desplegable ya no tapa lo de abajo: crece la barra y todo lo
+       que va debajo (incluida la cinta de compras en vivo) baja con ella. */
+    .navbar { flex-wrap: wrap; }
+    .nav-mobile-panel {
+        position: static; flex: 0 0 100%; order: 10; padding: 6px 4px 4px; box-shadow: none;
+        border-bottom: none; background: none; backdrop-filter: none;
+    }
+    /* La cinta se queda pegada justo debajo de la barra al hacer scroll.
+       --nav-h lo mide sesion.js (la barra cambia de alto con el menú). */
+    .ticker-vivo { position: sticky; top: calc(var(--nav-h, 58px) - 1px); z-index: 90; padding: 6px 0; }
+    .ticker-vivo-item { font-size: 12px; }
+    .ticker-vivo-track { gap: 28px; }
 }
 @media (max-width: 500px) {
     .login-left { padding: 80px 22px 40px; }
     .hero { padding: 70px 16px 50px; }
     .footer-grid { gap: 26px; }
 }
-/* Celulares: la barra (logo + menú + tema + saldo + usuario) no cabía y se
-   desbordaba. Se compacta: logo más chico, saldo sin ícono y el usuario
-   queda solo como avatar. */
-@media (max-width: 560px) {
+/* Celulares (y celulares grandes / plegables hasta 700px): la barra (logo +
+   menú + tema + saldo + usuario) no cabía y se desbordaba. Se compacta: logo
+   más chico, saldo sin ícono y el usuario queda solo como avatar. */
+@media (max-width: 700px) {
     .navbar { padding: 10px 10px; gap: 4px; }
     .logo-img { width: 38px; height: 32px; }
     .logo-text { font-size: 15px; letter-spacing: 0; white-space: nowrap; }
