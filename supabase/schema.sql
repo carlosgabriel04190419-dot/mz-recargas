@@ -1153,3 +1153,121 @@ begin
   return new;
 end;
 $$;
+
+
+-- ---------- FOTOS DE LAS CUENTAS ----------
+-- Bucket público (cualquiera puede VER las fotos por su URL), pero solo el
+-- admin puede subir, reemplazar o borrar. Se guarda en cada cuenta la lista
+-- de nombres de archivo (la primera es la portada), no la URL completa.
+-- Nota: es_admin_actual() no tiene EXECUTE para "authenticated" a propósito,
+-- así que las políticas consultan el perfil propio directamente.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('cuentas', 'cuentas', true, 3145728, array['image/webp', 'image/jpeg', 'image/png'])
+on conflict (id) do nothing;
+
+create policy "cuentas_fotos_admin_insert" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'cuentas' and exists (select 1 from public.perfiles p where p.id = auth.uid() and p.es_admin));
+create policy "cuentas_fotos_admin_select" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'cuentas' and exists (select 1 from public.perfiles p where p.id = auth.uid() and p.es_admin));
+create policy "cuentas_fotos_admin_update" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'cuentas' and exists (select 1 from public.perfiles p where p.id = auth.uid() and p.es_admin))
+  with check (bucket_id = 'cuentas' and exists (select 1 from public.perfiles p where p.id = auth.uid() and p.es_admin));
+create policy "cuentas_fotos_admin_delete" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'cuentas' and exists (select 1 from public.perfiles p where p.id = auth.uid() and p.es_admin));
+
+alter table public.cuentas_ff add column fotos text[] not null default '{}'
+  check (cardinality(fotos) <= 8);
+grant select (fotos) on public.cuentas_ff to anon, authenticated;
+
+-- Cambian de firma/retorno, así que se recrean.
+drop function public.admin_listar_cuentas();
+drop function public.admin_guardar_cuenta(integer, text, text, numeric, text);
+
+create function public.admin_listar_cuentas()
+returns table (
+  id integer,
+  titulo text,
+  descripcion text,
+  precio numeric,
+  estado text,
+  created_at timestamptz,
+  fotos text[]
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select c.id, c.titulo, c.descripcion, c.precio, c.estado, c.created_at, c.fotos
+    from public.cuentas_ff c
+    order by (c.estado = 'disponible') desc, c.id desc;
+end;
+$$;
+
+-- p_fotos null = no tocar las fotos que ya tiene. Solo se aceptan nombres de
+-- archivo simples (nada de URLs ni rutas), máximo 8.
+create function public.admin_guardar_cuenta(
+  p_id integer,
+  p_titulo text,
+  p_descripcion text,
+  p_precio numeric,
+  p_estado text,
+  p_fotos text[] default null
+)
+returns integer
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_id integer;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if p_titulo is null or length(trim(p_titulo)) = 0 then
+    raise exception 'Falta el título de la cuenta';
+  end if;
+  if p_precio is null or p_precio <= 0 then
+    raise exception 'El precio debe ser mayor a 0';
+  end if;
+  if p_fotos is not null then
+    if cardinality(p_fotos) > 8 then
+      raise exception 'Máximo 8 fotos por cuenta';
+    end if;
+    if exists (select 1 from unnest(p_fotos) f where f is null or f !~ '^[A-Za-z0-9._-]{1,100}$') then
+      raise exception 'Foto no válida';
+    end if;
+  end if;
+
+  if p_id is null then
+    insert into public.cuentas_ff (titulo, descripcion, precio, estado, fotos)
+    values (trim(p_titulo), coalesce(p_descripcion, ''), p_precio, coalesce(p_estado, 'disponible'), coalesce(p_fotos, '{}'))
+    returning id into v_id;
+  else
+    update public.cuentas_ff
+      set titulo = trim(p_titulo),
+          descripcion = coalesce(p_descripcion, ''),
+          precio = p_precio,
+          estado = coalesce(p_estado, estado),
+          fotos = coalesce(p_fotos, fotos)
+      where id = p_id;
+    v_id := p_id;
+  end if;
+
+  return v_id;
+end;
+$$;
+
+revoke execute on function public.admin_listar_cuentas() from public;
+revoke execute on function public.admin_guardar_cuenta(integer, text, text, numeric, text, text[]) from public;
+grant execute on function public.admin_listar_cuentas() to authenticated;
+grant execute on function public.admin_guardar_cuenta(integer, text, text, numeric, text, text[]) to authenticated;

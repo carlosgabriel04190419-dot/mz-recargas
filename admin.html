@@ -245,7 +245,7 @@
 
     <!-- Modal: crear/editar cuenta -->
     <div class="modal-overlay" id="modal-cuenta-admin">
-        <div class="modal-box" style="max-width: 480px;">
+        <div class="modal-box" style="max-width: 560px; max-height: 92vh; overflow-y: auto;">
             <span class="material-icons close-btn" onclick="cerrarModalCuentaAdmin()">close</span>
             <div class="modal-header">
                 <h2 id="modal-cuenta-admin-titulo">Nueva cuenta</h2>
@@ -255,6 +255,10 @@
             <input type="hidden" id="ct-id">
             <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Título</label>
             <input type="text" id="ct-titulo" class="input-form" placeholder="Ej: Cuenta Nivel 72 - Heroico" maxlength="120">
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Fotos <span style="font-weight:400; color:var(--texto-tenue);">(hasta 8 · la primera es la portada)</span></label>
+            <div id="ct-fotos" class="fotos-admin"></div>
+            <input type="file" id="ct-fotos-input" accept="image/*" multiple style="display:none;" onchange="agregarFotosCuenta(this.files); this.value = '';">
+            <p class="fotos-ayuda">Se reducen y optimizan solas. No subas capturas que muestren contraseñas ni datos de acceso de la cuenta.</p>
             <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Características <span style="font-weight:400; color:var(--texto-tenue);">(una por línea)</span></label>
             <textarea id="ct-descripcion" class="input-form" rows="6" style="resize: vertical; line-height:1.5;" placeholder="Nivel 72&#10;Rango Heroico&#10;12 skins de arma&#10;Vinculada a Facebook"></textarea>
             <div style="display:flex; gap:12px;">
@@ -520,8 +524,9 @@
                 const disponible = c.estado === 'disponible';
                 const lineas = String(c.descripcion || '').split('\n').map(l => l.trim()).filter(Boolean);
                 const resumen = lineas.slice(0, 3).map(escHtml).join('<br>') + (lineas.length > 3 ? `<br><span style="color:var(--texto-tenue);">+${lineas.length - 3} más</span>` : '');
+                const portada = (c.fotos || [])[0];
                 return `<tr>
-                    <td style="font-weight:700;">${escHtml(c.titulo)}</td>
+                    <td style="font-weight:700;"><div class="admin-cuenta-celda">${portada ? `<img class="admin-cuenta-thumb" src="${urlFotoCuenta(portada)}" alt="" loading="lazy">` : ''}<span>${escHtml(c.titulo)}</span></div></td>
                     <td style="font-size:12.5px; color:var(--texto-secundario); min-width:180px;">${resumen || '—'}</td>
                     <td>${formatearSoles(c.precio)}</td>
                     <td><span class="estado-pill ${disponible ? 'estado-confirmado' : 'estado-cancelado'}">${disponible ? 'Disponible' : 'Agotada'}</span></td>
@@ -545,11 +550,112 @@
             document.getElementById('ct-precio').value = cuenta ? cuenta.precio : '';
             document.getElementById('ct-estado').value = cuenta ? cuenta.estado : 'disponible';
 
+            fotosOriginales = cuenta ? [...(cuenta.fotos || [])] : [];
+            fotosEditor = fotosOriginales.map(ruta => ({ ruta }));
+            pintarFotosEditor();
+
             document.getElementById('modal-cuenta-admin').classList.add('abierto');
         }
 
         function cerrarModalCuentaAdmin() {
             document.getElementById('modal-cuenta-admin').classList.remove('abierto');
+            fotosEditor.forEach(f => { if (f.preview) URL.revokeObjectURL(f.preview); });
+            fotosEditor = [];
+        }
+
+        // ---------- FOTOS DE LAS CUENTAS ----------
+        // Las fotos nuevas se reducen aquí mismo (máx. 1600 px, WebP) y se suben
+        // recién al darle "Guardar": si cierras el modal sin guardar, no queda nada
+        // subido de más.
+        const MAX_FOTOS_CUENTA = 8;
+        let fotosEditor = [];      // { ruta } = ya subida | { blob, preview } = nueva, pendiente de subir
+        let fotosOriginales = [];  // rutas que tenía la cuenta al abrir el modal
+        let fotosProcesando = 0;
+
+        function pintarFotosEditor() {
+            const cont = document.getElementById('ct-fotos');
+            const items = fotosEditor.map((f, i) => `
+                <div class="foto-admin ${i === 0 ? 'portada' : ''}">
+                    <img src="${f.ruta ? urlFotoCuenta(f.ruta) : f.preview}" alt="Foto ${i + 1}">
+                    ${i === 0 ? '<span class="foto-admin-portada">Portada</span>' : ''}
+                    <div class="foto-admin-acciones">
+                        ${i > 0 ? `<button type="button" title="Hacer portada" onclick="hacerPortadaFoto(${i})"><span class="material-icons">star</span></button>` : ''}
+                        <button type="button" title="Quitar foto" onclick="quitarFotoCuenta(${i})"><span class="material-icons">close</span></button>
+                    </div>
+                </div>`).join('');
+            const agregar = fotosEditor.length < MAX_FOTOS_CUENTA
+                ? `<button type="button" class="foto-admin-agregar" onclick="document.getElementById('ct-fotos-input').click()"><span class="material-icons">add_a_photo</span>Agregar</button>`
+                : '';
+            cont.innerHTML = items + agregar;
+        }
+
+        async function comprimirImagen(archivo) {
+            const bmp = await createImageBitmap(archivo);
+            const MAX = 1600;
+            const k = Math.min(1, MAX / Math.max(bmp.width, bmp.height));
+            const w = Math.max(1, Math.round(bmp.width * k));
+            const h = Math.max(1, Math.round(bmp.height * k));
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#0c0f18'; ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(bmp, 0, 0, w, h);
+            if (bmp.close) bmp.close();
+            let blob = await new Promise(r => canvas.toBlob(r, 'image/webp', 0.85));
+            if (!blob || blob.type !== 'image/webp') blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.87));
+            if (!blob) throw new Error('no se pudo convertir');
+            return blob;
+        }
+
+        async function agregarFotosCuenta(archivos) {
+            const msg = document.getElementById('modal-cuenta-admin-msg');
+            msg.style.display = 'none';
+            const lista = Array.from(archivos || []);
+            const libres = Math.max(0, MAX_FOTOS_CUENTA - fotosEditor.length);
+            const errores = [];
+            if (lista.length > libres) errores.push(`Máximo ${MAX_FOTOS_CUENTA} fotos por cuenta: se ignoraron ${lista.length - libres}.`);
+
+            fotosProcesando++;
+            for (const archivo of lista.slice(0, libres)) {
+                if (!archivo.type.startsWith('image/')) { errores.push(`"${archivo.name}" no es una imagen.`); continue; }
+                try {
+                    const blob = await comprimirImagen(archivo);
+                    fotosEditor.push({ blob, preview: URL.createObjectURL(blob) });
+                    pintarFotosEditor();
+                } catch (e) {
+                    errores.push(`No se pudo leer "${archivo.name}" (prueba con JPG, PNG o WEBP).`);
+                }
+            }
+            fotosProcesando--;
+
+            if (errores.length) { msg.style.display = 'block'; msg.textContent = errores.join(' '); }
+        }
+
+        function quitarFotoCuenta(i) {
+            const [f] = fotosEditor.splice(i, 1);
+            if (f && f.preview) URL.revokeObjectURL(f.preview);
+            pintarFotosEditor();
+        }
+
+        function hacerPortadaFoto(i) {
+            const [f] = fotosEditor.splice(i, 1);
+            fotosEditor.unshift(f);
+            pintarFotosEditor();
+        }
+
+        async function subirFotoCuenta(blob) {
+            const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+            const nombre = crypto.randomUUID().replace(/-/g, '').slice(0, 20) + '.' + ext;
+            const { error } = await supabaseClient.storage.from('cuentas')
+                .upload(nombre, blob, { contentType: blob.type, cacheControl: '31536000', upsert: false });
+            if (error) throw error;
+            return nombre;
+        }
+
+        // Borrar archivos de Storage no es crítico: si falla, solo queda un archivo huérfano.
+        async function borrarFotosStorage(rutas) {
+            if (!rutas.length) return;
+            try { await supabaseClient.storage.from('cuentas').remove(rutas); } catch (e) { /* ignorar */ }
         }
 
         async function guardarCuentaAdmin() {
@@ -566,25 +672,55 @@
                 msg.textContent = 'Pon un título y un precio mayor a 0.';
                 return;
             }
+            if (fotosProcesando > 0) {
+                msg.style.display = 'block';
+                msg.textContent = 'Espera un momento: todavía se están procesando las fotos.';
+                return;
+            }
 
             const btn = document.getElementById('btn-guardar-cuenta');
-            btn.disabled = true; btn.textContent = 'Guardando...';
+            btn.disabled = true; btn.textContent = fotosEditor.some(f => f.blob) ? 'Subiendo fotos...' : 'Guardando...';
 
+            // 1) Subir las fotos nuevas (esperando a que terminen todas, para poder limpiar si alguna falla).
+            const subidas = [];
+            const resultados = await Promise.allSettled(fotosEditor.map(async f => {
+                if (f.ruta) return f.ruta;
+                const ruta = await subirFotoCuenta(f.blob);
+                subidas.push(ruta);
+                return ruta;
+            }));
+            const fallo = resultados.find(r => r.status === 'rejected');
+            if (fallo) {
+                await borrarFotosStorage(subidas);
+                btn.disabled = false; btn.textContent = 'Guardar';
+                msg.style.display = 'block';
+                msg.textContent = 'No se pudieron subir las fotos: ' + ((fallo.reason && fallo.reason.message) || 'error desconocido');
+                return;
+            }
+            const rutasFinal = resultados.map(r => r.value);
+
+            // 2) Guardar la cuenta con la lista final de fotos (el orden define la portada).
+            btn.textContent = 'Guardando...';
             const { error } = await supabaseClient.rpc('admin_guardar_cuenta', {
                 p_id: idRaw ? parseInt(idRaw, 10) : null,
                 p_titulo: titulo,
                 p_descripcion: descripcion,
                 p_precio: precio,
-                p_estado: document.getElementById('ct-estado').value
+                p_estado: document.getElementById('ct-estado').value,
+                p_fotos: rutasFinal
             });
 
             btn.disabled = false; btn.textContent = 'Guardar';
 
             if (error) {
+                await borrarFotosStorage(subidas);
                 msg.style.display = 'block';
                 msg.textContent = 'No se pudo guardar: ' + error.message;
                 return;
             }
+
+            // 3) Ya guardada: recién ahora se borran del Storage las fotos que quitaste.
+            await borrarFotosStorage(fotosOriginales.filter(r => !rutasFinal.includes(r)));
 
             cerrarModalCuentaAdmin();
             await cargarCuentasAdmin();
@@ -613,6 +749,7 @@
 
             const { error } = await supabaseClient.rpc('admin_eliminar_cuenta', { p_id: id });
             if (error) { alert(error.message); return; }
+            await borrarFotosStorage(cuenta.fotos || []);
             await cargarCuentasAdmin();
         }
 

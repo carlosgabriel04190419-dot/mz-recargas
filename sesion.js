@@ -27,6 +27,12 @@ function formatearSoles(monto) {
     return 'S/ ' + Number(monto || 0).toFixed(2);
 }
 
+// URL pública de una foto de cuenta (bucket "cuentas" de Supabase Storage).
+// La base de datos solo guarda el nombre del archivo, no la URL completa.
+function urlFotoCuenta(ruta) {
+    return supabaseUrl + '/storage/v1/object/public/cuentas/' + encodeURIComponent(ruta);
+}
+
 /**
  * Verifica la sesión REAL de Supabase Auth (no localStorage) y trae el
  * perfil actual del usuario directo de la base de datos.

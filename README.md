@@ -64,6 +64,8 @@ Cuando un cliente le da "Comprar", pasa todo en una sola operación (`comprar_cu
 
 Los datos de acceso de cada cuenta **no** se guardan en la web: se los pasas tú por WhatsApp.
 
+**Fotos:** al crear o editar una cuenta puedes subir hasta 8 fotos (la primera es la portada; con la estrella eliges otra). Se reducen solas en el navegador (máx. 1600 px, WebP) y se suben a Supabase Storage (bucket público `cuentas`: cualquiera ve las fotos, solo el admin sube o borra). Las fotos nuevas recién se suben al darle "Guardar", y al quitar una foto o eliminar la cuenta también se borra del Storage. En el catálogo la tarjeta muestra la portada; al tocarla se abre el detalle con galería y un visor a pantalla completa (flechas, teclado y deslizar con el dedo). En la base de datos solo se guarda el nombre de cada archivo (`cuentas_ff.fotos`). No subas capturas que muestren contraseñas o datos de acceso.
+
 ## Puesta en marcha (una sola vez)
 
 1. ✅ **Base de datos**: ya aplicado — `supabase/schema.sql` está corrido en el proyecto de Supabase de MZ'Recargas (tablas, RLS y triggers listos, con revisión de seguridad hecha con el Advisor de Supabase).

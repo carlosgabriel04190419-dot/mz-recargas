@@ -95,12 +95,15 @@
         </div>
 
         <div id="vista-cuentas" style="display:none;">
-            <a href="#" onclick="volverASelector(event)" class="back-link-catalogo"><span class="material-icons">arrow_back</span> Volver a catálogos</a>
-            <h3 id="cuentas-titulo" style="text-align:center; margin: 20px 0 8px; font-size:22px; font-weight:800;">Cuentas Free Fire</h3>
-            <p class="cuentas-aviso">Cada cuenta es única: apenas se vende, queda <strong>agotada</strong>. Al comprar, te llevamos a WhatsApp para entregarte los datos de acceso.</p>
-            <div id="cuentas-grid" class="cuentas-grid">
-                <p class="cuentas-vacio">Cargando cuentas...</p>
+            <a href="#" id="cuentas-volver-selector" onclick="volverASelector(event)" class="back-link-catalogo"><span class="material-icons">arrow_back</span> Volver a catálogos</a>
+            <div id="cuentas-listado">
+                <h3 id="cuentas-titulo" style="text-align:center; margin: 20px 0 8px; font-size:22px; font-weight:800;">Cuentas Free Fire</h3>
+                <p class="cuentas-aviso">Cada cuenta es única: apenas se vende, queda <strong>agotada</strong>. Al comprar, te llevamos a WhatsApp para entregarte los datos de acceso.</p>
+                <div id="cuentas-grid" class="cuentas-grid">
+                    <p class="cuentas-vacio">Cargando cuentas...</p>
+                </div>
             </div>
+            <div id="cuentas-detalle" style="display:none;"></div>
         </div>
 
         <div id="vista-paquetes" style="display:none;">
@@ -194,6 +197,15 @@
 
             <button type="button" id="btn-comprar" class="btn-primary" style="width:100%;" onclick="confirmarCompra()">Comprar ahora</button>
         </div>
+    </div>
+
+    <!-- VISOR DE FOTOS DE CUENTAS -->
+    <div id="lightbox-cuenta" class="lightbox" onclick="if (event.target === this) cerrarLightbox()">
+        <button type="button" class="lightbox-btn lightbox-cerrar" onclick="cerrarLightbox()" aria-label="Cerrar"><span class="material-icons">close</span></button>
+        <button type="button" class="lightbox-btn lightbox-prev" onclick="moverLightbox(-1)" aria-label="Foto anterior"><span class="material-icons">chevron_left</span></button>
+        <img id="lightbox-img" class="lightbox-img" alt="Foto de la cuenta" draggable="false">
+        <button type="button" class="lightbox-btn lightbox-next" onclick="moverLightbox(1)" aria-label="Foto siguiente"><span class="material-icons">chevron_right</span></button>
+        <div id="lightbox-contador" class="lightbox-contador"></div>
     </div>
 
     <!-- MODAL: COMPRAR CUENTA -->
@@ -341,6 +353,7 @@
                 document.getElementById('vista-paquetes').style.display = 'none';
                 document.getElementById('vista-cuentas').style.display = 'block';
                 promoActiva = null;
+                volverAListadoCuentas();
                 cargarCuentas();
                 return;
             }
@@ -478,6 +491,7 @@
             if (e) e.preventDefault();
             document.getElementById('vista-paquetes').style.display = 'none';
             document.getElementById('vista-cuentas').style.display = 'none';
+            volverAListadoCuentas();
             document.getElementById('vista-selector').style.display = 'grid';
             document.getElementById('paquetes-bg-img').style.display = 'none';
             document.getElementById('paquetes-bg-overlay').style.display = 'none';
@@ -495,7 +509,7 @@
 
             const { data, error } = await supabaseClient
                 .from('cuentas_ff')
-                .select('id, titulo, descripcion, precio, estado')
+                .select('id, titulo, descripcion, precio, estado, fotos')
                 .order('id', { ascending: false });
 
             if (error) {
@@ -507,28 +521,173 @@
 
             if (cuentasCargadas.length === 0) {
                 cont.innerHTML = '<p class="cuentas-vacio">Por ahora no hay cuentas publicadas. ¡Vuelve pronto!</p>';
+                if (cuentaDetalleId !== null) volverAListadoCuentas();
                 return;
             }
 
             cont.innerHTML = cuentasCargadas.map(c => {
                 const disponible = c.estado === 'disponible';
-                const caracteristicas = String(c.descripcion || '').split('\n').map(l => l.trim()).filter(Boolean);
+                const fotos = c.fotos || [];
+                const caracteristicas = lineasCuenta(c);
+                const portada = fotos.length
+                    ? `<img src="${urlFotoCuenta(fotos[0])}" alt="${escHtml(c.titulo)}" loading="lazy">`
+                    : `<div class="cuenta-foto-vacia"><span class="material-icons">sports_esports</span></div>`;
+                const contador = fotos.length > 1
+                    ? `<span class="cuenta-foto-contador"><span class="material-icons">photo_library</span>${fotos.length}</span>` : '';
                 return `
-                <div class="cuenta-card ${disponible ? '' : 'agotada'}">
-                    <div class="cuenta-card-cabecera">
-                        <h3>${escHtml(c.titulo)}</h3>
-                        <span class="estado-pill ${disponible ? 'estado-confirmado' : 'estado-cancelado'}">${disponible ? 'Disponible' : 'Agotada'}</span>
-                    </div>
-                    ${caracteristicas.length ? `<ul class="cuenta-caracteristicas">${caracteristicas.map(l => `<li>${escHtml(l)}</li>`).join('')}</ul>` : ''}
-                    <div class="cuenta-card-pie">
-                        <div class="cuenta-precio">${formatearSoles(c.precio)}</div>
-                        ${disponible
-                            ? `<button type="button" class="btn-primary btn-sm" onclick="abrirModalCuenta(${c.id})"><span class="material-icons" style="font-size:16px; vertical-align:-3px;">shopping_cart</span> Comprar</button>`
-                            : `<button type="button" class="btn-outline btn-sm" disabled>Agotada</button>`}
+                <div class="cuenta-card ${disponible ? '' : 'agotada'}" role="button" tabindex="0" onclick="verCuenta(${c.id})" onkeydown="if (event.key === 'Enter') verCuenta(${c.id})">
+                    <div class="cuenta-foto">${portada}${contador}</div>
+                    <div class="cuenta-card-cuerpo">
+                        <div class="cuenta-card-cabecera">
+                            <h3>${escHtml(c.titulo)}</h3>
+                            <span class="estado-pill ${disponible ? 'estado-confirmado' : 'estado-cancelado'}">${disponible ? 'Disponible' : 'Agotada'}</span>
+                        </div>
+                        ${caracteristicas.length ? `<ul class="cuenta-caracteristicas">${caracteristicas.slice(0, 3).map(l => `<li>${escHtml(l)}</li>`).join('')}${caracteristicas.length > 3 ? `<li class="cuenta-mas">+${caracteristicas.length - 3} más</li>` : ''}</ul>` : ''}
+                        <div class="cuenta-card-pie">
+                            <div class="cuenta-precio">${formatearSoles(c.precio)}</div>
+                            <button type="button" class="${disponible ? 'btn-primary' : 'btn-outline'} btn-sm" tabindex="-1">Ver detalle</button>
+                        </div>
                     </div>
                 </div>`;
             }).join('');
+
+            // Si estabas viendo el detalle de una cuenta, refrescarlo (por ejemplo, si se acaba de vender).
+            if (cuentaDetalleId !== null) {
+                if (cuentasCargadas.some(c => c.id === cuentaDetalleId)) pintarDetalleCuenta();
+                else volverAListadoCuentas();
+            }
         }
+
+        function lineasCuenta(c) {
+            return String(c.descripcion || '').split('\n').map(l => l.trim()).filter(Boolean);
+        }
+
+        // ---------- DETALLE Y GALERÍA DE UNA CUENTA ----------
+        let cuentaDetalleId = null;
+        let fotoDetalle = 0;
+
+        function verCuenta(id) {
+            if (!cuentasCargadas.some(c => c.id === id)) return;
+            cuentaDetalleId = id;
+            fotoDetalle = 0;
+            pintarDetalleCuenta();
+            document.getElementById('cuentas-volver-selector').style.display = 'none';
+            document.getElementById('cuentas-listado').style.display = 'none';
+            document.getElementById('cuentas-detalle').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function volverAListadoCuentas(e) {
+            if (e) e.preventDefault();
+            cuentaDetalleId = null;
+            cerrarLightbox();
+            document.getElementById('cuentas-detalle').style.display = 'none';
+            document.getElementById('cuentas-listado').style.display = 'block';
+            document.getElementById('cuentas-volver-selector').style.display = '';
+        }
+
+        function pintarDetalleCuenta() {
+            const c = cuentasCargadas.find(x => x.id === cuentaDetalleId);
+            if (!c) return;
+            const disponible = c.estado === 'disponible';
+            const fotos = c.fotos || [];
+            if (fotoDetalle >= fotos.length) fotoDetalle = 0;
+            const caracteristicas = lineasCuenta(c);
+
+            const galeria = fotos.length ? `
+                <div class="cuenta-galeria">
+                    <button type="button" class="cuenta-galeria-principal" onclick="abrirLightbox(fotoDetalle)" aria-label="Ampliar foto">
+                        <img id="galeria-principal" src="${urlFotoCuenta(fotos[fotoDetalle])}" alt="${escHtml(c.titulo)}">
+                        <span class="cuenta-galeria-ampliar"><span class="material-icons">zoom_in</span>Ampliar</span>
+                    </button>
+                    ${fotos.length > 1 ? `<div class="cuenta-miniaturas">${fotos.map((f, i) => `
+                        <button type="button" class="cuenta-miniatura ${i === fotoDetalle ? 'activa' : ''}" onclick="elegirFotoDetalle(${i})" aria-label="Ver foto ${i + 1}">
+                            <img src="${urlFotoCuenta(f)}" alt="" loading="lazy">
+                        </button>`).join('')}</div>` : ''}
+                </div>`
+                : `<div class="cuenta-galeria"><div class="cuenta-galeria-principal sin-foto"><div class="cuenta-foto-vacia"><span class="material-icons">sports_esports</span></div></div></div>`;
+
+            document.getElementById('cuentas-detalle').innerHTML = `
+                <a href="#" onclick="volverAListadoCuentas(event)" class="back-link-catalogo"><span class="material-icons">arrow_back</span> Volver a Cuentas</a>
+                <div class="card cuenta-detalle ${disponible ? '' : 'agotada'}">
+                    ${galeria}
+                    <div class="cuenta-info">
+                        <span class="estado-pill ${disponible ? 'estado-confirmado' : 'estado-cancelado'}">${disponible ? 'Disponible' : 'Agotada'}</span>
+                        <h2>${escHtml(c.titulo)}</h2>
+                        ${caracteristicas.length ? `<ul class="cuenta-caracteristicas">${caracteristicas.map(l => `<li>${escHtml(l)}</li>`).join('')}</ul>` : ''}
+                        <div class="cuenta-precio">${formatearSoles(c.precio)}</div>
+                        ${disponible
+                            ? `<button type="button" class="btn-primary" style="width:100%;" onclick="abrirModalCuenta(${c.id})"><span class="material-icons" style="font-size:18px; vertical-align:-4px;">shopping_cart</span> Comprar esta cuenta</button>
+                               <p class="cuenta-nota">Pagas con tu saldo y te entregamos los datos de acceso por WhatsApp.</p>`
+                            : `<button type="button" class="btn-outline" style="width:100%;" disabled>Esta cuenta ya se vendió</button>`}
+                    </div>
+                </div>`;
+        }
+
+        function elegirFotoDetalle(i) {
+            fotoDetalle = i;
+            pintarDetalleCuenta();
+        }
+
+        // ---------- VISOR (LIGHTBOX) ----------
+        let lightboxFotos = [];
+        let lightboxIndice = 0;
+
+        function abrirLightbox(i) {
+            const c = cuentasCargadas.find(x => x.id === cuentaDetalleId);
+            if (!c || !(c.fotos || []).length) return;
+            lightboxFotos = c.fotos.map(urlFotoCuenta);
+            lightboxIndice = Math.min(Math.max(i || 0, 0), lightboxFotos.length - 1);
+            pintarLightbox();
+            document.getElementById('lightbox-cuenta').classList.add('abierto');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function cerrarLightbox() {
+            const box = document.getElementById('lightbox-cuenta');
+            if (!box.classList.contains('abierto')) return;
+            box.classList.remove('abierto');
+            document.body.style.overflow = '';
+            // Que la miniatura activa de atrás quede en la última foto que viste.
+            if (cuentaDetalleId !== null && lightboxFotos.length) { fotoDetalle = lightboxIndice; pintarDetalleCuenta(); }
+        }
+
+        function moverLightbox(d) {
+            if (lightboxFotos.length < 2) return;
+            lightboxIndice = (lightboxIndice + d + lightboxFotos.length) % lightboxFotos.length;
+            pintarLightbox();
+        }
+
+        function pintarLightbox() {
+            document.getElementById('lightbox-img').src = lightboxFotos[lightboxIndice];
+            document.getElementById('lightbox-contador').innerText = `${lightboxIndice + 1} / ${lightboxFotos.length}`;
+            const varias = lightboxFotos.length > 1;
+            document.querySelector('.lightbox-prev').style.display = varias ? 'flex' : 'none';
+            document.querySelector('.lightbox-next').style.display = varias ? 'flex' : 'none';
+            document.getElementById('lightbox-contador').style.display = varias ? 'block' : 'none';
+            // Precarga la siguiente para que el cambio sea instantáneo.
+            if (varias) new Image().src = lightboxFotos[(lightboxIndice + 1) % lightboxFotos.length];
+        }
+
+        document.addEventListener('keydown', e => {
+            if (!document.getElementById('lightbox-cuenta').classList.contains('abierto')) return;
+            if (e.key === 'Escape') cerrarLightbox();
+            else if (e.key === 'ArrowLeft') moverLightbox(-1);
+            else if (e.key === 'ArrowRight') moverLightbox(1);
+        });
+
+        // Deslizar con el dedo para cambiar de foto en el celular.
+        (function () {
+            let x0 = null;
+            const box = document.getElementById('lightbox-cuenta');
+            box.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+            box.addEventListener('touchend', e => {
+                if (x0 === null) return;
+                const dx = e.changedTouches[0].clientX - x0;
+                x0 = null;
+                if (Math.abs(dx) > 50) moverLightbox(dx < 0 ? 1 : -1);
+            }, { passive: true });
+        })();
 
         function abrirModalCuenta(id) {
             cuentaElegida = cuentasCargadas.find(c => c.id === id);
