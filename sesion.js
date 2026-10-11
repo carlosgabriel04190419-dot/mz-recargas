@@ -27,6 +27,19 @@ function formatearSoles(monto) {
     return 'S/ ' + Number(monto || 0).toFixed(2);
 }
 
+// Adónde volver después de iniciar sesión o crear la cuenta (?volver=catalogo.html%3Fcatalogo%3Dcuentas).
+// Solo se aceptan páginas del propio sitio (nunca una dirección externa).
+function destinoVolver(porDefecto) {
+    const v = new URLSearchParams(location.search).get('volver') || '';
+    return /^[a-z0-9-]+\.html(\?[a-z0-9_=&-]*)?$/i.test(v) ? v : (porDefecto === undefined ? 'index.html' : porDefecto);
+}
+
+// Pasa el "volver" de una pantalla de acceso a la otra (login ⇄ registro).
+function conVolver(url) {
+    const v = destinoVolver('');
+    return v ? url + (url.includes('?') ? '&' : '?') + 'volver=' + encodeURIComponent(v) : url;
+}
+
 // URL pública de una foto de cuenta (bucket "cuentas" de Supabase Storage).
 // La base de datos solo guarda el nombre del archivo, no la URL completa.
 function urlFotoCuenta(ruta) {

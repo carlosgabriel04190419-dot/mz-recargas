@@ -6,13 +6,13 @@
     <title>MZ'Recargas | Recargar Diamantes Free Fire</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
     <meta name="theme-color" content="#0c0f18">
-    <meta name="robots" content="noindex, follow">
-    <meta name="description" content="Recarga saldo y compra diamantes de Free Fire al instante en MZ'Recargas.">
+    <meta name="description" content="Catálogo de Free Fire: recargas de diamantes ilimitadas, promo primera vez, cajas de tokens, tokens evolutivos y cuentas. Paga con Yape o Plin en MZ'Recargas.">
+    <link rel="canonical" href="https://carlosgabriel04190419-dot.github.io/mz-recargas/catalogo.html">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="MZ'Recargas">
     <meta property="og:locale" content="es_PE">
     <meta property="og:title" content="MZ'Recargas | Recargar Diamantes Free Fire">
-    <meta property="og:description" content="Recarga saldo y compra diamantes de Free Fire al instante en MZ'Recargas.">
+    <meta property="og:description" content="Catálogo de Free Fire: recargas de diamantes ilimitadas, promo primera vez, cajas de tokens, tokens evolutivos y cuentas. Paga con Yape o Plin en MZ'Recargas.">
     <meta property="og:image" content="https://carlosgabriel04190419-dot.github.io/mz-recargas/banner-ilimitada.jpg">
     <meta property="og:image:width" content="512">
     <meta property="og:image:height" content="512">
@@ -40,6 +40,7 @@
         </div>
         <div class="nav-actions">
             <button class="theme-toggle" onclick="alternarTema()" aria-label="Cambiar tema"><span class="material-icons">dark_mode</span></button>
+            <a href="login.html" class="btn-outline btn-sm" data-nav-invitado style="display:none;">Ingresar</a>
             <div class="nav-actions-conectado" data-nav-conectado style="display:none; align-items:center; gap:14px;">
                 <div class="balance-pill"><span class="material-icons">diamond</span><span data-nav-saldo>S/ 0.00</span></div>
                 <div class="nav-user-menu">
@@ -60,7 +61,15 @@
 
     <div class="container video-zone" style="padding-top: 40px; padding-bottom: 60px;">
 
-        <div class="saldo-card" style="max-width: 420px; margin-left:auto; margin-right:auto;">
+        <div class="saldo-card" id="aviso-invitado" style="display:none; max-width: 420px; margin-left:auto; margin-right:auto;">
+            <p style="color: var(--texto-secundario); font-size: 14px; line-height: 1.6; margin-bottom: 14px;">Mira los catálogos y precios cuando quieras. Para comprar necesitas una cuenta gratis: guardamos tu saldo y el historial de tus pedidos.</p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <a href="login.html" class="btn-primary" data-enlace-login style="display:inline-block; text-decoration:none;">Iniciar sesión</a>
+                <a href="register.html" class="btn-outline" data-enlace-registro style="display:inline-block; text-decoration:none;">Crear cuenta</a>
+            </div>
+        </div>
+
+        <div class="saldo-card" id="saldo-usuario" style="display:none; max-width: 420px; margin-left:auto; margin-right:auto;">
             <p style="color: var(--texto-secundario); font-size: 14px;">Tu saldo disponible</p>
             <div class="monto" data-nav-saldo>S/ 0.00</div>
             <a href="recargar-saldo.html" class="btn-primary" style="display:inline-block; text-decoration:none;">Recargar Saldo</a>
@@ -72,31 +81,31 @@
         </div>
 
         <div id="vista-selector" class="catalogos-grid">
-            <div class="catalogo-card" onclick="cambiarCatalogo('ilimitada')">
+            <a href="catalogo.html?catalogo=ilimitada" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('ilimitada'); return false;">
                 <img src="banner-ilimitada.jpg" alt="Recargas Ilimitadas">
                 <h3>Recargas Ilimitadas</h3>
                 <span class="catalogo-tag">Sin límite de recargas</span>
-            </div>
-            <div class="catalogo-card" onclick="cambiarCatalogo('promo')">
+            </a>
+            <a href="catalogo.html?catalogo=promo" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('promo'); return false;">
                 <img src="banner-promo.jpeg" alt="Promo Primera Vez">
                 <h3>Promo Primera Vez</h3>
                 <span class="catalogo-tag">Precio especial, 1 vez por ID</span>
-            </div>
-            <div class="catalogo-card" onclick="cambiarCatalogo('cajas_tokens')">
+            </a>
+            <a href="catalogo.html?catalogo=cajas_tokens" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('cajas_tokens'); return false;">
                 <img src="banner-cajas-tokens.jpg" alt="Cajas de Tokens" style="object-position: 50% 78%;">
                 <h3>Cajas de Tokens</h3>
                 <span class="catalogo-tag">Cajas de tokens evolutivos</span>
-            </div>
-            <div class="catalogo-card" onclick="cambiarCatalogo('tokens_evolutivos')">
+            </a>
+            <a href="catalogo.html?catalogo=tokens_evolutivos" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('tokens_evolutivos'); return false;">
                 <img src="banner-tokens-evo.jpg" alt="Tokens Evolutivos">
                 <h3>Tokens Evolutivos</h3>
                 <span class="catalogo-tag">Tokens sueltos para evolucionar</span>
-            </div>
-            <div class="catalogo-card" onclick="cambiarCatalogo('cuentas')">
+            </a>
+            <a href="catalogo.html?catalogo=cuentas" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('cuentas'); return false;">
                 <img src="banner-cuentas.jpg" alt="Cuentas de Free Fire">
                 <h3>Cuentas Free Fire</h3>
                 <span class="catalogo-tag">Cuentas listas para jugar</span>
-            </div>
+            </a>
         </div>
 
         <div id="vista-cuentas" style="display:none;">
@@ -222,6 +231,19 @@
         </div>
     </footer>
     <!-- FOOTER:FIN -->
+
+    <!-- MODAL: HAY QUE INICIAR SESIÓN PARA COMPRAR -->
+    <div id="modal-login-requerido" class="modal-overlay">
+        <div class="modal-box">
+            <span class="material-icons close-btn" onclick="cerrarModal('modal-login-requerido')">close</span>
+            <div class="modal-header">
+                <h2>Inicia sesión para comprar</h2>
+                <p>Crear tu cuenta es gratis y toma un minuto. Así guardamos tu saldo y el historial de tus pedidos.</p>
+            </div>
+            <a href="login.html" class="btn-primary" data-enlace-login style="display:block; width:100%; text-align:center; text-decoration:none; margin-bottom:10px;">Iniciar sesión</a>
+            <a href="register.html" class="btn-outline" data-enlace-registro style="display:block; width:100%; text-align:center; text-decoration:none;">Crear cuenta gratis</a>
+        </div>
+    </div>
 
     <!-- MODAL: COMPRAR DIAMANTES -->
     <div id="modal-comprar" class="modal-overlay">
@@ -352,13 +374,32 @@
         let promoActiva = null;
 
         window.onload = async function () {
-            usuarioActual = await verificarSesion();
-            if (!usuarioActual) return;
+            // Se puede mirar el catálogo sin cuenta; el inicio de sesión se pide recién al comprar.
+            usuarioActual = await verificarSesion(false);
+            if (usuarioActual) {
+                document.getElementById('saldo-usuario').style.display = 'block';
+            } else {
+                pintarNavInvitado();
+                document.getElementById('aviso-invitado').style.display = 'block';
+            }
+            actualizarEnlacesLogin();
             await cargarPaquetes();
 
             const catalogoUrl = new URLSearchParams(window.location.search).get('catalogo');
             if (catalogoUrl && NOMBRES_CATALOGO[catalogoUrl]) cambiarCatalogo(catalogoUrl);
         };
+
+        // Los botones de "Iniciar sesión" / "Crear cuenta" llevan de vuelta al mismo catálogo.
+        function actualizarEnlacesLogin() {
+            const volver = encodeURIComponent('catalogo.html' + (categoriaActiva ? '?catalogo=' + categoriaActiva : ''));
+            document.querySelectorAll('[data-enlace-login], [data-nav-invitado]').forEach(a => { a.href = 'login.html?volver=' + volver; });
+            document.querySelectorAll('[data-enlace-registro]').forEach(a => { a.href = 'register.html?volver=' + volver; });
+        }
+
+        function pedirLogin() {
+            actualizarEnlacesLogin();
+            document.getElementById('modal-login-requerido').classList.add('abierto');
+        }
 
         function emojiPorTamano(categoria, cantidad) {
             const config = CONFIG_CATALOGO[categoria] || { emoji: '💎', tamanos: [] };
@@ -388,8 +429,36 @@
             paquetesTodos = data;
         }
 
+        // Cada catálogo tiene su propio título, descripción y dirección canónica para buscadores.
+        const SEO_CATALOGO = {
+            ilimitada: ['Recargas ilimitadas de diamantes Free Fire', 'Compra diamantes de Free Fire con recargas ilimitadas. Elige tu paquete, paga con Yape o Plin y recíbelos en minutos.'],
+            promo: ['Promo primera vez: diamantes Free Fire', 'Precio especial en diamantes de Free Fire para tu primera recarga por ID de jugador. Paga con Yape o Plin.'],
+            cajas_tokens: ['Cajas de tokens evolutivos Free Fire', 'Compra cajas de tokens evolutivos de Free Fire por paquete o por cantidad exacta. Paga con Yape o Plin.'],
+            tokens_evolutivos: ['Tokens evolutivos Free Fire', 'Tokens sueltos para evolucionar tus armas en Free Fire. Elige tu paquete y paga con Yape o Plin.'],
+            cuentas: ['Cuentas de Free Fire en venta', 'Cuentas de Free Fire listas para jugar, con fotos y características. Cada cuenta es única; cómprala con tu saldo.']
+        };
+        const SEO_PORTADA = { titulo: document.title, descripcion: document.querySelector('meta[name="description"]').content };
+
+        function actualizarSeo(categoria) {
+            const canon = document.querySelector('link[rel="canonical"]');
+            const base = canon.href.split('?')[0];
+            const datos = categoria && SEO_CATALOGO[categoria];
+            const titulo = datos ? "MZ'Recargas | " + datos[0] : SEO_PORTADA.titulo;
+            const descripcion = datos ? datos[1] : SEO_PORTADA.descripcion;
+            const url = datos ? base + '?catalogo=' + categoria : base;
+            document.title = titulo;
+            document.querySelector('meta[name="description"]').content = descripcion;
+            canon.href = url;
+            const ponerMeta = (sel, v) => { const el = document.querySelector(sel); if (el) el.content = v; };
+            ponerMeta('meta[property="og:title"]', titulo);
+            ponerMeta('meta[property="og:description"]', descripcion);
+            ponerMeta('meta[property="og:url"]', url);
+        }
+
         function cambiarCatalogo(categoria) {
             categoriaActiva = categoria;
+            actualizarSeo(categoria);
+            actualizarEnlacesLogin();
             paqueteElegido = null;
             document.getElementById('paso-confirmar').style.display = 'none';
             document.getElementById('vista-selector').style.display = 'none';
@@ -541,6 +610,9 @@
 
         function volverASelector(e) {
             if (e) e.preventDefault();
+            categoriaActiva = null;
+            actualizarSeo(null);
+            actualizarEnlacesLogin();
             document.getElementById('vista-paquetes').style.display = 'none';
             document.getElementById('vista-cuentas').style.display = 'none';
             volverAListadoCuentas();
@@ -744,6 +816,7 @@
         function abrirModalCuenta(id) {
             cuentaElegida = cuentasCargadas.find(c => c.id === id);
             if (!cuentaElegida) return;
+            if (!usuarioActual) return pedirLogin();
             compraCuentaHecha = null;
 
             const saldoActual = Number(usuarioActual.saldo);
@@ -880,6 +953,7 @@
         // ---------- PASO 3: CONFIRMAR COMPRA ----------
         function abrirModalComprar() {
             if (!paqueteElegido) return;
+            if (!usuarioActual) return pedirLogin();
             const saldoActual = Number(usuarioActual.saldo);
             const precio = Number(paqueteElegido.precio);
 

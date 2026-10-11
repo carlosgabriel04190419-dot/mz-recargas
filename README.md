@@ -105,9 +105,10 @@ No lo edites a mano en cada página: el script lo vuelve a pisar. Es HTML normal
 ## Salir con dominio propio y aparecer en Google
 
 Qué ya está listo en el sitio:
-- `robots.txt` y `sitemap.xml` (con las 4 páginas que conviene indexar: inicio, soporte, términos y privacidad).
+- `robots.txt` y `sitemap.xml` (con las páginas que conviene indexar: inicio, el catálogo y cada uno de sus 5 catálogos, soporte, términos y privacidad).
 - `<link rel="canonical">`, título, descripción y vista previa al compartir (Open Graph) en cada página pública, y datos estructurados (Organization y WebSite) en el inicio.
-- Páginas privadas con `noindex` (admin, pedidos, perfil, recargar saldo, login, registro, nueva contraseña). `catalogo.html` y `ranking.html` también van con `noindex`: el catálogo exige iniciar sesión (Google no podría verlo) y el ranking muestra nicknames de clientes.
+- Páginas privadas con `noindex` (admin, pedidos, perfil, recargar saldo, login, registro, nueva contraseña). `ranking.html` también va con `noindex` porque muestra nicknames de clientes.
+- **El catálogo es público**: cualquiera ve los catálogos, paquetes, precios y cuentas sin iniciar sesión; el inicio de sesión se pide recién al darle "Comprar" (y después de entrar vuelve al mismo catálogo, con `?volver=`). Cada catálogo cambia su título, descripción y `canonical` solo (`SEO_CATALOGO` en `catalogo.html`).
 
 Cuando tengas el dominio:
 1. `python3 scripts/configurar-dominio.py https://www.tudominio.com` (agrega `--prueba` para ver qué cambiaría sin escribir nada). Cambia la dirección en canonical, og:url, og:image, datos estructurados, sitemap y robots, y crea el archivo `CNAME`.
@@ -116,5 +117,5 @@ Cuando tengas el dominio:
 4. En [Google Search Console](https://search.google.com/search-console) agrega el sitio (verificación por DNS) y envía `https://www.tudominio.com/sitemap.xml`. Haz lo mismo en Bing Webmaster Tools si quieres.
 5. Sube los cambios (`git push`).
 
-Aparte de lo técnico, para posicionar de verdad: el catálogo con precios hoy solo se ve con sesión iniciada, así que Google no puede leerlo. Si quieres que "recarga diamantes free fire perú" te encuentre, lo ideal es dejar que cualquiera vea el catálogo y sus precios y pedir el inicio de sesión recién al comprar. Hasta entonces solo se indexan el inicio y las páginas legales.
+Los paquetes y precios se cargan con JavaScript desde Supabase (Google los ve, pero tarda un poco más en procesarlos que el HTML fijo). Para saber cómo te ve Google, usa "Inspección de URL" en Search Console.
 

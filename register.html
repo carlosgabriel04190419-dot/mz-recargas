@@ -83,7 +83,7 @@
 
                 <button type="button" id="btn-registro" class="btn-primary" style="width: 100%; margin: 6px 0 20px;" onclick="manejarRegistro()">Crear mi cuenta</button>
 
-                <button type="button" class="btn-outline" style="width: 100%;" onclick="window.location.href='login.html'">Ya tengo una cuenta</button>
+                <button type="button" class="btn-outline" style="width: 100%;" onclick="window.location.href = conVolver('login.html')">Ya tengo una cuenta</button>
 
             </form>
         </div>
@@ -129,7 +129,7 @@
 
         window.onload = async function () {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) window.location.href = 'index.html';
+            if (session) window.location.href = destinoVolver();
             if (codigoReferido) document.getElementById('ref-box').style.display = 'block';
         };
 
@@ -160,7 +160,7 @@
             }
 
             if (data.session) {
-                window.location.href = 'index.html';
+                window.location.href = destinoVolver();
                 return;
             }
 

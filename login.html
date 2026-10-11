@@ -69,7 +69,7 @@
 
                 <button type="button" id="btn-login" class="btn-primary" style="width: 100%; margin-bottom: 20px;" onclick="manejarLogin()">Iniciar Sesión</button>
 
-                <button type="button" class="btn-outline" style="width: 100%;" onclick="window.location.href='register.html'">Crear una cuenta</button>
+                <button type="button" class="btn-outline" style="width: 100%;" onclick="window.location.href = conVolver('register.html')">Crear una cuenta</button>
 
                 <p class="terms-text">Al continuar, aceptas nuestros <a href="terminos.html">Términos de Servicio</a> y <a href="privacidad.html">Política de Privacidad</a></p>
             </form>
@@ -130,7 +130,7 @@
 
         window.onload = async function () {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) window.location.href = 'index.html';
+            if (session) window.location.href = destinoVolver();
         };
 
         async function manejarLogin() {
@@ -152,7 +152,7 @@
                 return mostrarError('Error: ' + error.message);
             }
 
-            window.location.href = 'index.html';
+            window.location.href = destinoVolver();
         }
 
         function abrirModalRecuperar(e) {
