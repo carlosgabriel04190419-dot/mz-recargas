@@ -3,6 +3,8 @@
 
 /* ========================================== */
 /* MODO CLARO / OSCURO — VARIABLES DE COLOR   */
+/* Por defecto el sitio es OSCURO para todos (sin importar el tema del sistema).
+   El claro solo se activa si la persona lo elige con el botón del tema. */
 /* ========================================== */
 :root {
     --bg: #0c0f18;
@@ -27,26 +29,6 @@
     --acento-degradado: linear-gradient(135deg, var(--acento-1) 0%, var(--acento-2) 100%);
     --exito: #2ee6a6;
     --error: #ff4757;
-}
-@media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-        --bg: #f2f4fb;
-        --bg-elevada: #ffffff;
-        --bg-elevada-2: #e8ecfa;
-        --bg-input: #eef1fb;
-        --bg-nav: rgba(255, 255, 255, 0.95);
-        --bg-footer: #e8ecfa;
-        --borde: #dee3f5;
-        --borde-suave: #c5cdec;
-        --texto: #12162a;
-        --texto-secundario: #4d5578;
-        --texto-tenue: #757ea1;
-        --shimmer-1: #e6e9f7;
-        --shimmer-2: #f5f6fc;
-        --sombra-modal: rgba(20,20,45,0.15);
-        --overlay: rgba(15, 16, 32, 0.6);
-        --card-glass: rgba(255, 255, 255, 0.8);
-    }
 }
 :root[data-theme="light"] {
     --bg: #f2f4fb;

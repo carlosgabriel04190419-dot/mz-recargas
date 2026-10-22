@@ -107,20 +107,20 @@ function pintarNavInvitado() {
 }
 
 // ==========================================
-// TEMA CLARO / OSCURO
+// TEMA CLARO / OSCURO — el sitio arranca siempre en oscuro; el claro es opcional.
+// (La clave lleva _v2 para que quien había quedado en claro vuelva a oscuro una vez.)
 // ==========================================
-const CLAVE_TEMA = 'mzrecargas_tema';
+const CLAVE_TEMA = 'mzrecargas_tema_v2';
 
 (function aplicarTemaGuardado() {
     try {
         const t = localStorage.getItem(CLAVE_TEMA);
         if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
-    } catch (e) { /* modo privado: seguimos con el tema automático del sistema */ }
+    } catch (e) { /* modo privado: seguimos en oscuro */ }
 })();
 
 function alternarTema() {
-    const actual = document.documentElement.getAttribute('data-theme') ||
-        (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    const actual = document.documentElement.getAttribute('data-theme') || 'dark';
     const nuevo = actual === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', nuevo);
     try { localStorage.setItem(CLAVE_TEMA, nuevo); } catch (e) { /* modo privado: no se guarda para la próxima */ }
