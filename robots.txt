@@ -3,4 +3,4 @@ Allow: /
 Disallow: /scripts/
 Disallow: /supabase/
 
-Sitemap: https://carlosgabriel04190419-dot.github.io/mz-recargas/sitemap.xml
+Sitemap: https://mzrecargas.com/sitemap.xml
