@@ -227,6 +227,7 @@
     <script src="sesion.js"></script>
     <script>
         window.onload = async function () {
+            cargarConfigCatalogos().then(aplicarEstadoTarjetas);
             const usuario = await verificarSesion(false);
             if (!usuario) pintarNavInvitado();
         };

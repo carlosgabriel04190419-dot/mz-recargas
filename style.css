@@ -198,6 +198,25 @@ button { cursor: pointer; font-family: inherit; }
     display: inline-block; margin: 0 0 18px; background: var(--bg-elevada-2); color: var(--acento-1);
     font-size: 12.5px; font-weight: 700; padding: 6px 14px; border-radius: 20px;
 }
+.catalogo-card { position: relative; }
+/* Estado de los catálogos: en mantenimiento / sin stock (lo decide el admin) */
+.cat-etiqueta { position: absolute; top: 12px; left: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; color: #fff; background: rgba(8, 10, 20, 0.85); }
+.cat-etiqueta .material-icons { font-size: 14px; }
+.catalogo-card.cat-mant .cat-etiqueta { background: #ffb020; color: #1a1300; }
+.catalogo-card.cat-stock .cat-etiqueta { background: var(--error); }
+.catalogo-card.cat-mant img { opacity: 0.55; }
+.catalogo-card.cat-stock img { filter: grayscale(1); }
+.catalogo-card .cat-mensaje { margin: -6px 0 0; padding: 0 14px 16px; font-size: 12.5px; line-height: 1.45; color: var(--texto-secundario); }
+.cat-aviso { display: flex; align-items: flex-start; gap: 14px; max-width: 760px; margin: 22px auto 0; padding: 16px 20px; border-radius: 16px; background: var(--bg-elevada); border: 1px solid #ffb020; }
+.cat-aviso.stock { border-color: var(--error); }
+.cat-aviso .material-icons { flex: none; font-size: 26px; color: #ffb020; }
+.cat-aviso.stock .material-icons { color: var(--error); }
+.cat-aviso strong { display: block; margin-bottom: 2px; font-size: 15px; }
+.cat-aviso p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--texto-secundario); }
+.paquetes-grid.bloqueado .paquete-card { opacity: 0.5; filter: grayscale(0.6); cursor: not-allowed; }
+.paquetes-grid.bloqueado .paquete-card:hover, .paquete-card.agotado:hover { transform: none; border-color: var(--borde); box-shadow: none; }
+.paquete-card.agotado { position: relative; opacity: 0.55; filter: grayscale(0.8); cursor: not-allowed; }
+.agotado-tag { position: absolute; top: 10px; right: 10px; z-index: 2; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; color: #fff; background: var(--error); }
 .back-link-catalogo { display: inline-flex; align-items: center; gap: 6px; color: var(--texto-secundario); font-size: 14px; font-weight: 600; margin-top: 24px; }
 .back-link-catalogo:hover { color: var(--acento-1); }
 
@@ -487,36 +506,6 @@ body.fondo-catalogo-activo #cuentas-titulo { color: #f5f7ff; }
 .estado-completado { background: rgba(46,230,166,0.2); color: var(--exito); }
 .estado-cancelado { background: rgba(255,71,87,0.12); color: var(--error); }
 .tabla-vacia { text-align: center; padding: 50px 20px; color: var(--texto-tenue); }
-
-/* ========================================== */
-/* PANEL ADMIN                                */
-/* ========================================== */
-.admin-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; border-bottom: 1px solid var(--borde); padding-bottom: 0; }
-.admin-tab {
-    display: flex; align-items: center; gap: 6px; padding: 11px 18px; font-size: 14px; font-weight: 700;
-    color: var(--texto-tenue); background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px;
-}
-.admin-tab .material-icons { font-size: 18px; }
-.admin-tab:hover { color: var(--texto); }
-.admin-tab.activo { color: var(--acento-1); border-bottom-color: var(--acento-1); }
-
-.admin-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.admin-stat-card { background-color: var(--bg-elevada); border: 1px solid var(--borde); border-radius: 14px; padding: 22px; }
-.admin-stat-valor { font-size: 28px; font-weight: 800; color: var(--acento-1); margin-bottom: 6px; }
-.admin-stat-label { font-size: 13px; color: var(--texto-secundario); }
-
-.admin-filtros { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-.admin-filtro { background-color: var(--bg-elevada); border: 1px solid var(--borde); color: var(--texto-secundario); padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; }
-.admin-filtro:hover { border-color: var(--acento-1); color: var(--acento-1); }
-.admin-filtro.activo { background: var(--acento-1); border-color: var(--acento-1); color: #fff; }
-
-@media (max-width: 900px) {
-    .admin-stats-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 560px) {
-    .admin-stats-grid { grid-template-columns: 1fr; }
-    .admin-tabs { overflow-x: auto; flex-wrap: nowrap; }
-}
 
 /* ========================================== */
 /* FOOTER                                     */

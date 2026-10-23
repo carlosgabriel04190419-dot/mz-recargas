@@ -108,6 +108,8 @@
             </a>
         </div>
 
+        <div id="catalogo-aviso" class="cat-aviso" style="display:none;" role="status"></div>
+
         <div id="vista-cuentas" style="display:none;">
             <a href="#" id="cuentas-volver-selector" onclick="volverASelector(event)" class="back-link-catalogo"><span class="material-icons">arrow_back</span> Volver a catálogos</a>
             <div id="cuentas-listado">
@@ -366,6 +368,7 @@
         };
 
         let usuarioActual = null;
+        let configCatalogos = {};
         let paquetesTodos = [];
         let paquetes = [];
         let categoriaActiva = null;
@@ -383,11 +386,38 @@
                 document.getElementById('aviso-invitado').style.display = 'block';
             }
             actualizarEnlacesLogin();
+            configCatalogos = await cargarConfigCatalogos();
+            aplicarEstadoTarjetas(configCatalogos);
             await cargarPaquetes();
 
             const catalogoUrl = new URLSearchParams(window.location.search).get('catalogo');
-            if (catalogoUrl && NOMBRES_CATALOGO[catalogoUrl]) cambiarCatalogo(catalogoUrl);
+            if (catalogoUrl && NOMBRES_CATALOGO[catalogoUrl] && estadoVisualCatalogo(configCatalogos[catalogoUrl]) !== 'oculto') cambiarCatalogo(catalogoUrl);
         };
+
+        // ¿Se puede comprar en este catálogo ahora? (el servidor lo vuelve a comprobar al comprar)
+        function catalogoBloqueado(cat) {
+            const e = estadoVisualCatalogo(configCatalogos[cat]);
+            return e === 'mant' || e === 'stock' || e === 'oculto';
+        }
+
+        function pintarAvisoCatalogo(cat) {
+            const el = document.getElementById('catalogo-aviso');
+            const e = estadoVisualCatalogo(cat ? configCatalogos[cat] : null);
+            if (e !== 'mant' && e !== 'stock') { el.style.display = 'none'; el.innerHTML = ''; return; }
+            const c = configCatalogos[cat];
+            el.className = 'cat-aviso ' + (e === 'stock' ? 'stock' : 'mant');
+            el.innerHTML = `<span class="material-icons">${e === 'mant' ? 'build' : 'remove_shopping_cart'}</span>
+                <div><strong>${e === 'mant' ? 'Este catálogo está en mantenimiento' : 'Este catálogo está sin stock por ahora'}</strong>
+                <p>${escHtml(c.mensaje) || (e === 'mant' ? 'Puedes ver los precios, pero por ahora no se puede comprar. Vuelve en un rato.' : 'Puedes ver los precios, pero por ahora no se puede comprar. Vuelve pronto.')}</p></div>`;
+            el.style.display = 'flex';
+        }
+
+        // Cuando alguien intenta comprar en un catálogo bloqueado: lo llevamos al aviso.
+        function avisarBloqueado() {
+            const el = document.getElementById('catalogo-aviso');
+            if (el.style.display !== 'none') el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return true;
+        }
 
         // Los botones de "Iniciar sesión" / "Crear cuenta" llevan de vuelta al mismo catálogo.
         function actualizarEnlacesLogin() {
@@ -459,6 +489,8 @@
             categoriaActiva = categoria;
             actualizarSeo(categoria);
             actualizarEnlacesLogin();
+            pintarAvisoCatalogo(categoria);
+            document.getElementById('id-validado-msg').style.display = 'none';
             paqueteElegido = null;
             document.getElementById('paso-confirmar').style.display = 'none';
             document.getElementById('vista-selector').style.display = 'none';
@@ -505,6 +537,7 @@
             promoActiva = null;
 
             if (categoriaActiva !== 'ilimitada' && categoriaActiva !== 'promo') return;
+            if (catalogoBloqueado(categoriaActiva)) return;
 
             const { data, error } = await supabaseClient.rpc('obtener_promo_del_dia');
             if (error || !data || data.length === 0) return;
@@ -538,6 +571,7 @@
         function elegirPromoDelDia() {
             if (!promoActiva) return;
             cerrarModal('modal-promo-dia');
+            if (catalogoBloqueado(categoriaActiva)) return avisarBloqueado();
 
             if (!idJugadorValidado) {
                 const msg = document.getElementById('id-validado-msg');
@@ -575,6 +609,7 @@
         function elegirCantidadExacta() {
             const cantExacta = CANTIDAD_EXACTA[categoriaActiva];
             if (!cantExacta) return;
+            if (catalogoBloqueado(categoriaActiva)) return avisarBloqueado();
 
             if (!idJugadorValidado) {
                 const msg = document.getElementById('id-validado-msg');
@@ -613,6 +648,7 @@
             categoriaActiva = null;
             actualizarSeo(null);
             actualizarEnlacesLogin();
+            pintarAvisoCatalogo(null);
             document.getElementById('vista-paquetes').style.display = 'none';
             document.getElementById('vista-cuentas').style.display = 'none';
             volverAListadoCuentas();
@@ -740,7 +776,9 @@
                         <h2>${escHtml(c.titulo)}</h2>
                         ${caracteristicas.length ? `<ul class="cuenta-caracteristicas">${caracteristicas.map(l => `<li>${escHtml(l)}</li>`).join('')}</ul>` : ''}
                         <div class="cuenta-precio">${formatearSoles(c.precio)}</div>
-                        ${disponible
+                        ${disponible && catalogoBloqueado('cuentas')
+                            ? `<button type="button" class="btn-outline" style="width:100%;" disabled>No disponible por ahora</button>`
+                            : disponible
                             ? `<button type="button" class="btn-primary" style="width:100%;" onclick="abrirModalCuenta(${c.id})"><span class="material-icons" style="font-size:18px; vertical-align:-4px;">shopping_cart</span> Comprar esta cuenta</button>
                                <p class="cuenta-nota">Pagas con tu saldo y te entregamos los datos de acceso por WhatsApp.</p>`
                             : `<button type="button" class="btn-outline" style="width:100%;" disabled>Esta cuenta ya se vendió</button>`}
@@ -816,6 +854,7 @@
         function abrirModalCuenta(id) {
             cuentaElegida = cuentasCargadas.find(c => c.id === id);
             if (!cuentaElegida) return;
+            if (catalogoBloqueado('cuentas')) return avisarBloqueado();
             if (!usuarioActual) return pedirLogin();
             compraCuentaHecha = null;
 
@@ -860,10 +899,14 @@
                 msg.className = 'msg-box error'; msg.style.display = 'block';
                 msg.innerText = error.message.includes('Saldo insuficiente')
                     ? 'Saldo insuficiente. Recarga tu saldo primero.'
+                    : error.message.includes('catálogo no está disponible')
+                        ? 'Este catálogo no está disponible por ahora. Vuelve a intentarlo más tarde.'
                     : error.message.includes('ya no está disponible')
                         ? 'Alguien más acaba de comprar esta cuenta. Elige otra disponible.'
                         : 'No se pudo comprar: ' + error.message;
-                if (error.message.includes('ya no está disponible')) cargarCuentas();
+                if (error.message.includes('catálogo no está disponible')) {
+                    cargarConfigCatalogos().then(m => { configCatalogos = m; pintarAvisoCatalogo('cuentas'); cargarCuentas(); });
+                } else if (error.message.includes('ya no está disponible')) cargarCuentas();
                 return;
             }
 
@@ -897,9 +940,10 @@
                 return;
             }
 
+            cont.classList.toggle('bloqueado', catalogoBloqueado(categoriaActiva));
             cont.innerHTML = paquetes.map(p => `
-                <div class="paquete-card" data-id="${p.id}" onclick="elegirPaquete(${p.id})">
-                    ${p.destacado ? '<span class="destacado-tag">Más Popular</span>' : ''}
+                <div class="paquete-card ${p.agotado ? 'agotado' : ''}" data-id="${p.id}" onclick="elegirPaquete(${p.id})">
+                    ${p.agotado ? '<span class="agotado-tag">Agotado</span>' : (p.destacado ? '<span class="destacado-tag">Más Popular</span>' : '')}
                     <div class="paquete-icon">${emojiPorTamano(p.categoria, p.cantidad)}</div>
                     <h3>${escHtml(p.nombre)}</h3>
                     <div class="precio">${formatearSoles(p.precio)}</div>
@@ -928,6 +972,14 @@
 
         // ---------- PASO 2: ELEGIR PAQUETE ----------
         function elegirPaquete(paqueteId) {
+            if (catalogoBloqueado(categoriaActiva)) return avisarBloqueado();
+            const elegido = paquetesTodos.find(p => p.id === paqueteId);
+            if (elegido && elegido.agotado) {
+                const msgAgotado = document.getElementById('id-validado-msg');
+                msgAgotado.className = 'msg-box error'; msgAgotado.style.display = 'block';
+                msgAgotado.innerText = 'Este paquete está agotado por ahora. Elige otro o vuelve más tarde.';
+                return;
+            }
             if (!idJugadorValidado) {
                 const msg = document.getElementById('id-validado-msg');
                 msg.className = 'msg-box error'; msg.style.display = 'block';
@@ -953,6 +1005,7 @@
         // ---------- PASO 3: CONFIRMAR COMPRA ----------
         function abrirModalComprar() {
             if (!paqueteElegido) return;
+            if (catalogoBloqueado(paqueteElegido.categoria)) return avisarBloqueado();
             if (!usuarioActual) return pedirLogin();
             const saldoActual = Number(usuarioActual.saldo);
             const precio = Number(paqueteElegido.precio);
@@ -993,6 +1046,12 @@
                 msg.className = 'msg-box error';
                 if (error.message.includes('Saldo insuficiente')) {
                     msg.innerText = 'Saldo insuficiente. Recarga tu saldo primero.';
+                } else if (error.message.includes('catálogo no está disponible') || error.message.includes('agotado por ahora')) {
+                    // El admin lo puso en mantenimiento / sin stock mientras tenías la página abierta.
+                    msg.innerText = error.message.includes('agotado')
+                        ? 'Ese paquete se acaba de agotar. Elige otro o vuelve más tarde.'
+                        : 'Este catálogo no está disponible por ahora. Vuelve a intentarlo más tarde.';
+                    refrescarEstadoCatalogos();
                 } else if (error.message.includes('precio de este paquete cambió') || error.message.includes('ya no está disponible')) {
                     // El servidor valida el precio: si cambió (o ya no hay promo) mientras tenías la página abierta.
                     msg.innerText = 'El precio o la disponibilidad de este paquete cambió. Ya actualicé la lista: cierra esto y vuelve a elegir tu paquete.';
@@ -1008,6 +1067,12 @@
 
             const catalogoTexto = NOMBRES_CATALOGO[paqueteElegido.categoria] || '';
             abrirWhatsapp(`¡Hola! Vengo de MZ'Recargas 💎. Compré el paquete ${paqueteElegido.nombre} (${catalogoTexto}) por S/ ${Number(paqueteElegido.precio).toFixed(2)}. Mi ID de Free Fire es: ${idJugadorValidado}`);
+        }
+
+        async function refrescarEstadoCatalogos() {
+            configCatalogos = await cargarConfigCatalogos();
+            pintarAvisoCatalogo(categoriaActiva);
+            await refrescarPaquetesTrasError();
         }
 
         async function refrescarPaquetesTrasError() {

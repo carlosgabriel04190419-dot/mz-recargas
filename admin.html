@@ -9,190 +9,288 @@
     <meta name="robots" content="noindex, nofollow">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
-<body>
-
-    <nav class="navbar">
-        <a href="index.html" class="nav-logo-premium">
-            <img src="logo.svg?v=2" alt="MZ'Recargas" class="logo-img">
-            <div class="logo-text"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></div>
-        </a>
-        <div class="nav-links">
-            <a href="index.html">Inicio</a>
-            <a href="catalogo.html">Recargar Diamantes</a>
-        </div>
-        <div class="nav-actions">
-            <button class="theme-toggle" onclick="alternarTema()" aria-label="Cambiar tema"><span class="material-icons">dark_mode</span></button>
-            <div class="nav-actions-conectado" data-nav-conectado style="display:none; align-items:center; gap:14px;">
-                <div class="balance-pill"><span class="material-icons">diamond</span><span data-nav-saldo>S/ 0.00</span></div>
-                <div class="nav-user-menu">
-                    <button class="nav-user-btn" id="nav-user-btn" onclick="alternarMenuUsuario()">
-                        <span class="nav-avatar" data-nav-avatar>?</span>
-                        <span data-nav-nickname>Usuario</span>
-                    </button>
-                    <div class="nav-dropdown" id="nav-dropdown">
-                        <a href="recargar-saldo.html"><span class="material-icons">account_balance_wallet</span> Recargar Saldo</a>
-                        <a href="perfil.html"><span class="material-icons">person</span> Mi Perfil</a>
-                        <a href="historial.html"><span class="material-icons">receipt_long</span> Mis Pedidos</a>
-                        <button onclick="cerrarSesionSegura()"><span class="material-icons">logout</span> Cerrar Sesión</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+<body class="admin-body">
 
     <div id="admin-cargando" class="container" style="padding-top: 80px; text-align:center; color: var(--texto-tenue);">Verificando acceso...</div>
 
-    <div id="admin-panel" class="container" style="padding-top: 40px; padding-bottom: 70px; display:none;">
-        <div class="seccion-header" style="text-align:left; margin: 0 0 26px; max-width:none;">
-            <h2>Panel de Administración</h2>
-            <p>Gestiona pedidos, paquetes y usuarios de MZ'Recargas.</p>
-        </div>
+    <div id="admin-panel" class="adm-layout" style="display:none;">
 
-        <div class="admin-tabs">
-            <button class="admin-tab activo" data-tab="dashboard" onclick="cambiarPestana('dashboard')"><span class="material-icons">dashboard</span> Resumen</button>
-            <button class="admin-tab" data-tab="pedidos" onclick="cambiarPestana('pedidos')"><span class="material-icons">receipt_long</span> Pedidos</button>
-            <button class="admin-tab" data-tab="paquetes" onclick="cambiarPestana('paquetes')"><span class="material-icons">inventory_2</span> Paquetes</button>
-            <button class="admin-tab" data-tab="cuentas" onclick="cambiarPestana('cuentas')"><span class="material-icons">badge</span> Cuentas</button>
-            <button class="admin-tab" data-tab="usuarios" onclick="cambiarPestana('usuarios')"><span class="material-icons">group</span> Usuarios</button>
-            <button class="admin-tab" data-tab="promo" onclick="cambiarPestana('promo')"><span class="material-icons">local_fire_department</span> Promo del día</button>
-        </div>
+        <!-- ===== BARRA LATERAL ===== -->
+        <aside class="adm-side" id="adm-side">
+            <a href="index.html" class="adm-marca" aria-label="MZ'Recargas">
+                <img src="logo.svg?v=2" alt="">
+                <div class="adm-marca-texto"><span class="m">MZ'</span>Recargas</div>
+            </a>
+            <div class="adm-rol">Administrador</div>
 
-        <!-- ===== RESUMEN ===== -->
-        <div class="admin-vista" id="vista-dashboard">
-            <div class="admin-stats-grid" id="admin-stats-grid">
-                <div class="admin-stat-card"><div class="admin-stat-valor">—</div><div class="admin-stat-label">Recargas pendientes de confirmar</div></div>
-                <div class="admin-stat-card"><div class="admin-stat-valor">—</div><div class="admin-stat-label">Compras pagadas por entregar</div></div>
-                <div class="admin-stat-card"><div class="admin-stat-valor">—</div><div class="admin-stat-label">Usuarios registrados</div></div>
-                <div class="admin-stat-card"><div class="admin-stat-valor">—</div><div class="admin-stat-label">Saldo total en el sistema</div></div>
+            <div class="adm-buscar">
+                <span class="material-icons">search</span>
+                <input type="text" id="adm-buscar" placeholder="Ir a una sección…" autocomplete="off" aria-label="Buscar una sección">
+                <kbd>/</kbd>
             </div>
-        </div>
 
-        <!-- ===== PEDIDOS ===== -->
-        <div class="admin-vista" id="vista-pedidos" style="display:none;">
-            <div class="admin-filtros" id="admin-filtros-pedidos">
-                <button class="admin-filtro activo" data-estado="">Todos</button>
-                <button class="admin-filtro" data-estado="pendiente">Pendientes</button>
-                <button class="admin-filtro" data-estado="confirmado">Confirmados</button>
-                <button class="admin-filtro" data-estado="completado">Completados</button>
-                <button class="admin-filtro" data-estado="cancelado">Cancelados</button>
+            <nav class="adm-nav" id="adm-nav">
+                <div class="adm-grupo">Principal</div>
+                <button class="adm-item" data-ir="resumen"><span class="adm-ico"><span class="material-icons">dashboard</span></span>Resumen</button>
+                <button class="adm-item" data-ir="solicitudes"><span class="adm-ico"><span class="material-icons">inbox</span></span>Solicitudes <span class="adm-badge" id="ins-solicitudes" hidden></span></button>
+                <button class="adm-item" data-ir="pedidos"><span class="adm-ico"><span class="material-icons">shopping_cart</span></span>Pedidos <span class="adm-badge" id="ins-pedidos" hidden></span></button>
+                <button class="adm-item" data-ir="historial"><span class="adm-ico"><span class="material-icons">history</span></span>Historial</button>
+
+                <div class="adm-grupo tono-clientes" style="--tono: 34, 184, 207;">Clientes</div>
+                <button class="adm-item tono-clientes" data-ir="usuarios"><span class="adm-ico"><span class="material-icons">group</span></span>Usuarios</button>
+
+                <div class="adm-grupo tono-catalogo" style="--tono: 255, 176, 32;">Catálogo y ventas</div>
+                <button class="adm-item tono-catalogo" data-ir="catalogo"><span class="adm-ico"><span class="material-icons">storefront</span></span>Catálogo</button>
+                <button class="adm-item tono-catalogo" data-ir="paquetes"><span class="adm-ico"><span class="material-icons">inventory_2</span></span>Paquetes</button>
+                <button class="adm-item tono-catalogo" data-ir="cuentas"><span class="adm-ico"><span class="material-icons">badge</span></span>Cuentas</button>
+                <button class="adm-item tono-catalogo" data-ir="promo"><span class="adm-ico"><span class="material-icons">local_fire_department</span></span>Promo del día</button>
+                <button class="adm-item tono-catalogo" data-ir="ventas"><span class="adm-ico"><span class="material-icons">trending_up</span></span>Ventas</button>
+            </nav>
+
+            <div class="adm-pie">
+                <button class="adm-btn-lateral" id="adm-tema" type="button"><span class="material-icons">dark_mode</span><span id="adm-tema-txt">Modo oscuro</span></button>
+                <div class="adm-pie-fila">
+                    <a class="adm-btn-lateral" href="index.html"><span class="material-icons">storefront</span>Tienda</a>
+                    <button class="adm-btn-lateral salir" type="button" onclick="cerrarSesionSegura()"><span class="material-icons">logout</span>Salir</button>
+                </div>
             </div>
-            <div class="card" style="overflow-x: auto; padding: 0;">
-                <table class="tabla-pedidos" id="tabla-admin-pedidos">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Usuario</th>
-                            <th>Tipo</th>
-                            <th>Detalle</th>
-                            <th>Monto</th>
-                            <th>Pago</th>
-                            <th>Estado</th>
-                            <th>Nota</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-admin-pedidos-body">
-                        <tr><td colspan="9" class="tabla-vacia">Cargando...</td></tr>
-                    </tbody>
-                </table>
+        </aside>
+        <div class="adm-velo" id="adm-velo"></div>
+
+        <!-- ===== CONTENIDO ===== -->
+        <main class="adm-main">
+            <div class="adm-movil">
+                <button type="button" id="adm-abrir-menu" aria-label="Abrir menú"><span class="material-icons">menu</span></button>
+                <strong id="adm-movil-titulo">Resumen</strong>
             </div>
-        </div>
 
-        <!-- ===== PAQUETES ===== -->
-        <div class="admin-vista" id="vista-paquetes" style="display:none;">
-            <div style="display:flex; justify-content:flex-end; margin-bottom: 16px;">
-                <button class="btn-primary btn-sm" onclick="abrirModalPaquete()"><span class="material-icons" style="font-size:18px; vertical-align:-4px;">add</span> Nuevo paquete</button>
+            <div class="adm-contenido">
+
+                <!-- ===== RESUMEN ===== -->
+                <section class="adm-vista" id="vista-resumen">
+                    <div class="adm-cabecera">
+                        <div class="adm-titulo"><span class="adm-ico"><span class="material-icons">dashboard</span></span><h1>Resumen</h1></div>
+                        <button class="btn-outline btn-sm" type="button" onclick="cargarResumen(true)"><span class="material-icons" style="font-size:17px; vertical-align:-4px;">refresh</span> Actualizar</button>
+                    </div>
+                    <p class="adm-sub">Cómo va tu tienda ahora mismo: lo que necesita tu atención, lo que llevas hoy y el estado de tu negocio.</p>
+
+                    <div class="adm-hero">
+                        <div>
+                            <div class="adm-hero-fecha" id="res-fecha">&nbsp;</div>
+                            <div class="adm-hero-saludo" id="res-saludo">&nbsp;</div>
+                            <h2>Resumen de tu tienda</h2>
+                            <span class="adm-estado ok" id="res-estado">Cargando…</span>
+                        </div>
+                        <div class="adm-hero-cifras">
+                            <button class="adm-mini" type="button" data-ir="solicitudes">
+                                <div class="adm-mini-etq">Solicitudes de saldo</div>
+                                <div class="adm-mini-num" id="res-sol-num">—</div>
+                                <div class="adm-mini-sub" id="res-sol-sub">&nbsp;</div>
+                            </button>
+                            <button class="adm-mini" type="button" data-ir="pedidos">
+                                <div class="adm-mini-etq">Pedidos pendientes</div>
+                                <div class="adm-mini-num" id="res-ped-num">—</div>
+                                <div class="adm-mini-sub" id="res-ped-sub">&nbsp;</div>
+                            </button>
+                            <button class="adm-mini" type="button" data-ir="cuentas">
+                                <div class="adm-mini-etq">Cuentas a la venta</div>
+                                <div class="adm-mini-num" id="res-cue-num">—</div>
+                                <div class="adm-mini-sub" id="res-cue-sub">&nbsp;</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="adm-seccion"><span class="material-icons">insights</span> Tu negocio ahora</div>
+                    <div class="adm-kpis" id="res-kpis"></div>
+
+                    <div class="adm-seccion"><span class="material-icons">storefront</span> Estado de tus catálogos</div>
+                    <div class="adm-estados" id="res-catalogos"></div>
+
+                    <div class="adm-seccion"><span class="material-icons">bolt</span> Accesos rápidos</div>
+                    <div class="adm-rapidos">
+                        <button class="adm-rapido" data-ir="solicitudes"><span class="adm-ico"><span class="material-icons">inbox</span></span>Solicitudes</button>
+                        <button class="adm-rapido" data-ir="pedidos"><span class="adm-ico"><span class="material-icons">shopping_cart</span></span>Pedidos</button>
+                        <button class="adm-rapido" data-ir="historial"><span class="adm-ico"><span class="material-icons">history</span></span>Historial</button>
+                        <button class="adm-rapido tono-clientes" data-ir="usuarios"><span class="adm-ico"><span class="material-icons">group</span></span>Usuarios</button>
+                        <button class="adm-rapido tono-catalogo" data-ir="catalogo"><span class="adm-ico"><span class="material-icons">storefront</span></span>Catálogo</button>
+                        <button class="adm-rapido tono-catalogo" data-ir="cuentas"><span class="adm-ico"><span class="material-icons">badge</span></span>Cuentas</button>
+                        <button class="adm-rapido tono-catalogo" data-ir="promo"><span class="adm-ico"><span class="material-icons">local_fire_department</span></span>Promo del día</button>
+                        <button class="adm-rapido tono-catalogo" data-ir="ventas"><span class="adm-ico"><span class="material-icons">trending_up</span></span>Ventas</button>
+                    </div>
+                </section>
+
+                <!-- ===== SOLICITUDES ===== -->
+                <section class="adm-vista" id="vista-solicitudes">
+                    <div class="adm-cabecera">
+                        <div class="adm-titulo"><span class="adm-ico"><span class="material-icons">inbox</span></span><h1>Solicitudes de saldo</h1></div>
+                        <button class="btn-outline btn-sm" type="button" onclick="cargarLista('solicitudes')"><span class="material-icons" style="font-size:17px; vertical-align:-4px;">refresh</span> Actualizar</button>
+                    </div>
+                    <p class="adm-sub">Recargas de saldo que los clientes pagaron por Yape o Plin y esperan que confirmes. Revisa el comprobante en WhatsApp y toca <strong>Confirmar pago</strong>: el saldo se acredita al instante.</p>
+                    <div class="adm-tarjeta">
+                        <table class="adm-tabla" id="tabla-solicitudes">
+                            <thead><tr><th>Fecha</th><th>Usuario</th><th>Tipo</th><th>Detalle</th><th>Monto</th><th>Pago</th><th>Estado</th><th>Nota</th><th>Acciones</th></tr></thead>
+                            <tbody id="tabla-solicitudes-body"><tr><td colspan="9" class="adm-vacio">Cargando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ===== PEDIDOS ===== -->
+                <section class="adm-vista" id="vista-pedidos">
+                    <div class="adm-cabecera">
+                        <div class="adm-titulo"><span class="adm-ico"><span class="material-icons">shopping_cart</span></span><h1>Pedidos por entregar</h1></div>
+                        <button class="btn-outline btn-sm" type="button" onclick="cargarLista('pedidos')"><span class="material-icons" style="font-size:17px; vertical-align:-4px;">refresh</span> Actualizar</button>
+                    </div>
+                    <p class="adm-sub">Compras ya pagadas con saldo (diamantes, tokens y cuentas). Entrégalas al ID del jugador o por WhatsApp y toca <strong>Marcar entregado</strong>. Si algo sale mal, <strong>Cancelar</strong> le devuelve el saldo al cliente.</p>
+                    <div class="adm-tarjeta">
+                        <table class="adm-tabla" id="tabla-pedidos">
+                            <thead><tr><th>Fecha</th><th>Usuario</th><th>Tipo</th><th>Detalle</th><th>Monto</th><th>Pago</th><th>Estado</th><th>Nota</th><th>Acciones</th></tr></thead>
+                            <tbody id="tabla-pedidos-body"><tr><td colspan="9" class="adm-vacio">Cargando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ===== HISTORIAL ===== -->
+                <section class="adm-vista" id="vista-historial">
+                    <div class="adm-cabecera">
+                        <div class="adm-titulo"><span class="adm-ico"><span class="material-icons">history</span></span><h1>Historial</h1></div>
+                        <button class="btn-outline btn-sm" type="button" onclick="cargarLista('historial')"><span class="material-icons" style="font-size:17px; vertical-align:-4px;">refresh</span> Actualizar</button>
+                    </div>
+                    <p class="adm-sub">Todos los pedidos y recargas de la tienda, del más nuevo al más antiguo.</p>
+                    <div class="adm-filtros" id="adm-filtros-historial">
+                        <button class="adm-chip activo" data-estado="">Todos</button>
+                        <button class="adm-chip" data-estado="pendiente">Pendientes</button>
+                        <button class="adm-chip" data-estado="confirmado">Confirmados</button>
+                        <button class="adm-chip" data-estado="completado">Completados</button>
+                        <button class="adm-chip" data-estado="cancelado">Cancelados</button>
+                    </div>
+                    <div class="adm-tarjeta">
+                        <table class="adm-tabla" id="tabla-historial">
+                            <thead><tr><th>Fecha</th><th>Usuario</th><th>Tipo</th><th>Detalle</th><th>Monto</th><th>Pago</th><th>Estado</th><th>Nota</th><th>Acciones</th></tr></thead>
+                            <tbody id="tabla-historial-body"><tr><td colspan="9" class="adm-vacio">Cargando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ===== USUARIOS ===== -->
+                <section class="adm-vista" id="vista-usuarios">
+                    <div class="adm-titulo"><span class="adm-ico tono-clientes" style="--tono: 34, 184, 207;"><span class="material-icons">group</span></span><h1>Usuarios</h1></div>
+                    <p class="adm-sub">Los clientes registrados, con su saldo y su WhatsApp si lo dejaron en su perfil.</p>
+                    <div class="adm-filtros">
+                        <span id="usuarios-conteo" style="font-size:13.5px; color: var(--texto-secundario);"></span>
+                        <input type="search" class="adm-input" id="usuarios-buscar" placeholder="Buscar por nickname o correo…" aria-label="Buscar usuarios">
+                    </div>
+                    <div class="adm-tarjeta">
+                        <table class="adm-tabla" id="tabla-admin-usuarios">
+                            <thead><tr><th>Nickname</th><th>Correo</th><th>WhatsApp</th><th>Saldo</th><th>Registrado</th></tr></thead>
+                            <tbody id="tabla-admin-usuarios-body"><tr><td colspan="5" class="adm-vacio">Cargando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ===== CATÁLOGO ===== -->
+                <section class="adm-vista" id="vista-catalogo">
+                    <div class="adm-cabecera">
+                        <div class="adm-titulo"><span class="adm-ico tono-catalogo" style="--tono: 255, 176, 32;"><span class="material-icons">storefront</span></span><h1>Catálogo</h1></div>
+                    </div>
+                    <p class="adm-sub">Aquí decides qué ve y qué puede comprar el cliente. Con los interruptores eliges si el catálogo <strong>se muestra</strong>, si está <strong>en mantenimiento</strong> (nadie compra) o <strong>sin stock</strong> (se ve en blanco y negro y tampoco se compra). Se aplica al instante, tanto en la web como al comprar.</p>
+                    <div class="adm-cat-grid" id="adm-cat-grid"><p style="color: var(--texto-tenue);">Cargando…</p></div>
+                </section>
+
+                <!-- ===== PAQUETES ===== -->
+                <section class="adm-vista" id="vista-paquetes">
+                    <div class="adm-cabecera">
+                        <div class="adm-titulo"><span class="adm-ico tono-catalogo" style="--tono: 255, 176, 32;"><span class="material-icons">inventory_2</span></span><h1>Paquetes</h1></div>
+                        <button class="btn-primary btn-sm" onclick="abrirModalPaquete()"><span class="material-icons" style="font-size:18px; vertical-align:-4px;">add</span> Nuevo paquete</button>
+                    </div>
+                    <p class="adm-sub">Los productos de cada catálogo. <strong>Visible</strong> los muestra en la web; <strong>Agotado</strong> los deja a la vista pero nadie los puede comprar.</p>
+                    <div class="adm-filtros" id="adm-filtros-paquetes">
+                        <button class="adm-chip activo" data-cat="">Todos</button>
+                        <button class="adm-chip" data-cat="ilimitada">Recargas Ilimitadas</button>
+                        <button class="adm-chip" data-cat="promo">Promo Primera Vez</button>
+                        <button class="adm-chip" data-cat="cajas_tokens">Cajas de Tokens</button>
+                        <button class="adm-chip" data-cat="tokens_evolutivos">Tokens Evolutivos</button>
+                    </div>
+                    <div class="adm-tarjeta">
+                        <table class="adm-tabla" id="tabla-admin-paquetes">
+                            <thead><tr><th>Catálogo</th><th>Nombre</th><th>Cantidad</th><th>Precio</th><th>Destacado</th><th>Visible</th><th>Agotado</th><th>Orden</th><th>Acciones</th></tr></thead>
+                            <tbody id="tabla-admin-paquetes-body"><tr><td colspan="9" class="adm-vacio">Cargando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ===== CUENTAS ===== -->
+                <section class="adm-vista" id="vista-cuentas">
+                    <div class="adm-cabecera">
+                        <div class="adm-titulo"><span class="adm-ico tono-catalogo" style="--tono: 255, 176, 32;"><span class="material-icons">badge</span></span><h1>Cuentas</h1></div>
+                        <button class="btn-primary btn-sm" onclick="abrirModalCuentaAdmin()"><span class="material-icons" style="font-size:18px; vertical-align:-4px;">add</span> Nueva cuenta</button>
+                    </div>
+                    <p class="adm-sub">Publica cuentas de Free Fire para vender. Cuando un cliente compra una, queda <strong>Agotada</strong> sola y te llega el pedido en la sección Pedidos y por WhatsApp para que le pases los datos.</p>
+                    <div class="adm-tarjeta">
+                        <table class="adm-tabla" id="tabla-admin-cuentas">
+                            <thead><tr><th>Título</th><th>Características</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
+                            <tbody id="tabla-admin-cuentas-body"><tr><td colspan="5" class="adm-vacio">Cargando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ===== PROMO DEL DÍA ===== -->
+                <section class="adm-vista" id="vista-promo">
+                    <div class="adm-titulo"><span class="adm-ico tono-catalogo" style="--tono: 255, 176, 32;"><span class="material-icons">local_fire_department</span></span><h1>Promo del día</h1></div>
+                    <p class="adm-sub">Elige un paquete de diamantes (Recargas Ilimitadas o Promo Primera Vez) y ponle un precio especial por tiempo limitado. Se muestra como oferta destacada, con ventana emergente, en ese catálogo mientras esté activa.</p>
+                    <div class="card" style="max-width: 480px; border-radius: 18px;">
+                        <div id="promo-admin-msg" class="msg-box error"></div>
+
+                        <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Paquete</label>
+                        <select id="promo-paquete" class="input-form">
+                            <option value="">Cargando paquetes...</option>
+                        </select>
+
+                        <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Precio especial (S/)</label>
+                        <input type="number" id="promo-precio" class="input-form" min="0" step="0.01">
+
+                        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom: 20px; cursor:pointer;">
+                            <input type="checkbox" id="promo-activo" style="width:16px; height:16px;"> Promo activa (visible en la web)
+                        </label>
+
+                        <button type="button" class="btn-primary" id="btn-guardar-promo" style="width:100%;" onclick="guardarPromo()">Guardar</button>
+                    </div>
+                </section>
+
+                <!-- ===== VENTAS ===== -->
+                <section class="adm-vista" id="vista-ventas">
+                    <div class="adm-cabecera">
+                        <div class="adm-titulo"><span class="adm-ico tono-catalogo" style="--tono: 255, 176, 32;"><span class="material-icons">trending_up</span></span><h1>Ventas</h1></div>
+                        <button class="btn-outline btn-sm" type="button" onclick="cargarVentas()"><span class="material-icons" style="font-size:17px; vertical-align:-4px;">refresh</span> Actualizar</button>
+                    </div>
+                    <p class="adm-sub">Lo que se compró con saldo (diamantes, tokens y cuentas). Los pedidos cancelados no cuentan. Los días se cuentan con la hora de Lima.</p>
+                    <div class="adm-kpis" id="ven-kpis"></div>
+
+                    <div class="adm-seccion"><span class="material-icons">bar_chart</span> Ventas por día</div>
+                    <div class="adm-grafica-caja">
+                        <div class="adm-grafica-cab">
+                            <div><h3>Últimos 14 días</h3><p id="ven-grafica-sub">&nbsp;</p></div>
+                            <div class="adm-acciones">
+                                <button class="adm-chip activo" id="ven-ver-grafica" type="button">Gráfica</button>
+                                <button class="adm-chip" id="ven-ver-tabla" type="button">Tabla</button>
+                            </div>
+                        </div>
+                        <div id="ven-grafica-contenedor"></div>
+                        <div id="ven-tabla-contenedor" class="adm-tarjeta" style="display:none; border:none; border-radius:0;"></div>
+                    </div>
+
+                    <div class="adm-seccion"><span class="material-icons">leaderboard</span> Qué catálogos venden más (30 días)</div>
+                    <div class="adm-grafica-caja"><div class="adm-hbarras" id="ven-catalogos"></div></div>
+                </section>
+
             </div>
-            <div class="card" style="overflow-x: auto; padding: 0;">
-                <table class="tabla-pedidos" id="tabla-admin-paquetes">
-                    <thead>
-                        <tr>
-                            <th>Categoría</th>
-                            <th>Nombre</th>
-                            <th>Cantidad</th>
-                            <th>Unidad</th>
-                            <th>Precio</th>
-                            <th>Destacado</th>
-                            <th>Activo</th>
-                            <th>Orden</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-admin-paquetes-body">
-                        <tr><td colspan="9" class="tabla-vacia">Cargando...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ===== CUENTAS ===== -->
-        <div class="admin-vista" id="vista-cuentas" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom: 16px;">
-                <p style="color: var(--texto-secundario); font-size: 13.5px; max-width: 560px;">Publica cuentas de Free Fire para vender. Cuando un cliente compra una, queda <strong>Agotada</strong> sola y te llega el pedido aquí (pestaña Pedidos) y por WhatsApp para que le pases los datos.</p>
-                <button class="btn-primary btn-sm" onclick="abrirModalCuentaAdmin()"><span class="material-icons" style="font-size:18px; vertical-align:-4px;">add</span> Nueva cuenta</button>
-            </div>
-            <div class="card" style="overflow-x: auto; padding: 0;">
-                <table class="tabla-pedidos" id="tabla-admin-cuentas">
-                    <thead>
-                        <tr>
-                            <th>Título</th>
-                            <th>Características</th>
-                            <th>Precio</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-admin-cuentas-body">
-                        <tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ===== USUARIOS ===== -->
-        <div class="admin-vista" id="vista-usuarios" style="display:none;">
-            <div class="card" style="overflow-x: auto; padding: 0;">
-                <table class="tabla-pedidos" id="tabla-admin-usuarios">
-                    <thead>
-                        <tr>
-                            <th>Nickname</th>
-                            <th>Correo</th>
-                            <th>WhatsApp</th>
-                            <th>Saldo</th>
-                            <th>Registrado</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-admin-usuarios-body">
-                        <tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ===== PROMO DEL DÍA ===== -->
-        <div class="admin-vista" id="vista-promo" style="display:none;">
-            <div class="card" style="max-width: 460px;">
-                <p style="color: var(--texto-secundario); font-size: 13.5px; margin-bottom: 20px;">Elige un paquete de diamantes (Recargas Ilimitadas o Promo Primera Vez) y ponle un precio especial por tiempo limitado. Se muestra como oferta destacada — con popup — en ese catálogo mientras esté activa.</p>
-                <div id="promo-admin-msg" class="msg-box error"></div>
-
-                <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Paquete</label>
-                <select id="promo-paquete" class="input-form">
-                    <option value="">Cargando paquetes...</option>
-                </select>
-
-                <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Precio especial (S/)</label>
-                <input type="number" id="promo-precio" class="input-form" min="0" step="0.01">
-
-                <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom: 20px; cursor:pointer;">
-                    <input type="checkbox" id="promo-activo" style="width:16px; height:16px;"> Promo activa (visible en la web)
-                </label>
-
-                <button type="button" class="btn-primary" id="btn-guardar-promo" style="width:100%;" onclick="guardarPromo()">Guardar</button>
-            </div>
-        </div>
+        </main>
     </div>
+
+    <div class="adm-tip" id="adm-tip" role="status"></div>
+    <div class="adm-toast" id="adm-toast" role="status" aria-live="polite"></div>
 
     <!-- Modal: crear/editar paquete -->
     <div class="modal-overlay" id="modal-paquete">
@@ -283,9 +381,50 @@
     <script>
         const ETIQUETAS_ESTADO = { pendiente: 'Pendiente', confirmado: 'Confirmado', completado: 'Completado', cancelado: 'Cancelado' };
         const ETIQUETAS_CATEGORIA = { ilimitada: 'Recargas Ilimitadas', promo: 'Promo Primera Vez', cajas_tokens: 'Cajas de Tokens', tokens_evolutivos: 'Tokens Evolutivos' };
-        let filtroEstadoActual = '';
-        let cacheePaquetes = [];
+        const CATALOGOS = {
+            ilimitada:         { nombre: 'Recargas Ilimitadas', img: 'banner-ilimitada.jpg' },
+            promo:             { nombre: 'Promo Primera Vez',   img: 'banner-promo.jpeg' },
+            cajas_tokens:      { nombre: 'Cajas de Tokens',     img: 'banner-cajas-tokens.jpg' },
+            tokens_evolutivos: { nombre: 'Tokens Evolutivos',   img: 'banner-tokens-evo.jpg' },
+            cuentas:           { nombre: 'Cuentas Free Fire',   img: 'banner-cuentas.jpg' }
+        };
+        const SECCIONES = {
+            resumen:     { titulo: 'Resumen',        buscar: 'resumen inicio panel dashboard', cargar: () => cargarResumen() },
+            solicitudes: { titulo: 'Solicitudes',    buscar: 'solicitudes recargas de saldo pagos pendientes yape plin', cargar: () => cargarLista('solicitudes') },
+            pedidos:     { titulo: 'Pedidos',        buscar: 'pedidos por entregar compras', cargar: () => cargarLista('pedidos') },
+            historial:   { titulo: 'Historial',      buscar: 'historial todos los pedidos', cargar: () => cargarLista('historial') },
+            usuarios:    { titulo: 'Usuarios',       buscar: 'usuarios clientes saldo', cargar: () => cargarUsuarios() },
+            catalogo:    { titulo: 'Catálogo',       buscar: 'catalogo stock mantenimiento visible agotado', cargar: () => cargarCatalogos() },
+            paquetes:    { titulo: 'Paquetes',       buscar: 'paquetes productos precios', cargar: () => cargarPaquetes() },
+            cuentas:     { titulo: 'Cuentas',        buscar: 'cuentas free fire fotos', cargar: () => cargarCuentasAdmin() },
+            promo:       { titulo: 'Promo del día',  buscar: 'promo oferta del dia descuento', cargar: () => cargarPromo() },
+            ventas:      { titulo: 'Ventas',         buscar: 'ventas ganancias grafica ingresos', cargar: () => cargarVentas() }
+        };
+        const CFG_LISTAS = {
+            solicitudes: { estado: 'pendiente',  tipos: ['recarga_saldo'],                       cuerpo: 'tabla-solicitudes-body', vacio: 'No hay solicitudes de saldo pendientes. ¡Todo al día! 🎉' },
+            pedidos:     { estado: 'confirmado', tipos: ['compra_diamantes', 'compra_cuenta'],   cuerpo: 'tabla-pedidos-body',     vacio: 'No hay pedidos por entregar. ¡Todo entregado! 🎉' },
+            historial:   { estado: null,         tipos: null,                                    cuerpo: 'tabla-historial-body',   vacio: 'No hay pedidos en este filtro.' }
+        };
 
+        let seccionActual = 'resumen';
+        let filtroHistorial = '';
+        let filtroCategoriaPaquetes = '';
+        let cacheePaquetes = [];
+        let catalogosAdmin = [];
+        let usuariosCache = [];
+        let temporizadorInsignias = null;
+
+        // ---------- aviso flotante ----------
+        let temporizadorAviso = null;
+        function avisar(texto, tipo) {
+            const el = document.getElementById('adm-toast');
+            el.textContent = texto;
+            el.className = 'adm-toast visible' + (tipo === 'error' ? ' error' : '');
+            clearTimeout(temporizadorAviso);
+            temporizadorAviso = setTimeout(() => el.classList.remove('visible'), tipo === 'error' ? 4500 : 2200);
+        }
+
+        // ---------- arranque ----------
         window.onload = async function () {
             const usuario = await verificarSesion();
             if (!usuario) return;
@@ -296,61 +435,193 @@
             }
 
             document.getElementById('admin-cargando').style.display = 'none';
-            document.getElementById('admin-panel').style.display = 'block';
+            document.getElementById('admin-panel').style.display = 'flex';
+            prepararEventos();
+            actualizarTextoTema();
 
-            document.querySelectorAll('#admin-filtros-pedidos .admin-filtro').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#admin-filtros-pedidos .admin-filtro').forEach(b => b.classList.remove('activo'));
-                    btn.classList.add('activo');
-                    filtroEstadoActual = btn.dataset.estado;
-                    cargarPedidos();
-                });
-            });
+            const inicial = (location.hash || '').replace('#', '');
+            irA(SECCIONES[inicial] ? inicial : 'resumen');
 
-            await cargarEstadisticas();
+            actualizarInsignias();
+            temporizadorInsignias = setInterval(() => { if (!document.hidden) actualizarInsignias(); }, 60000);
         };
 
-        function cambiarPestana(tab) {
-            document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
-            document.querySelectorAll('.admin-vista').forEach(v => v.style.display = 'none');
-            document.getElementById('vista-' + tab).style.display = 'block';
+        function prepararEventos() {
+            // Navegación: todo lo que lleve data-ir cambia de sección.
+            document.addEventListener('click', e => {
+                const b = e.target.closest('[data-ir]');
+                if (b) irA(b.dataset.ir);
+            });
+            document.getElementById('adm-abrir-menu').addEventListener('click', () => document.getElementById('admin-panel').classList.add('menu-abierto'));
+            document.getElementById('adm-velo').addEventListener('click', cerrarMenuMovil);
 
-            if (tab === 'pedidos') cargarPedidos();
-            else if (tab === 'paquetes') cargarPaquetes();
-            else if (tab === 'cuentas') cargarCuentasAdmin();
-            else if (tab === 'usuarios') cargarUsuarios();
-            else if (tab === 'dashboard') cargarEstadisticas();
-            else if (tab === 'promo') cargarPromo();
+            // Buscador de secciones: "/" para enfocar, Enter para ir.
+            const buscador = document.getElementById('adm-buscar');
+            document.addEventListener('keydown', e => {
+                const escribiendo = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '');
+                if (e.key === '/' && !escribiendo && !e.metaKey && !e.ctrlKey) { e.preventDefault(); buscador.focus(); }
+                if (e.key === 'Escape') { buscador.blur(); cerrarMenuMovil(); }
+            });
+            buscador.addEventListener('input', () => {
+                const q = normalizar(buscador.value);
+                document.querySelectorAll('#adm-nav .adm-item').forEach(it => {
+                    const s = SECCIONES[it.dataset.ir];
+                    it.classList.toggle('oculto', !!q && !normalizar(s.titulo + ' ' + s.buscar).includes(q));
+                });
+            });
+            buscador.addEventListener('keydown', e => {
+                if (e.key !== 'Enter') return;
+                const primero = document.querySelector('#adm-nav .adm-item:not(.oculto)');
+                if (primero) { irA(primero.dataset.ir); buscador.value = ''; buscador.dispatchEvent(new Event('input')); buscador.blur(); }
+            });
+
+            document.getElementById('adm-tema').addEventListener('click', () => { alternarTema(); actualizarTextoTema(); });
+
+            // Historial: filtros por estado.
+            document.querySelectorAll('#adm-filtros-historial .adm-chip').forEach(btn => btn.addEventListener('click', () => {
+                document.querySelectorAll('#adm-filtros-historial .adm-chip').forEach(b => b.classList.remove('activo'));
+                btn.classList.add('activo');
+                filtroHistorial = btn.dataset.estado;
+                cargarLista('historial');
+            }));
+
+            // Paquetes: filtros por catálogo.
+            document.querySelectorAll('#adm-filtros-paquetes .adm-chip').forEach(btn => btn.addEventListener('click', () => {
+                ponerFiltroPaquetes(btn.dataset.cat);
+                pintarPaquetes();
+            }));
+
+            // Copiar el ID de jugador con un toque.
+            document.addEventListener('click', async e => {
+                const b = e.target.closest('[data-copiar]');
+                if (!b) return;
+                try { await navigator.clipboard.writeText(b.dataset.copiar); avisar('ID copiado: ' + b.dataset.copiar); }
+                catch (err) { avisar('No se pudo copiar. Selecciónalo a mano.', 'error'); }
+            });
+
+            document.getElementById('usuarios-buscar').addEventListener('input', pintarUsuarios);
+            document.getElementById('ven-ver-grafica').addEventListener('click', () => alternarVistaVentas(false));
+            document.getElementById('ven-ver-tabla').addEventListener('click', () => alternarVistaVentas(true));
         }
 
-        async function cargarEstadisticas() {
+        function normalizar(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+        function cerrarMenuMovil() { document.getElementById('admin-panel').classList.remove('menu-abierto'); }
+        function actualizarTextoTema() {
+            const oscuro = (document.documentElement.getAttribute('data-theme') || 'dark') === 'dark';
+            document.getElementById('adm-tema-txt').textContent = oscuro ? 'Modo oscuro' : 'Modo claro';
+            document.querySelector('#adm-tema .material-icons').textContent = oscuro ? 'dark_mode' : 'light_mode';
+        }
+
+        function irA(seccion) {
+            if (!SECCIONES[seccion]) seccion = 'resumen';
+            seccionActual = seccion;
+            document.querySelectorAll('.adm-vista').forEach(v => v.classList.toggle('activa', v.id === 'vista-' + seccion));
+            document.querySelectorAll('#adm-nav .adm-item').forEach(b => b.classList.toggle('activo', b.dataset.ir === seccion));
+            document.getElementById('adm-movil-titulo').textContent = SECCIONES[seccion].titulo;
+            try { history.replaceState(null, '', '#' + seccion); } catch (e) {}
+            cerrarMenuMovil();
+            document.getElementById('adm-tip').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            SECCIONES[seccion].cargar();
+        }
+
+        // Los números rojos de la barra lateral (solicitudes y pedidos por atender).
+        async function actualizarInsignias() {
             const { data, error } = await supabaseClient.rpc('admin_estadisticas');
             if (error || !data || !data[0]) return;
-            const s = data[0];
-            const tarjetas = document.querySelectorAll('#admin-stats-grid .admin-stat-valor');
-            tarjetas[0].textContent = s.pedidos_pendientes;
-            tarjetas[1].textContent = s.pedidos_por_entregar;
-            tarjetas[2].textContent = s.total_usuarios;
-            tarjetas[3].textContent = formatearSoles(s.saldo_total);
+            const poner = (id, n) => {
+                const el = document.getElementById(id);
+                el.textContent = n > 99 ? '99+' : n;
+                el.hidden = !(n > 0);
+            };
+            poner('ins-solicitudes', Number(data[0].pedidos_pendientes));
+            poner('ins-pedidos', Number(data[0].pedidos_por_entregar));
         }
 
-        // ---------- PEDIDOS ----------
-        async function cargarPedidos() {
-            const cuerpo = document.getElementById('tabla-admin-pedidos-body');
-            cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">Cargando...</td></tr>`;
+        // ---------- RESUMEN ----------
+        function kpi(icono, tono, etiqueta, valor, sub) {
+            return `<div class="adm-kpi"><span class="adm-ico" style="--tono:${tono};"><span class="material-icons">${icono}</span></span>
+                <div class="adm-kpi-etq">${etiqueta}</div><div class="adm-kpi-num">${valor}</div><div class="adm-kpi-sub">${sub}</div></div>`;
+        }
+        function plural(n, uno, varios) { return n === 1 ? uno : varios; }
 
-            const { data, error } = await supabaseClient.rpc('admin_listar_pedidos', { p_estado: filtroEstadoActual || null });
+        function estadoCatalogo(c) {
+            if (!c.visible) return { clave: 'oculto', texto: 'Oculto', icono: 'visibility_off' };
+            if (c.mantenimiento) return { clave: 'mant', texto: 'En mantenimiento', icono: 'build' };
+            if (c.sin_stock) return { clave: 'stock', texto: 'Sin stock', icono: 'remove_shopping_cart' };
+            return { clave: 'visible', texto: 'Visible', icono: 'visibility' };
+        }
 
+        async function cargarResumen(manual) {
+            const ahora = new Date();
+            const h = ahora.getHours();
+            document.getElementById('res-fecha').textContent = ahora.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+            document.getElementById('res-saludo').textContent = h < 12 ? 'Buenos días ☀️' : h < 19 ? 'Buenas tardes 👋' : 'Buenas noches 🌙';
+
+            const [{ data, error }, { data: cats }] = await Promise.all([
+                supabaseClient.rpc('admin_resumen_tienda'),
+                supabaseClient.rpc('admin_listar_catalogos')
+            ]);
+            if (error || !data || !data[0]) {
+                document.getElementById('res-estado').textContent = 'No se pudo cargar el resumen';
+                document.getElementById('res-estado').className = 'adm-estado atencion';
+                return;
+            }
+            const r = data[0];
+            const sol = Number(r.solicitudes_pendientes), ped = Number(r.por_entregar), cue = Number(r.cuentas_disponibles);
+
+            const porAtender = sol + ped;
+            const est = document.getElementById('res-estado');
+            est.className = 'adm-estado ' + (porAtender === 0 ? 'ok' : 'atencion');
+            est.textContent = porAtender === 0 ? 'Todo al día ✓' : `${porAtender} ${plural(porAtender, 'cosa', 'cosas')} por atender`;
+
+            const num = (id, n, alerta) => { const el = document.getElementById(id); el.textContent = n; el.classList.toggle('alerta', !!alerta); };
+            num('res-sol-num', sol, sol > 0);
+            document.getElementById('res-sol-sub').textContent = sol > 0 ? `${formatearSoles(r.monto_solicitudes)} por aprobar` : 'todo aprobado';
+            num('res-ped-num', ped, ped > 0);
+            document.getElementById('res-ped-sub').textContent = ped > 0 ? `${plural(ped, 'por entregar', 'por entregar')}` : 'todo entregado';
+            num('res-cue-num', cue, false);
+            document.getElementById('res-cue-sub').textContent = cue > 0 ? 'publicadas y disponibles' : 'ninguna publicada';
+
+            const nHoy = Number(r.n_ventas_hoy), uHoy = Number(r.usuarios_hoy);
+            document.getElementById('res-kpis').innerHTML =
+                kpi('group', '34, 184, 207', 'Usuarios registrados', Number(r.total_usuarios), uHoy > 0 ? `+${uHoy} ${plural(uHoy, 'nuevo', 'nuevos')} hoy` : 'ninguno nuevo hoy') +
+                kpi('account_balance_wallet', '255, 176, 32', 'Saldo de tus clientes', formatearSoles(r.saldo_clientes), 'en sus billeteras de la tienda') +
+                kpi('payments', '46, 230, 166', 'Ventas de hoy', formatearSoles(r.ventas_hoy), nHoy > 0 ? `${nHoy} ${plural(nHoy, 'compra', 'compras')} hoy` : 'aún sin compras hoy') +
+                kpi('trending_up', '59, 125, 255', 'Ventas del mes', formatearSoles(r.ventas_mes), `dinero recargado este mes: ${formatearSoles(r.recargado_mes)}`) +
+                kpi('savings', '139, 63, 251', 'Recargas de hoy', formatearSoles(r.recargado_hoy), 'saldo que ya confirmaste hoy') +
+                kpi('schedule', '34, 184, 207', 'Última venta', r.ultima_venta ? tiempoRelativo(r.ultima_venta) : '—', r.ultima_venta ? new Date(r.ultima_venta).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'todavía no hay ventas');
+
+            if (cats) {
+                catalogosAdmin = cats;
+                document.getElementById('res-catalogos').innerHTML = cats.map(c => {
+                    const e = estadoCatalogo(c);
+                    return `<button class="adm-chip-cat" data-ir="catalogo"><span class="adm-punto ${e.clave === 'visible' ? '' : e.clave}"></span>${CATALOGOS[c.categoria].nombre}<span style="color:var(--texto-tenue); font-weight:500;">· ${e.texto}</span></button>`;
+                }).join('');
+            }
+            if (manual) avisar('Resumen actualizado');
+            actualizarInsignias();
+        }
+
+        // ---------- SOLICITUDES / PEDIDOS / HISTORIAL ----------
+        async function cargarLista(vista) {
+            const cfg = CFG_LISTAS[vista];
+            const cuerpo = document.getElementById(cfg.cuerpo);
+            cuerpo.innerHTML = `<tr><td colspan="9" class="adm-vacio">Cargando...</td></tr>`;
+
+            const estado = vista === 'historial' ? (filtroHistorial || null) : cfg.estado;
+            const { data, error } = await supabaseClient.rpc('admin_listar_pedidos', { p_estado: estado });
             if (error) {
-                cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">No se pudo cargar los pedidos.</td></tr>`;
+                cuerpo.innerHTML = `<tr><td colspan="9" class="adm-vacio">No se pudo cargar. Intenta de nuevo.</td></tr>`;
                 return;
             }
-            if (!data || data.length === 0) {
-                cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">No hay pedidos en este filtro.</td></tr>`;
+            const filas = (data || []).filter(p => !cfg.tipos || cfg.tipos.includes(p.tipo));
+            if (filas.length === 0) {
+                cuerpo.innerHTML = `<tr><td colspan="9" class="adm-vacio">${cfg.vacio}</td></tr>`;
                 return;
             }
 
-            cuerpo.innerHTML = data.map(p => {
+            cuerpo.innerHTML = filas.map(p => {
                 const fecha = new Date(p.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
                 const tipoTxt = p.tipo === 'recarga_saldo' ? 'Recarga' : p.tipo === 'compra_cuenta' ? 'Cuenta' : 'Compra';
                 let detalle = '—';
@@ -358,19 +629,20 @@
                     detalle = escHtml((p.nota_admin || 'Cuenta Free Fire').replace(/^Cuenta: /, ''));
                 } else if (p.tipo === 'compra_diamantes') {
                     const nombrePaquete = p.paquete_nombre || (p.nota_admin ? p.nota_admin.replace('Cantidad personalizada: ', '') : 'Paquete');
-                    detalle = escHtml(nombrePaquete) + (p.id_jugador_ff ? `<br><span style="color:var(--texto-tenue); font-size:12px;">ID: ${escHtml(p.id_jugador_ff)}</span>` : '');
+                    detalle = escHtml(nombrePaquete) + (p.id_jugador_ff
+                        ? `<br><span style="color:var(--texto-tenue); font-size:12px;">ID: ${escHtml(p.id_jugador_ff)}</span><button class="adm-copiar" type="button" data-copiar="${escHtml(p.id_jugador_ff)}"><span class="material-icons">content_copy</span>Copiar</button>`
+                        : '');
                 }
-                const acciones = botonesAccion(p);
                 return `<tr>
                     <td>${fecha}</td>
                     <td>${escHtml(p.nickname)}<br><span style="color:var(--texto-tenue); font-size:12px;">${escHtml(p.correo)}</span></td>
                     <td>${tipoTxt}</td>
                     <td>${detalle}</td>
-                    <td>${formatearSoles(p.monto)}</td>
+                    <td style="font-weight:700;">${formatearSoles(p.monto)}</td>
                     <td style="text-transform:capitalize;">${escHtml(p.metodo_pago)}</td>
                     <td><span class="estado-pill estado-${p.estado}">${ETIQUETAS_ESTADO[p.estado] || p.estado}</span></td>
                     <td style="max-width:160px; font-size:12.5px; color:var(--texto-secundario);">${escHtml(p.tipo === 'compra_cuenta' ? '—' : (p.nota_admin || '—'))}</td>
-                    <td style="white-space:nowrap;">${acciones}</td>
+                    <td style="white-space:nowrap;">${botonesAccion(p)}</td>
                 </tr>`;
             }).join('');
         }
@@ -378,10 +650,10 @@
         function botonesAccion(p) {
             const btns = [];
             if (p.tipo === 'recarga_saldo' && p.estado === 'pendiente') {
-                btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','confirmado')">Confirmar pago</button>`);
+                btns.push(`<button class="btn-primary btn-sm" onclick="cambiarEstadoPedido('${p.id}','confirmado')">Confirmar pago</button>`);
             }
             if ((p.tipo === 'compra_diamantes' || p.tipo === 'compra_cuenta') && p.estado === 'confirmado') {
-                btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','completado')">Marcar entregado</button>`);
+                btns.push(`<button class="btn-primary btn-sm" onclick="cambiarEstadoPedido('${p.id}','completado')">Marcar entregado</button>`);
             }
             if (p.estado === 'pendiente' || p.estado === 'confirmado') {
                 btns.push(`<button class="btn-outline btn-sm" onclick="cambiarEstadoPedido('${p.id}','cancelado','${p.tipo}','${p.estado}')" style="color:var(--error); border-color:var(--error);">Cancelar</button>`);
@@ -395,46 +667,187 @@
             // Una compra ya cobrada (confirmada) que se cancela devuelve el saldo al cliente.
             if (nuevoEstado === 'cancelado' && estadoActual === 'confirmado' && (tipo === 'compra_diamantes' || tipo === 'compra_cuenta')) {
                 pregunta = '¿Cancelar este pedido? Se le devuelve el saldo al cliente.';
-                if (tipo === 'compra_cuenta') pregunta += '\n\nLa cuenta seguirá como "Agotada": si quieres venderla de nuevo, ponla como Disponible en la pestaña Cuentas.';
+                if (tipo === 'compra_cuenta') pregunta += '\n\nLa cuenta seguirá como "Agotada": si quieres venderla de nuevo, ponla como Disponible en la sección Cuentas.';
             }
             if (!confirm(pregunta)) return;
 
             const { error } = await supabaseClient.rpc('admin_actualizar_pedido', { p_id: id, p_estado: nuevoEstado, p_nota: null });
             if (error) {
-                alert('No se pudo actualizar: ' + error.message);
+                avisar('No se pudo actualizar: ' + error.message, 'error');
                 return;
             }
-            await cargarPedidos();
-            await cargarEstadisticas();
+            avisar(nuevoEstado === 'confirmado' ? 'Pago confirmado: saldo acreditado' : nuevoEstado === 'completado' ? 'Pedido marcado como entregado' : 'Pedido cancelado');
+            if (CFG_LISTAS[seccionActual]) await cargarLista(seccionActual);
+            actualizarInsignias();
+        }
+
+        // ---------- USUARIOS ----------
+        async function cargarUsuarios() {
+            const cuerpo = document.getElementById('tabla-admin-usuarios-body');
+            cuerpo.innerHTML = `<tr><td colspan="5" class="adm-vacio">Cargando...</td></tr>`;
+            const { data, error } = await supabaseClient.rpc('admin_listar_usuarios');
+            if (error) {
+                cuerpo.innerHTML = `<tr><td colspan="5" class="adm-vacio">No se pudo cargar los usuarios.</td></tr>`;
+                return;
+            }
+            usuariosCache = data || [];
+            pintarUsuarios();
+        }
+
+        function pintarUsuarios() {
+            const cuerpo = document.getElementById('tabla-admin-usuarios-body');
+            const q = normalizar(document.getElementById('usuarios-buscar').value);
+            const lista = usuariosCache.filter(u => !q || normalizar(u.nickname + ' ' + u.correo).includes(q));
+            document.getElementById('usuarios-conteo').textContent = `${lista.length} de ${usuariosCache.length} ${plural(usuariosCache.length, 'usuario', 'usuarios')}`;
+            if (lista.length === 0) {
+                cuerpo.innerHTML = `<tr><td colspan="5" class="adm-vacio">${usuariosCache.length ? 'Nadie coincide con esa búsqueda.' : 'Todavía no hay usuarios registrados.'}</td></tr>`;
+                return;
+            }
+            cuerpo.innerHTML = lista.map(u => `<tr>
+                <td style="font-weight:700;">${escHtml(u.nickname)}</td>
+                <td>${escHtml(u.correo)}</td>
+                <td>${escHtml(u.celular || '—')}</td>
+                <td style="font-weight:700;">${formatearSoles(u.saldo)}</td>
+                <td>${new Date(u.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+            </tr>`).join('');
+        }
+
+        // ---------- CATÁLOGO (visible / mantenimiento / sin stock) ----------
+        async function cargarCatalogos() {
+            const { data, error } = await supabaseClient.rpc('admin_listar_catalogos');
+            if (error) {
+                document.getElementById('adm-cat-grid').innerHTML = '<p style="color:var(--texto-tenue);">No se pudo cargar los catálogos.</p>';
+                return;
+            }
+            catalogosAdmin = data || [];
+            pintarCatalogos();
+        }
+
+        function tarjetaCatalogo(c) {
+            const e = estadoCatalogo(c);
+            const info = CATALOGOS[c.categoria];
+            const unidad = c.categoria === 'cuentas' ? ['cuenta', 'cuentas'] : ['producto', 'productos'];
+            const total = Number(c.total_productos), ago = Number(c.productos_agotados);
+            const conteo = `${total} ${plural(total, unidad[0], unidad[1])}` + (ago > 0 ? ` · ${ago} ${plural(ago, 'agotado', 'agotados')}` : '');
+            return `<div class="adm-cat s-${e.clave}" data-cat="${c.categoria}">
+                <div class="adm-cat-img"><img src="${info.img}" alt=""></div>
+                <div class="adm-cat-cuerpo">
+                    <h3>${info.nombre}</h3>
+                    <span class="adm-etiqueta ${e.clave}"><span class="material-icons">${e.icono}</span>${e.texto}</span>
+                    <div class="adm-cat-conteo">${conteo}</div>
+                    <div class="adm-cat-switches">
+                        <label class="sw"><input type="checkbox" data-campo="visible" ${c.visible ? 'checked' : ''}><span class="sw-pista"></span>Mostrar en la web</label>
+                        <label class="sw aviso"><input type="checkbox" data-campo="mantenimiento" ${c.mantenimiento ? 'checked' : ''}><span class="sw-pista"></span>En mantenimiento</label>
+                        <label class="sw peligro"><input type="checkbox" data-campo="sin_stock" ${c.sin_stock ? 'checked' : ''}><span class="sw-pista"></span>Sin stock</label>
+                    </div>
+                    <input class="adm-mensaje" type="text" maxlength="200" value="${escHtml(c.mensaje)}" placeholder="Mensaje para el cliente (opcional)" aria-label="Mensaje para el cliente de ${info.nombre}">
+                    <button class="adm-cat-ver" type="button" data-ver="${c.categoria}"><span class="material-icons">south</span>Ver sus ${c.categoria === 'cuentas' ? 'cuentas' : 'productos'}</button>
+                </div>
+            </div>`;
+        }
+
+        function pintarCatalogos() {
+            const grid = document.getElementById('adm-cat-grid');
+            grid.innerHTML = catalogosAdmin.map(tarjetaCatalogo).join('');
+            if (grid.dataset.listo) return;
+            grid.dataset.listo = '1';
+
+            grid.addEventListener('change', async e => {
+                const caja = e.target.closest('input[data-campo]');
+                const tarjeta = e.target.closest('.adm-cat');
+                if (!caja || !tarjeta) return;
+                const c = catalogosAdmin.find(x => x.categoria === tarjeta.dataset.cat);
+                const anterior = c[caja.dataset.campo];
+                c[caja.dataset.campo] = caja.checked;
+                const ok = await guardarCatalogo(c);
+                if (!ok) c[caja.dataset.campo] = anterior;
+                tarjeta.outerHTML = tarjetaCatalogo(c);
+            });
+            grid.addEventListener('change', async e => {
+                const campo = e.target.closest('input.adm-mensaje');
+                const tarjeta = e.target.closest('.adm-cat');
+                if (!campo || !tarjeta) return;
+                const c = catalogosAdmin.find(x => x.categoria === tarjeta.dataset.cat);
+                const anterior = c.mensaje;
+                c.mensaje = campo.value.trim();
+                if (!(await guardarCatalogo(c))) { c.mensaje = anterior; campo.value = anterior; }
+            });
+            grid.addEventListener('click', e => {
+                const b = e.target.closest('[data-ver]');
+                if (!b) return;
+                if (b.dataset.ver === 'cuentas') { irA('cuentas'); return; }
+                irA('paquetes');
+                ponerFiltroPaquetes(b.dataset.ver);
+                pintarPaquetes();
+            });
+        }
+
+        async function guardarCatalogo(c) {
+            const { error } = await supabaseClient.rpc('admin_guardar_catalogo', {
+                p_categoria: c.categoria, p_visible: c.visible, p_mantenimiento: c.mantenimiento, p_sin_stock: c.sin_stock, p_mensaje: c.mensaje || ''
+            });
+            if (error) { avisar('No se pudo guardar: ' + error.message, 'error'); return false; }
+            avisar('Guardado: ' + CATALOGOS[c.categoria].nombre);
+            return true;
         }
 
         // ---------- PAQUETES ----------
+        function ponerFiltroPaquetes(cat) {
+            filtroCategoriaPaquetes = cat || '';
+            document.querySelectorAll('#adm-filtros-paquetes .adm-chip').forEach(b => b.classList.toggle('activo', b.dataset.cat === filtroCategoriaPaquetes));
+        }
+
         async function cargarPaquetes() {
             const cuerpo = document.getElementById('tabla-admin-paquetes-body');
-            cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">Cargando...</td></tr>`;
-
+            cuerpo.innerHTML = `<tr><td colspan="9" class="adm-vacio">Cargando...</td></tr>`;
             const { data, error } = await supabaseClient.rpc('admin_listar_paquetes');
             if (error) {
-                cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">No se pudo cargar los paquetes.</td></tr>`;
+                cuerpo.innerHTML = `<tr><td colspan="9" class="adm-vacio">No se pudo cargar los paquetes.</td></tr>`;
                 return;
             }
             cacheePaquetes = data || [];
-            if (cacheePaquetes.length === 0) {
-                cuerpo.innerHTML = `<tr><td colspan="9" class="tabla-vacia">Todavía no hay paquetes.</td></tr>`;
+            pintarPaquetes();
+        }
+
+        function pintarPaquetes() {
+            const cuerpo = document.getElementById('tabla-admin-paquetes-body');
+            const lista = cacheePaquetes.filter(p => !filtroCategoriaPaquetes || p.categoria === filtroCategoriaPaquetes);
+            if (lista.length === 0) {
+                cuerpo.innerHTML = `<tr><td colspan="9" class="adm-vacio">${cacheePaquetes.length ? 'No hay paquetes en este catálogo.' : 'Todavía no hay paquetes.'}</td></tr>`;
                 return;
             }
-
-            cuerpo.innerHTML = cacheePaquetes.map(p => `<tr>
-                <td>${ETIQUETAS_CATEGORIA[p.categoria] || p.categoria}</td>
-                <td>${escHtml(p.nombre)}</td>
-                <td>${p.cantidad}</td>
-                <td>${escHtml(p.unidad)}</td>
-                <td>${formatearSoles(p.precio)}</td>
+            cuerpo.innerHTML = lista.map(p => `<tr data-pq="${p.id}">
+                <td style="color:var(--texto-secundario);">${ETIQUETAS_CATEGORIA[p.categoria] || p.categoria}</td>
+                <td style="font-weight:700;">${escHtml(p.nombre)}<br><span style="color:var(--texto-tenue); font-size:12px; font-weight:400;">${escHtml(p.unidad)}</span></td>
+                <td>${Number(p.cantidad).toLocaleString('es-PE')}</td>
+                <td style="font-weight:700;">${formatearSoles(p.precio)}</td>
                 <td>${p.destacado ? '⭐' : '—'}</td>
-                <td><span class="estado-pill ${p.activo ? 'estado-confirmado' : 'estado-cancelado'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
+                <td><label class="sw chico"><input type="checkbox" data-campo="activo" ${p.activo ? 'checked' : ''} aria-label="Visible"><span class="sw-pista"></span></label></td>
+                <td><label class="sw chico peligro"><input type="checkbox" data-campo="agotado" ${p.agotado ? 'checked' : ''} aria-label="Agotado"><span class="sw-pista"></span></label></td>
                 <td>${p.orden}</td>
                 <td><button class="btn-outline btn-sm" onclick="abrirModalPaquete(${p.id})">Editar</button></td>
             </tr>`).join('');
+
+            const tabla = document.getElementById('tabla-admin-paquetes');
+            if (tabla.dataset.listo) return;
+            tabla.dataset.listo = '1';
+            tabla.addEventListener('change', async e => {
+                const caja = e.target.closest('input[data-campo]');
+                const fila = e.target.closest('tr[data-pq]');
+                if (!caja || !fila) return;
+                const p = cacheePaquetes.find(x => x.id === parseInt(fila.dataset.pq, 10));
+                const anterior = p[caja.dataset.campo];
+                p[caja.dataset.campo] = caja.checked;
+                caja.disabled = true;
+                const { error } = await supabaseClient.rpc('admin_estado_paquete', { p_id: p.id, p_activo: p.activo, p_agotado: p.agotado });
+                caja.disabled = false;
+                if (error) {
+                    p[caja.dataset.campo] = anterior; caja.checked = anterior;
+                    avisar('No se pudo guardar: ' + error.message, 'error');
+                    return;
+                }
+                avisar(`${p.nombre}: ${p.activo ? 'visible' : 'oculto'}${p.agotado ? ', agotado' : ''}`);
+            });
         }
 
         function abrirModalPaquete(id) {
@@ -443,7 +856,7 @@
 
             document.getElementById('modal-paquete-titulo').textContent = paquete ? 'Editar paquete' : 'Nuevo paquete';
             document.getElementById('pq-id').value = paquete ? paquete.id : '';
-            document.getElementById('pq-categoria').value = paquete ? paquete.categoria : 'ilimitada';
+            document.getElementById('pq-categoria').value = paquete ? paquete.categoria : (filtroCategoriaPaquetes || 'ilimitada');
             document.getElementById('pq-nombre').value = paquete ? paquete.nombre : '';
             document.getElementById('pq-cantidad').value = paquete ? paquete.cantidad : '';
             document.getElementById('pq-unidad').value = paquete ? paquete.unidad : 'Diamantes';
@@ -499,7 +912,103 @@
             }
 
             cerrarModalPaquete();
+            avisar('Paquete guardado');
             await cargarPaquetes();
+        }
+
+        // ---------- VENTAS ----------
+        let ventasDias = [];
+        function ahoraLima() { return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }); }
+        function etiquetaDia(iso) {
+            const [y, m, d] = iso.split('-').map(Number);
+            return new Date(y, m - 1, d).toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+        function maximoAmable(v) {
+            if (v <= 0) return 10;
+            const exp = Math.pow(10, Math.floor(Math.log10(v)));
+            const f = v / exp;
+            return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * exp;
+        }
+
+        async function cargarVentas() {
+            const [{ data: dias, error: e1 }, { data: cats, error: e2 }] = await Promise.all([
+                supabaseClient.rpc('admin_ventas_dias', { p_dias: 14 }),
+                supabaseClient.rpc('admin_ventas_catalogos', { p_dias: 30 })
+            ]);
+            if (e1 || e2) {
+                document.getElementById('ven-grafica-contenedor').innerHTML = '<p style="color:var(--texto-tenue);">No se pudo cargar las ventas.</p>';
+                return;
+            }
+            ventasDias = (dias || []).map(d => ({ dia: d.dia, ventas: Number(d.ventas), recargado: Number(d.recargado), n: Number(d.n_ventas) }));
+            const suma = (arr, k) => arr.reduce((a, d) => a + d[k], 0);
+            const hoy = ventasDias[ventasDias.length - 1] || { ventas: 0, n: 0 };
+            const ult7 = ventasDias.slice(-7);
+
+            document.getElementById('ven-kpis').innerHTML =
+                kpi('payments', '46, 230, 166', 'Ventas de hoy', formatearSoles(hoy.ventas), `${hoy.n} ${plural(hoy.n, 'compra', 'compras')}`) +
+                kpi('date_range', '59, 125, 255', 'Últimos 7 días', formatearSoles(suma(ult7, 'ventas')), `${suma(ult7, 'n')} ${plural(suma(ult7, 'n'), 'compra', 'compras')}`) +
+                kpi('calendar_month', '139, 63, 251', 'Últimos 14 días', formatearSoles(suma(ventasDias, 'ventas')), `${suma(ventasDias, 'n')} ${plural(suma(ventasDias, 'n'), 'compra', 'compras')}`) +
+                kpi('savings', '255, 176, 32', 'Saldo recargado (14 días)', formatearSoles(suma(ventasDias, 'recargado')), 'pagos de clientes que confirmaste');
+
+            document.getElementById('ven-grafica-sub').textContent = `Total: ${formatearSoles(suma(ventasDias, 'ventas'))} en ${suma(ventasDias, 'n')} ${plural(suma(ventasDias, 'n'), 'compra', 'compras')}`;
+            pintarGraficaVentas();
+            pintarTablaVentas();
+
+            const lista = cats || [];
+            const maxV = Math.max(...lista.map(c => Number(c.ventas)), 0);
+            document.getElementById('ven-catalogos').innerHTML = lista.length === 0
+                ? '<p style="color:var(--texto-tenue);">Todavía no hay ventas en los últimos 30 días.</p>'
+                : lista.map(c => {
+                    const v = Number(c.ventas);
+                    const nombre = (CATALOGOS[c.categoria] || { nombre: c.categoria }).nombre;
+                    return `<div class="adm-hfila"><div>${nombre}<br><small>${c.n} ${plural(c.n, 'compra', 'compras')}</small></div>
+                        <div class="adm-hfila-pista"><div class="adm-hfila-barra" style="width:${maxV ? Math.max(2, (v / maxV) * 100) : 0}%"></div></div>
+                        <div class="adm-hfila-valor">${formatearSoles(v)}</div></div>`;
+                }).join('');
+        }
+
+        function pintarGraficaVentas() {
+            const tope = maximoAmable(Math.max(...ventasDias.map(d => d.ventas), 0));
+            const hoy = ahoraLima();
+            const guias = [1, 0.5].map(f => `<div class="adm-guia" style="top:${(1 - f) * 100}%"><span>S/ ${Math.round(tope * f)}</span></div>`).join('');
+            const barras = ventasDias.map(d => {
+                const pct = tope ? (d.ventas / tope) * 100 : 0;
+                const aria = `${etiquetaDia(d.dia)}: ${formatearSoles(d.ventas)} en ${d.n} ${plural(d.n, 'compra', 'compras')}`;
+                return `<div class="adm-col ${d.dia === hoy ? 'hoy' : ''}" tabindex="0" role="img" aria-label="${aria}" data-tip-t="${etiquetaDia(d.dia)}" data-tip-v="${formatearSoles(d.ventas)}" data-tip-s="${d.n} ${plural(d.n, 'compra', 'compras')} · recargado ${formatearSoles(d.recargado)}">
+                    <div class="adm-barra-zona"><div class="adm-barra ${d.ventas > 0 ? '' : 'cero'}" style="height:${d.ventas > 0 ? Math.max(pct, 1.5) : 0}%"></div></div>
+                    <div class="adm-col-dia">${d.dia.slice(8)}</div></div>`;
+            }).join('');
+            const cont = document.getElementById('ven-grafica-contenedor');
+            cont.innerHTML = `<div class="adm-grafica"><div class="adm-grafica-guias">${guias}</div><div class="adm-barras">${barras}</div></div>`;
+
+            const tip = document.getElementById('adm-tip');
+            const mostrar = col => {
+                tip.innerHTML = `<strong>${col.dataset.tipT}</strong>${col.dataset.tipV}<br><span>${col.dataset.tipS}</span>`;
+                tip.style.display = 'block';
+                const r = col.getBoundingClientRect();
+                const ancho = tip.offsetWidth;
+                tip.style.left = Math.max(8, Math.min(window.innerWidth - ancho - 8, r.left + r.width / 2 - ancho / 2)) + 'px';
+                tip.style.top = Math.max(8, r.top - tip.offsetHeight - 8) + 'px';
+            };
+            cont.querySelectorAll('.adm-col').forEach(col => {
+                col.addEventListener('mouseenter', () => mostrar(col));
+                col.addEventListener('focus', () => mostrar(col));
+                col.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+                col.addEventListener('blur', () => { tip.style.display = 'none'; });
+            });
+        }
+
+        function pintarTablaVentas() {
+            document.getElementById('ven-tabla-contenedor').innerHTML = `<table class="adm-tabla"><thead><tr><th>Día</th><th>Compras</th><th>Ventas</th><th>Saldo recargado</th></tr></thead><tbody>` +
+                [...ventasDias].reverse().map(d => `<tr><td>${etiquetaDia(d.dia)}</td><td>${d.n}</td><td style="font-weight:700;">${formatearSoles(d.ventas)}</td><td>${formatearSoles(d.recargado)}</td></tr>`).join('') + `</tbody></table>`;
+        }
+
+        function alternarVistaVentas(tabla) {
+            document.getElementById('ven-ver-grafica').classList.toggle('activo', !tabla);
+            document.getElementById('ven-ver-tabla').classList.toggle('activo', tabla);
+            document.getElementById('ven-grafica-contenedor').style.display = tabla ? 'none' : 'block';
+            document.getElementById('ven-tabla-contenedor').style.display = tabla ? 'block' : 'none';
+            document.getElementById('adm-tip').style.display = 'none';
         }
 
         // ---------- CUENTAS ----------
@@ -818,30 +1327,6 @@
             msg.className = 'msg-box exito';
             msg.style.display = 'block';
             msg.textContent = activo ? 'Promo activa y visible en la web.' : 'Guardado (promo desactivada).';
-        }
-
-        // ---------- USUARIOS ----------
-        async function cargarUsuarios() {
-            const cuerpo = document.getElementById('tabla-admin-usuarios-body');
-            cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>`;
-
-            const { data, error } = await supabaseClient.rpc('admin_listar_usuarios');
-            if (error) {
-                cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">No se pudo cargar los usuarios.</td></tr>`;
-                return;
-            }
-            if (!data || data.length === 0) {
-                cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">No hay usuarios registrados.</td></tr>`;
-                return;
-            }
-
-            cuerpo.innerHTML = data.map(u => `<tr>
-                <td>${escHtml(u.nickname)}</td>
-                <td>${escHtml(u.correo)}</td>
-                <td>${escHtml(u.celular || '—')}</td>
-                <td>${formatearSoles(u.saldo)}</td>
-                <td>${new Date(u.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-            </tr>`).join('');
         }
     </script>
 </body>

@@ -1271,3 +1271,248 @@ revoke execute on function public.admin_listar_cuentas() from public;
 revoke execute on function public.admin_guardar_cuenta(integer, text, text, numeric, text, text[]) from public;
 grant execute on function public.admin_listar_cuentas() to authenticated;
 grant execute on function public.admin_guardar_cuenta(integer, text, text, numeric, text, text[]) to authenticated;
+
+
+-- ---------- ESTADO DE LOS CATÁLOGOS, STOCK DE PAQUETES Y RESUMEN DEL ADMIN ----------
+-- Cada catálogo se puede ocultar, poner en mantenimiento o marcar sin stock (con un
+-- mensaje opcional para el cliente), y cada paquete se puede marcar agotado. El servidor
+-- también lo hace cumplir al comprar (no basta con esconder el botón en la web).
+create table public.catalogos_config (
+  categoria text primary key check (categoria in ('ilimitada', 'promo', 'cajas_tokens', 'tokens_evolutivos', 'cuentas')),
+  visible boolean not null default true,
+  mantenimiento boolean not null default false,
+  sin_stock boolean not null default false,
+  mensaje text not null default '' check (length(mensaje) <= 200),
+  updated_at timestamptz not null default now()
+);
+insert into public.catalogos_config (categoria) values ('ilimitada'), ('promo'), ('cajas_tokens'), ('tokens_evolutivos'), ('cuentas');
+
+alter table public.catalogos_config enable row level security;
+create policy "ver_catalogos_config" on public.catalogos_config for select using (true);
+revoke all on public.catalogos_config from anon, authenticated;
+grant select on public.catalogos_config to anon, authenticated;
+
+alter table public.paquetes_ff add column agotado boolean not null default false;
+
+-- ¿Se puede comprar en este catálogo? (visible, sin mantenimiento y con stock)
+create function public.catalogo_disponible(p_categoria text)
+returns boolean
+language sql stable
+security definer set search_path = public
+as $$
+  select coalesce(
+    (select visible and not mantenimiento and not sin_stock from public.catalogos_config where categoria = p_categoria),
+    true
+  );
+$$;
+revoke execute on function public.catalogo_disponible(text) from public, anon, authenticated;
+
+-- procesar_nuevo_pedido(): igual que antes, más estas tres comprobaciones:
+--   · paquete con catálogo oculto / en mantenimiento / sin stock  -> 'Este catálogo no está disponible por ahora'
+--   · paquete agotado                                            -> 'Este paquete está agotado por ahora'
+--   · cantidad exacta (cajas_tokens) con ese catálogo bloqueado   -> 'Este catálogo no está disponible por ahora'
+-- comprar_cuenta(): igual que antes, más la comprobación del catálogo 'cuentas'.
+-- (Las dos funciones completas están definidas en la base; se recrearon con "create or replace".)
+
+create function public.admin_listar_catalogos()
+returns table (
+  categoria text, visible boolean, mantenimiento boolean, sin_stock boolean, mensaje text,
+  total_productos integer, productos_agotados integer
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select c.categoria, c.visible, c.mantenimiento, c.sin_stock, c.mensaje,
+      case when c.categoria = 'cuentas'
+        then (select count(*)::integer from public.cuentas_ff)
+        else (select count(*)::integer from public.paquetes_ff p where p.categoria = c.categoria and p.activo) end,
+      case when c.categoria = 'cuentas'
+        then (select count(*)::integer from public.cuentas_ff where estado = 'agotado')
+        else (select count(*)::integer from public.paquetes_ff p where p.categoria = c.categoria and p.activo and p.agotado) end
+    from public.catalogos_config c
+    order by array_position(array['ilimitada','promo','cajas_tokens','tokens_evolutivos','cuentas'], c.categoria);
+end;
+$$;
+
+create function public.admin_guardar_catalogo(
+  p_categoria text, p_visible boolean, p_mantenimiento boolean, p_sin_stock boolean, p_mensaje text
+)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if char_length(coalesce(p_mensaje, '')) > 200 then
+    raise exception 'El mensaje puede tener máximo 200 caracteres';
+  end if;
+  update public.catalogos_config
+    set visible = coalesce(p_visible, visible),
+        mantenimiento = coalesce(p_mantenimiento, mantenimiento),
+        sin_stock = coalesce(p_sin_stock, sin_stock),
+        mensaje = trim(coalesce(p_mensaje, mensaje)),
+        updated_at = now()
+    where categoria = p_categoria;
+  if not found then
+    raise exception 'Catálogo no válido';
+  end if;
+end;
+$$;
+
+-- Cambia solo la visibilidad y el stock de un paquete (sin tocar su precio ni nombre).
+create function public.admin_estado_paquete(p_id integer, p_activo boolean, p_agotado boolean)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  update public.paquetes_ff
+    set activo = coalesce(p_activo, activo), agotado = coalesce(p_agotado, agotado)
+    where id = p_id;
+  if not found then
+    raise exception 'Paquete no encontrado';
+  end if;
+end;
+$$;
+
+-- Mismo listado de antes, ahora con "agotado" (cambia el retorno, por eso se recrea).
+drop function public.admin_listar_paquetes();
+create function public.admin_listar_paquetes()
+returns table (
+  id integer, nombre text, cantidad integer, precio numeric, categoria text, unidad text,
+  destacado boolean, activo boolean, orden integer, agotado boolean
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select pa.id, pa.nombre, pa.cantidad, pa.precio, pa.categoria, pa.unidad, pa.destacado, pa.activo, pa.orden, pa.agotado
+    from public.paquetes_ff pa
+    order by pa.categoria, pa.orden;
+end;
+$$;
+
+-- Resumen del negocio para el inicio del panel (los días se cuentan con la hora de Lima).
+-- "Ventas" = compras con saldo (diamantes y cuentas) confirmadas o entregadas; las canceladas no cuentan.
+create function public.admin_resumen_tienda()
+returns table (
+  solicitudes_pendientes bigint, monto_solicitudes numeric, por_entregar bigint,
+  total_usuarios bigint, usuarios_hoy bigint, saldo_clientes numeric,
+  ventas_hoy numeric, ventas_mes numeric, n_ventas_hoy bigint,
+  recargado_hoy numeric, recargado_mes numeric,
+  cuentas_disponibles bigint, ultima_venta timestamptz
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+declare
+  v_hoy date := (now() at time zone 'America/Lima')::date;
+  v_mes date := date_trunc('month', now() at time zone 'America/Lima')::date;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select
+      (select count(*) from public.pedidos where tipo = 'recarga_saldo' and estado = 'pendiente'),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo = 'recarga_saldo' and estado = 'pendiente'),
+      (select count(*) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado = 'confirmado'),
+      (select count(*) from public.perfiles),
+      (select count(*) from public.perfiles where (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(saldo), 0) from public.perfiles),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date >= v_mes),
+      (select count(*) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo = 'recarga_saldo' and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo = 'recarga_saldo' and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date >= v_mes),
+      (select count(*) from public.cuentas_ff where estado = 'disponible'),
+      (select max(created_at) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado'));
+end;
+$$;
+
+-- Ventas y recargas por día (últimos p_dias días, hora de Lima).
+create function public.admin_ventas_dias(p_dias integer default 14)
+returns table (dia date, recargado numeric, ventas numeric, n_ventas integer)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+declare
+  v_hoy date := (now() at time zone 'America/Lima')::date;
+  v_n integer := greatest(1, least(coalesce(p_dias, 14), 90));
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select d::date,
+      coalesce((select sum(pe.monto) from public.pedidos pe where pe.tipo = 'recarga_saldo' and pe.estado in ('confirmado', 'completado') and (pe.created_at at time zone 'America/Lima')::date = d::date), 0),
+      coalesce((select sum(pe.monto) from public.pedidos pe where pe.tipo in ('compra_diamantes', 'compra_cuenta') and pe.estado in ('confirmado', 'completado') and (pe.created_at at time zone 'America/Lima')::date = d::date), 0),
+      (select count(*)::integer from public.pedidos pe where pe.tipo in ('compra_diamantes', 'compra_cuenta') and pe.estado in ('confirmado', 'completado') and (pe.created_at at time zone 'America/Lima')::date = d::date)
+    from generate_series(v_hoy - (v_n - 1), v_hoy, interval '1 day') d
+    order by d;
+end;
+$$;
+
+-- Qué catálogos venden más (últimos p_dias días).
+create function public.admin_ventas_catalogos(p_dias integer default 30)
+returns table (categoria text, ventas numeric, n integer)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select case when pe.tipo = 'compra_cuenta' then 'cuentas'
+                when pe.paquete_id is null then 'cajas_tokens'
+                else pa.categoria end as cat,
+           sum(pe.monto), count(*)::integer
+    from public.pedidos pe
+    left join public.paquetes_ff pa on pa.id = pe.paquete_id
+    where pe.tipo in ('compra_diamantes', 'compra_cuenta')
+      and pe.estado in ('confirmado', 'completado')
+      and pe.created_at >= now() - make_interval(days => greatest(1, least(coalesce(p_dias, 30), 365)))
+    group by 1
+    order by 2 desc;
+end;
+$$;
+
+revoke execute on function public.admin_listar_catalogos() from public;
+revoke execute on function public.admin_guardar_catalogo(text, boolean, boolean, boolean, text) from public;
+revoke execute on function public.admin_estado_paquete(integer, boolean, boolean) from public;
+revoke execute on function public.admin_listar_paquetes() from public;
+revoke execute on function public.admin_resumen_tienda() from public;
+revoke execute on function public.admin_ventas_dias(integer) from public;
+revoke execute on function public.admin_ventas_catalogos(integer) from public;
+grant execute on function public.admin_listar_catalogos() to authenticated;
+grant execute on function public.admin_guardar_catalogo(text, boolean, boolean, boolean, text) to authenticated;
+grant execute on function public.admin_estado_paquete(integer, boolean, boolean) to authenticated;
+grant execute on function public.admin_listar_paquetes() to authenticated;
+grant execute on function public.admin_resumen_tienda() to authenticated;
+grant execute on function public.admin_ventas_dias(integer) to authenticated;
+grant execute on function public.admin_ventas_catalogos(integer) to authenticated;

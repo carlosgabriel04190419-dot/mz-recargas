@@ -40,6 +40,39 @@ function conVolver(url) {
     return v ? url + (url.includes('?') ? '&' : '?') + 'volver=' + encodeURIComponent(v) : url;
 }
 
+// ---------- ESTADO DE LOS CATÁLOGOS (visible / mantenimiento / sin stock) ----------
+// Lo decide el admin en el panel (tabla catalogos_config) y también lo hace cumplir el servidor al comprar.
+async function cargarConfigCatalogos() {
+    const { data } = await supabaseClient.from('catalogos_config').select('categoria, visible, mantenimiento, sin_stock, mensaje');
+    const mapa = {};
+    (data || []).forEach(c => { mapa[c.categoria] = c; });
+    return mapa;
+}
+
+// 'oculto' | 'mant' | 'stock' | 'ok'
+function estadoVisualCatalogo(c) {
+    if (!c) return 'ok';
+    if (!c.visible) return 'oculto';
+    if (c.mantenimiento) return 'mant';
+    if (c.sin_stock) return 'stock';
+    return 'ok';
+}
+
+// Pinta las tarjetas de catálogo (inicio y selector): quita las ocultas y marca las de
+// mantenimiento / sin stock con su etiqueta y el mensaje del admin.
+function aplicarEstadoTarjetas(mapa) {
+    document.querySelectorAll('a.catalogo-card[href*="catalogo="]').forEach(a => {
+        const cat = new URL(a.getAttribute('href'), location.href).searchParams.get('catalogo');
+        const c = mapa[cat];
+        const e = estadoVisualCatalogo(c);
+        if (e === 'oculto') { a.remove(); return; }
+        if (e === 'ok') return;
+        a.classList.add('cat-' + e);
+        a.insertAdjacentHTML('afterbegin', `<span class="cat-etiqueta"><span class="material-icons">${e === 'mant' ? 'build' : 'remove_shopping_cart'}</span>${e === 'mant' ? 'En mantenimiento' : 'Sin stock'}</span>`);
+        if (c.mensaje) a.insertAdjacentHTML('beforeend', `<p class="cat-mensaje">${escHtml(c.mensaje)}</p>`);
+    });
+}
+
 // URL pública de una foto de cuenta (bucket "cuentas" de Supabase Storage).
 // La base de datos solo guarda el nombre del archivo, no la URL completa.
 function urlFotoCuenta(ruta) {

@@ -29,19 +29,31 @@ compartir usuarios ni datos).
 
 ### Panel de administración (`admin.html`)
 
-Solo lo puede abrir la cuenta marcada como admin (columna `es_admin` en `perfiles`; por ahora es la cuenta `mzrecargaspro@gmail.com`) — cualquier otra cuenta que entre a esa URL rebota a `index.html`. Tiene cuatro pestañas:
-- **Resumen**: recargas pendientes, compras pagadas por entregar, usuarios registrados y saldo total en el sistema.
-- **Pedidos**: todos los pedidos de todos los usuarios, con filtro por estado y botones para confirmar pago / marcar entregado / cancelar.
-- **Paquetes**: editar precio, cantidad, destacado y activo/inactivo de cualquier paquete de los 4 catálogos, o crear uno nuevo — se refleja al instante en la web.
-- **Usuarios**: nickname, correo, WhatsApp, saldo y fecha de registro de cada cuenta registrada.
+Solo lo puede abrir la cuenta marcada como admin (columna `es_admin` en `perfiles`; por ahora es la cuenta `mzrecargaspro@gmail.com`) — cualquier otra cuenta que entre a esa URL rebota a `index.html`. Tiene barra lateral (en el celular se abre con el botón ☰), un buscador de secciones (tecla `/`) y estas secciones:
 
-Toda la lógica vive en funciones de Postgres (`admin_listar_pedidos`, `admin_actualizar_pedido`, `admin_listar_paquetes`, `admin_guardar_paquete`, `admin_listar_usuarios`, `admin_estadisticas`, `admin_obtener_promo`, `admin_guardar_promo`) que revisan `es_admin_actual()` antes de hacer nada — aunque alguien intente llamarlas directo a la API sin ser admin, las rechaza.
+- **Resumen**: saludo del día, cuántas solicitudes y pedidos están por atender, usuarios, saldo de los clientes, ventas de hoy y del mes, última venta, el estado de cada catálogo y accesos rápidos.
+- **Solicitudes**: recargas de saldo pendientes. Confirmas el pago y el saldo se acredita al instante.
+- **Pedidos**: compras ya pagadas por entregar (con botón para copiar el ID de jugador). "Marcar entregado" o "Cancelar" (devuelve el saldo).
+- **Historial**: todos los pedidos con filtro por estado.
+- **Usuarios**: nickname, correo, WhatsApp, saldo y fecha de registro, con buscador.
+- **Catálogo**: tarjeta de cada uno de los 5 catálogos con interruptores **Mostrar en la web**, **En mantenimiento** y **Sin stock**, y un mensaje opcional para el cliente (ver abajo).
+- **Paquetes**: precio, cantidad, destacado, orden, y interruptores **Visible** y **Agotado** por paquete.
+- **Cuentas**, **Promo del día** y **Ventas** (ventas por día en una gráfica, y qué catálogos venden más).
+
+Toda la lógica vive en funciones de Postgres (`admin_*`) que revisan `es_admin_actual()` antes de hacer nada — aunque alguien intente llamarlas directo a la API sin ser admin, las rechaza. El estilo del panel está en `admin.css`.
+
+**Stock y mantenimiento (se aplica al instante, y el servidor también lo hace cumplir):**
+- *Oculto*: el catálogo desaparece del inicio y de la lista de catálogos.
+- *En mantenimiento*: se ve (con su etiqueta y tu mensaje) pero nadie puede comprar.
+- *Sin stock*: igual, pero la portada se ve en blanco y negro.
+- *Paquete agotado*: sigue a la vista pero con la marca "Agotado" y no se puede elegir. *Paquete no visible*: no aparece.
+Si un cliente tiene la página abierta justo cuando lo cambias, al intentar comprar el servidor lo rechaza con un aviso claro. Las recargas de saldo no se afectan.
 
 Para dar acceso de admin a otra cuenta más adelante: `update public.perfiles set es_admin = true where id = '<uuid de la cuenta>';` en el SQL Editor de Supabase.
 
 ### Ver el correo de un usuario
 
-Ya no hace falta ir a Supabase: la pestaña **Usuarios** de `admin.html` lo muestra directo. (También sigue disponible en el panel de Supabase, en Authentication → Users o en la vista `perfiles_admin` del Table Editor, por si acaso.)
+Ya no hace falta ir a Supabase: la sección **Usuarios** de `admin.html` lo muestra directo. (También sigue disponible en el panel de Supabase, en Authentication → Users o en la vista `perfiles_admin` del Table Editor, por si acaso.)
 
 ### Puntos, ranking, compras en vivo, promo del día y asistente
 
