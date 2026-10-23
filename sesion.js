@@ -15,6 +15,17 @@
 // 4. Para "Cerrar sesión" usa cerrarSesionSegura().
 // ==========================================
 
+// Dirección limpia: /catalogo en vez de /catalogo.html (y / en vez de /index.html).
+// GitHub Pages sirve las dos formas; esto solo arregla lo que se ve en la barra del navegador
+// cuando alguien entra con un enlace o favorito viejo que trae el ".html".
+(function limpiarDireccion() {
+    try {
+        if (/^(localhost|127\.|\[::1\])/.test(location.hostname)) return;
+        const limpia = location.pathname.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '');
+        if (limpia !== location.pathname) history.replaceState(null, '', limpia + location.search + location.hash);
+    } catch (e) { /* si no se puede, la página funciona igual */ }
+})();
+
 const supabaseUrl = 'https://bvfllkzcvrdzhkzpkryj.supabase.co';
 const supabaseKey = 'sb_publishable_BDJh1MvR9C6YSA7q1Trluw_9Tx2EfGE';
 const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -27,11 +38,11 @@ function formatearSoles(monto) {
     return 'S/ ' + Number(monto || 0).toFixed(2);
 }
 
-// Adónde volver después de iniciar sesión o crear la cuenta (?volver=catalogo.html%3Fcatalogo%3Dcuentas).
+// Adónde volver después de iniciar sesión o crear la cuenta (?volver=catalogo%3Fcatalogo%3Dcuentas).
 // Solo se aceptan páginas del propio sitio (nunca una dirección externa).
 function destinoVolver(porDefecto) {
     const v = new URLSearchParams(location.search).get('volver') || '';
-    return /^[a-z0-9-]+\.html(\?[a-z0-9_=&-]*)?$/i.test(v) ? v : (porDefecto === undefined ? 'index.html' : porDefecto);
+    return /^[a-z0-9-]+(\.html)?(\?[a-z0-9_=&-]*)?$/i.test(v) ? v : (porDefecto === undefined ? '/' : porDefecto);
 }
 
 // Pasa el "volver" de una pantalla de acceso a la otra (login ⇄ registro).
@@ -91,7 +102,7 @@ async function verificarSesion(requerido = true) {
     const { data: { session } } = await supabaseClient.auth.getSession();
 
     if (!session) {
-        if (requerido) window.location.href = 'login.html';
+        if (requerido) window.location.href = '/login';
         return null;
     }
 
@@ -103,7 +114,7 @@ async function verificarSesion(requerido = true) {
 
     if (error || !usuario) {
         await supabaseClient.auth.signOut();
-        if (requerido) window.location.href = 'login.html';
+        if (requerido) window.location.href = '/login';
         return null;
     }
 
@@ -115,7 +126,7 @@ async function verificarSesion(requerido = true) {
 /** Cierra la sesión de verdad en Supabase y manda a la página de inicio. */
 async function cerrarSesionSegura() {
     await supabaseClient.auth.signOut();
-    window.location.href = 'index.html';
+    window.location.href = '/';
 }
 
 /** Rellena los elementos comunes de la barra de navegación, si existen en la página. */
@@ -185,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (document.querySelector('.navbar')) pintarMenuMovil();
 
-    if (location.pathname.endsWith('admin.html')) return;
+    if (/\/admin(\.html)?$/.test(location.pathname)) return;
     if (!document.querySelector('.navbar')) return;
     medirAlturaBarra();
     pintarFondoVideo();

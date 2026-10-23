@@ -17,7 +17,7 @@
     <meta property="og:image:width" content="512">
     <meta property="og:image:height" content="512">
     <meta property="og:image:alt" content="MZ'Recargas: recargas de diamantes de Free Fire">
-    <meta property="og:url" content="https://mzrecargas.com/login.html">
+    <meta property="og:url" content="https://mzrecargas.com/login">
     <meta name="twitter:card" content="summary">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
     <link rel="stylesheet" href="style.css">
@@ -30,12 +30,12 @@
     </video>
     <div class="auth-bg-overlay"></div>
 
-    <a href="index.html" class="back-link"><span class="material-icons">arrow_back</span> Volver a MZ'Recargas</a>
+    <a href="./" class="back-link"><span class="material-icons">arrow_back</span> Volver a MZ'Recargas</a>
 
     <div class="login-container">
         <div class="login-left">
             <div class="login-header">
-                <a href="index.html" class="nav-logo-premium">
+                <a href="./" class="nav-logo-premium">
                     <img src="logo.svg?v=2" alt="MZ'Recargas" class="logo-img" style="width: 38px; height: 38px;">
                     <div class="logo-text" style="font-size: 19px;">
                         <span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span>
@@ -69,9 +69,9 @@
 
                 <button type="button" id="btn-login" class="btn-primary" style="width: 100%; margin-bottom: 20px;" onclick="manejarLogin()">Iniciar Sesión</button>
 
-                <button type="button" class="btn-outline" style="width: 100%;" onclick="window.location.href = conVolver('register.html')">Crear una cuenta</button>
+                <button type="button" class="btn-outline" style="width: 100%;" onclick="window.location.href = conVolver('register')">Crear una cuenta</button>
 
-                <p class="terms-text">Al continuar, aceptas nuestros <a href="terminos.html">Términos de Servicio</a> y <a href="privacidad.html">Política de Privacidad</a></p>
+                <p class="terms-text">Al continuar, aceptas nuestros <a href="terminos">Términos de Servicio</a> y <a href="privacidad">Política de Privacidad</a></p>
             </form>
         </div>
 
@@ -173,7 +173,7 @@
             }
             btn.disabled = true; btn.innerText = 'Enviando...';
             const { error } = await supabaseClient.auth.resetPasswordForEmail(correo, {
-                redirectTo: window.location.origin + window.location.pathname.replace('login.html', 'restablecer-contrasena.html')
+                redirectTo: window.location.origin + '/restablecer-contrasena'
             });
             btn.disabled = false; btn.innerText = 'Enviar Enlace';
             msg.style.display = 'block';

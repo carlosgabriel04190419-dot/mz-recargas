@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
     <meta name="theme-color" content="#0c0f18">
     <meta name="description" content="Catálogo de Free Fire: recargas de diamantes ilimitadas, promo primera vez, cajas de tokens, tokens evolutivos y cuentas. Paga con Yape o Plin en MZ'Recargas.">
-    <link rel="canonical" href="https://mzrecargas.com/catalogo.html">
+    <link rel="canonical" href="https://mzrecargas.com/catalogo">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="MZ'Recargas">
     <meta property="og:locale" content="es_PE">
@@ -17,7 +17,7 @@
     <meta property="og:image:width" content="512">
     <meta property="og:image:height" content="512">
     <meta property="og:image:alt" content="MZ'Recargas: recargas de diamantes de Free Fire">
-    <meta property="og:url" content="https://mzrecargas.com/catalogo.html">
+    <meta property="og:url" content="https://mzrecargas.com/catalogo">
     <meta name="twitter:card" content="summary">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
     <link rel="stylesheet" href="style.css">
@@ -29,18 +29,18 @@
     <div class="paquetes-bg-overlay" id="paquetes-bg-overlay"></div>
 
     <nav class="navbar">
-        <a href="index.html" class="nav-logo-premium">
+        <a href="./" class="nav-logo-premium">
             <img src="logo.svg?v=2" alt="MZ'Recargas" class="logo-img">
             <div class="logo-text"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></div>
         </a>
         <div class="nav-links">
-            <a href="index.html">Inicio</a>
-            <a href="catalogo.html" class="activo">Recargar Diamantes</a>
-            <a href="soporte.html">Soporte</a>
+            <a href="./">Inicio</a>
+            <a href="catalogo" class="activo">Recargar Diamantes</a>
+            <a href="soporte">Soporte</a>
         </div>
         <div class="nav-actions">
             <button class="theme-toggle" onclick="alternarTema()" aria-label="Cambiar tema"><span class="material-icons">dark_mode</span></button>
-            <a href="login.html" class="btn-outline btn-sm" data-nav-invitado style="display:none;">Ingresar</a>
+            <a href="login" class="btn-outline btn-sm" data-nav-invitado style="display:none;">Ingresar</a>
             <div class="nav-actions-conectado" data-nav-conectado style="display:none; align-items:center; gap:14px;">
                 <div class="balance-pill"><span class="material-icons">diamond</span><span data-nav-saldo>S/ 0.00</span></div>
                 <div class="nav-user-menu">
@@ -49,9 +49,9 @@
                         <span data-nav-nickname>Usuario</span>
                     </button>
                     <div class="nav-dropdown" id="nav-dropdown">
-                        <a href="recargar-saldo.html"><span class="material-icons">account_balance_wallet</span> Recargar Saldo</a>
-                        <a href="perfil.html"><span class="material-icons">person</span> Mi Perfil</a>
-                        <a href="historial.html"><span class="material-icons">receipt_long</span> Mis Pedidos</a>
+                        <a href="recargar-saldo"><span class="material-icons">account_balance_wallet</span> Recargar Saldo</a>
+                        <a href="perfil"><span class="material-icons">person</span> Mi Perfil</a>
+                        <a href="historial"><span class="material-icons">receipt_long</span> Mis Pedidos</a>
                         <button onclick="cerrarSesionSegura()"><span class="material-icons">logout</span> Cerrar Sesión</button>
                     </div>
                 </div>
@@ -64,15 +64,15 @@
         <div class="saldo-card" id="aviso-invitado" style="display:none; max-width: 420px; margin-left:auto; margin-right:auto;">
             <p style="color: var(--texto-secundario); font-size: 14px; line-height: 1.6; margin-bottom: 14px;">Mira los catálogos y precios cuando quieras. Para comprar necesitas una cuenta gratis: guardamos tu saldo y el historial de tus pedidos.</p>
             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                <a href="login.html" class="btn-primary" data-enlace-login style="display:inline-block; text-decoration:none;">Iniciar sesión</a>
-                <a href="register.html" class="btn-outline" data-enlace-registro style="display:inline-block; text-decoration:none;">Crear cuenta</a>
+                <a href="login" class="btn-primary" data-enlace-login style="display:inline-block; text-decoration:none;">Iniciar sesión</a>
+                <a href="register" class="btn-outline" data-enlace-registro style="display:inline-block; text-decoration:none;">Crear cuenta</a>
             </div>
         </div>
 
         <div class="saldo-card" id="saldo-usuario" style="display:none; max-width: 420px; margin-left:auto; margin-right:auto;">
             <p style="color: var(--texto-secundario); font-size: 14px;">Tu saldo disponible</p>
             <div class="monto" data-nav-saldo>S/ 0.00</div>
-            <a href="recargar-saldo.html" class="btn-primary" style="display:inline-block; text-decoration:none;">Recargar Saldo</a>
+            <a href="recargar-saldo" class="btn-primary" style="display:inline-block; text-decoration:none;">Recargar Saldo</a>
         </div>
 
         <div class="seccion-header">
@@ -81,27 +81,27 @@
         </div>
 
         <div id="vista-selector" class="catalogos-grid">
-            <a href="catalogo.html?catalogo=ilimitada" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('ilimitada'); return false;">
+            <a href="catalogo?catalogo=ilimitada" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('ilimitada'); return false;">
                 <img src="banner-ilimitada.jpg" alt="Recargas Ilimitadas">
                 <h3>Recargas Ilimitadas</h3>
                 <span class="catalogo-tag">Sin límite de recargas</span>
             </a>
-            <a href="catalogo.html?catalogo=promo" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('promo'); return false;">
+            <a href="catalogo?catalogo=promo" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('promo'); return false;">
                 <img src="banner-promo.jpeg" alt="Promo Primera Vez">
                 <h3>Promo Primera Vez</h3>
                 <span class="catalogo-tag">Precio especial, 1 vez por ID</span>
             </a>
-            <a href="catalogo.html?catalogo=cajas_tokens" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('cajas_tokens'); return false;">
+            <a href="catalogo?catalogo=cajas_tokens" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('cajas_tokens'); return false;">
                 <img src="banner-cajas-tokens.jpg" alt="Cajas de Tokens" style="object-position: 50% 78%;">
                 <h3>Cajas de Tokens</h3>
                 <span class="catalogo-tag">Cajas de tokens evolutivos</span>
             </a>
-            <a href="catalogo.html?catalogo=tokens_evolutivos" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('tokens_evolutivos'); return false;">
+            <a href="catalogo?catalogo=tokens_evolutivos" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('tokens_evolutivos'); return false;">
                 <img src="banner-tokens-evo.jpg" alt="Tokens Evolutivos">
                 <h3>Tokens Evolutivos</h3>
                 <span class="catalogo-tag">Tokens sueltos para evolucionar</span>
             </a>
-            <a href="catalogo.html?catalogo=cuentas" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('cuentas'); return false;">
+            <a href="catalogo?catalogo=cuentas" class="catalogo-card" style="text-decoration:none; color:inherit;" onclick="cambiarCatalogo('cuentas'); return false;">
                 <img src="banner-cuentas.jpg" alt="Cuentas de Free Fire">
                 <h3>Cuentas Free Fire</h3>
                 <span class="catalogo-tag">Cuentas listas para jugar</span>
@@ -201,28 +201,28 @@
             <div class="footer-col">
                 <h4>Catálogos</h4>
                 <ul>
-                    <li><a href="catalogo.html?catalogo=ilimitada">Recargas Ilimitadas</a></li>
-                    <li><a href="catalogo.html?catalogo=promo">Promo Primera Vez</a></li>
-                    <li><a href="catalogo.html?catalogo=cajas_tokens">Cajas de Tokens</a></li>
-                    <li><a href="catalogo.html?catalogo=tokens_evolutivos">Tokens Evolutivos</a></li>
-                    <li><a href="catalogo.html?catalogo=cuentas">Cuentas Free Fire</a></li>
+                    <li><a href="catalogo?catalogo=ilimitada">Recargas Ilimitadas</a></li>
+                    <li><a href="catalogo?catalogo=promo">Promo Primera Vez</a></li>
+                    <li><a href="catalogo?catalogo=cajas_tokens">Cajas de Tokens</a></li>
+                    <li><a href="catalogo?catalogo=tokens_evolutivos">Tokens Evolutivos</a></li>
+                    <li><a href="catalogo?catalogo=cuentas">Cuentas Free Fire</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h4>Mi Cuenta</h4>
                 <ul>
-                    <li><a href="recargar-saldo.html">Recargar Saldo</a></li>
-                    <li><a href="historial.html">Mis Pedidos</a></li>
-                    <li><a href="perfil.html">Mi Perfil</a></li>
-                    <li><a href="ranking.html">Ranking</a></li>
-                    <li><a href="soporte.html">Soporte</a></li>
+                    <li><a href="recargar-saldo">Recargar Saldo</a></li>
+                    <li><a href="historial">Mis Pedidos</a></li>
+                    <li><a href="perfil">Mi Perfil</a></li>
+                    <li><a href="ranking">Ranking</a></li>
+                    <li><a href="soporte">Soporte</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h4>Legal y Contacto</h4>
                 <ul>
-                    <li><a href="terminos.html">Términos de Servicio</a></li>
-                    <li><a href="privacidad.html">Política de Privacidad</a></li>
+                    <li><a href="terminos">Términos de Servicio</a></li>
+                    <li><a href="privacidad">Política de Privacidad</a></li>
                     <li><a href="https://wa.me/51901150296" target="_blank" rel="noopener">WhatsApp: +51 901 150 296</a></li>
                 </ul>
             </div>
@@ -242,8 +242,8 @@
                 <h2>Inicia sesión para comprar</h2>
                 <p>Crear tu cuenta es gratis y toma un minuto. Así guardamos tu saldo y el historial de tus pedidos.</p>
             </div>
-            <a href="login.html" class="btn-primary" data-enlace-login style="display:block; width:100%; text-align:center; text-decoration:none; margin-bottom:10px;">Iniciar sesión</a>
-            <a href="register.html" class="btn-outline" data-enlace-registro style="display:block; width:100%; text-align:center; text-decoration:none;">Crear cuenta gratis</a>
+            <a href="login" class="btn-primary" data-enlace-login style="display:block; width:100%; text-align:center; text-decoration:none; margin-bottom:10px;">Iniciar sesión</a>
+            <a href="register" class="btn-outline" data-enlace-registro style="display:block; width:100%; text-align:center; text-decoration:none;">Crear cuenta gratis</a>
         </div>
     </div>
 
@@ -310,7 +310,7 @@
                 </div>
             </div>
 
-            <a id="mc-recargar" href="recargar-saldo.html" class="btn-outline" style="display:none; width:100%; text-align:center; margin-bottom:10px;">Recargar saldo</a>
+            <a id="mc-recargar" href="recargar-saldo" class="btn-outline" style="display:none; width:100%; text-align:center; margin-bottom:10px;">Recargar saldo</a>
             <button type="button" id="mc-btn-comprar" class="btn-primary" style="width:100%;" onclick="confirmarCompraCuenta()">Comprar cuenta</button>
             <button type="button" id="mc-btn-whatsapp" class="btn-primary" style="display:none; width:100%;" onclick="abrirWhatsappCuenta()">
                 <span class="material-icons" style="font-size:18px; vertical-align:middle;">chat</span> Abrir WhatsApp
@@ -421,9 +421,9 @@
 
         // Los botones de "Iniciar sesión" / "Crear cuenta" llevan de vuelta al mismo catálogo.
         function actualizarEnlacesLogin() {
-            const volver = encodeURIComponent('catalogo.html' + (categoriaActiva ? '?catalogo=' + categoriaActiva : ''));
-            document.querySelectorAll('[data-enlace-login], [data-nav-invitado]').forEach(a => { a.href = 'login.html?volver=' + volver; });
-            document.querySelectorAll('[data-enlace-registro]').forEach(a => { a.href = 'register.html?volver=' + volver; });
+            const volver = encodeURIComponent('catalogo' + (categoriaActiva ? '?catalogo=' + categoriaActiva : ''));
+            document.querySelectorAll('[data-enlace-login], [data-nav-invitado]').forEach(a => { a.href = 'login?volver=' + volver; });
+            document.querySelectorAll('[data-enlace-registro]').forEach(a => { a.href = 'register?volver=' + volver; });
         }
 
         function pedirLogin() {
