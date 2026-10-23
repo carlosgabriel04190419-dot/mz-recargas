@@ -19,7 +19,7 @@ compartir usuarios ni datos).
 
 ### Cómo funciona el saldo y los pedidos
 
-1. El usuario recarga saldo (elige Yape o Plin) desde `catalogo.html` → queda un pedido `pendiente` y se abre WhatsApp con un mensaje ya armado para que te mande el monto y su captura de pago.
+1. El usuario recarga saldo desde `recargar-saldo.html`, un asistente de 3 pasos (monto → método → pago). En el último paso ve el QR (`qr-yape.jpeg` o `qr-plin.jpeg`), el titular y el número de Yape, botones para copiar el monto y descargar el QR, y un campo opcional con el código de seguridad de 3 dígitos de Yape. Al darle "Ya pagué" queda un pedido `pendiente` y se abre WhatsApp con un mensaje ya armado (monto, método, usuario y ese código) para que mande su captura. Al lado ve el resumen (saldo ahora y después) y sus últimas recargas con su estado. Para cambiar un QR, reemplaza el archivo con el mismo nombre; los datos de Yape (titular y número) están al inicio del script de esa página (`METODOS`).
 2. **Confirmas el pago** desde `admin.html` (pestaña Pedidos → "Confirmar pago") — un trigger acredita el saldo automáticamente.
 3. El usuario compra un paquete con su saldo (desde cualquiera de los catálogos: "Recargas Ilimitadas", "Promo Primera Vez", "Cajas de Tokens" o "Tokens Evolutivos") → se descuenta al instante, el pedido queda `confirmado` (pagado), y también se abre WhatsApp avisándote qué paquete compró y su ID de Free Fire, a la espera de que entregues lo comprado en el juego.
 4. Cuando ya entregaste los diamantes, lo marcas como `completado` desde `admin.html` ("Marcar entregado").

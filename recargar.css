@@ -1,0 +1,158 @@
+/* ==========================================================
+   RECARGAR SALDO — asistente de 3 pasos (monto, método, pago)
+   Solo lo carga recargar-saldo.html. Usa las variables de color
+   del sitio, así que funciona igual en modo oscuro y claro.
+   ========================================================== */
+
+.rec-cabecera { max-width: 1080px; margin: 0 auto 26px; }
+.rec-titulo { margin: 18px 0 6px; font-size: 32px; font-weight: 800; line-height: 1.15; color: #f5f7ff; }
+.rec-titulo span { background: var(--acento-degradado); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.rec-sub { max-width: 620px; font-size: 15px; line-height: 1.6; color: #c2c9ea; }
+
+.rec-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; align-items: start; max-width: 1080px; margin: 0 auto; }
+.rec-lateral { display: flex; flex-direction: column; gap: 20px; position: sticky; top: 90px; }
+
+.rec-card { background: var(--bg-elevada); border: 1px solid var(--borde); border-radius: 22px; padding: 28px; }
+.rec-card h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+.rec-card .rec-ayuda { font-size: 14px; line-height: 1.6; color: var(--texto-secundario); margin-bottom: 22px; }
+
+/* ---------- pasos ---------- */
+.rec-pasos { display: flex; align-items: center; margin-bottom: 28px; }
+.rec-paso { display: flex; align-items: center; gap: 10px; padding: 0; border: none; background: none; color: var(--texto-tenue); font: 700 14px 'Poppins', sans-serif; cursor: default; }
+.rec-paso-num { display: flex; align-items: center; justify-content: center; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--borde-suave); font-size: 15px; font-weight: 800; transition: all 0.2s; }
+.rec-paso-num .material-icons { font-size: 18px; }
+.rec-paso.activo { color: var(--texto); }
+.rec-paso.activo .rec-paso-num { border-color: transparent; background: var(--acento-degradado); color: #fff; box-shadow: 0 0 0 5px rgba(59, 125, 255, 0.18); }
+.rec-paso.hecho { color: var(--texto-secundario); cursor: pointer; }
+.rec-paso.hecho .rec-paso-num { border-color: var(--acento-1); background: rgba(59, 125, 255, 0.14); color: var(--acento-1); }
+.rec-linea { flex: 1; min-width: 14px; height: 3px; margin: 0 12px; border-radius: 3px; background: var(--borde-suave); }
+.rec-linea.llena { background: var(--acento-degradado); }
+
+.rec-vista { display: none; }
+.rec-vista.activa { display: block; animation: rec-entra 0.25s ease; }
+@keyframes rec-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .rec-vista.activa { animation: none; } }
+
+/* ---------- paso 1: monto ---------- */
+.rec-montos { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.rec-monto {
+    padding: 18px 8px; border-radius: 16px; border: 1.5px solid var(--borde); background: var(--bg-input); color: var(--texto);
+    font: 800 20px 'Poppins', sans-serif; text-align: center; cursor: pointer; transition: border-color 0.15s, transform 0.15s, background 0.15s;
+}
+.rec-monto small { display: block; margin-bottom: 2px; font-size: 12px; font-weight: 700; color: var(--texto-tenue); }
+.rec-monto:hover { border-color: var(--acento-1); transform: translateY(-2px); }
+.rec-monto.activo { border-color: var(--acento-1); background: rgba(59, 125, 255, 0.12); box-shadow: 0 0 0 3px rgba(59, 125, 255, 0.18); }
+.rec-otro { display: flex; align-items: center; gap: 10px; padding: 0 16px; border-radius: 16px; border: 1.5px solid var(--borde); background: var(--bg-input); }
+.rec-otro:focus-within, .rec-otro.activo { border-color: var(--acento-1); }
+.rec-otro span { font-weight: 800; color: var(--texto-tenue); }
+.rec-otro input { flex: 1; min-width: 0; padding: 16px 0; border: none; outline: none; background: none; color: var(--texto); font: 700 16px 'Poppins', sans-serif; }
+.rec-otro input::placeholder { color: var(--texto-tenue); font-weight: 500; }
+
+/* ---------- paso 2: método ---------- */
+.rec-metodos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rec-metodo {
+    position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 22px 20px 20px; border-radius: 18px;
+    border: 1.5px solid var(--borde); background: var(--bg-input); color: var(--texto); text-align: left; cursor: pointer; transition: border-color 0.15s, transform 0.15s;
+}
+.rec-metodo::before { content: ''; position: absolute; left: 0; top: 0; right: 0; height: 5px; background: var(--tono-metodo); }
+.rec-metodo:hover { border-color: var(--acento-1); transform: translateY(-2px); }
+.rec-metodo.activo { border-color: var(--acento-1); box-shadow: 0 0 0 3px rgba(59, 125, 255, 0.18); background: rgba(59, 125, 255, 0.08); }
+.rec-metodo strong { font-size: 20px; font-weight: 800; }
+.rec-metodo span { font-size: 13px; line-height: 1.45; color: var(--texto-secundario); }
+.rec-metodo.yape { --tono-metodo: #7b1fa2; }
+.rec-metodo.plin { --tono-metodo: #00b8d4; }
+
+/* ---------- paso 3: pagar ---------- */
+.rec-total {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 16px 20px; margin-bottom: 22px; border-radius: 16px;
+    background: linear-gradient(120deg, rgba(139, 63, 251, 0.14), rgba(59, 125, 255, 0.10)); border: 1px solid var(--borde-suave);
+}
+.rec-total-etq { font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--texto-tenue); }
+.rec-total-num { font-size: 28px; font-weight: 800; line-height: 1.2; }
+.rec-pago { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: center; margin-bottom: 22px; }
+.rec-qr { padding: 14px; border-radius: 20px; background: #fff; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28); }
+.rec-qr img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.rec-datos { display: flex; flex-direction: column; gap: 14px; }
+.rec-dato { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--bg-input); border: 1px solid var(--borde); }
+.rec-dato small { display: block; font-size: 11.5px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--texto-tenue); }
+.rec-dato strong { font-size: 16px; font-weight: 800; }
+.rec-btn-mini { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--borde-suave); background: none; color: var(--texto-secundario); font: 700 12.5px 'Poppins', sans-serif; cursor: pointer; text-decoration: none; }
+.rec-btn-mini:hover { border-color: var(--acento-1); color: var(--acento-1); }
+.rec-btn-mini .material-icons { font-size: 16px; }
+.rec-pasos-pago { display: flex; flex-direction: column; gap: 10px; margin: 0 0 20px; padding: 0; list-style: none; counter-reset: pago; }
+.rec-pasos-pago li { position: relative; padding-left: 38px; font-size: 14px; line-height: 1.55; color: var(--texto-secundario); counter-increment: pago; }
+.rec-pasos-pago li::before { content: counter(pago); position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 50%; background: rgba(139, 63, 251, 0.16); color: var(--acento-2); font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.rec-codigo label { display: block; margin-bottom: 7px; font-size: 13.5px; font-weight: 700; color: var(--texto-secundario); }
+.rec-codigo label span { font-weight: 400; color: var(--texto-tenue); }
+.rec-codigo input { width: 130px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--borde); background: var(--bg-input); color: var(--texto); font: 800 22px 'Poppins', sans-serif; letter-spacing: 8px; text-align: center; outline: none; }
+.rec-codigo input:focus { border-color: var(--acento-1); }
+.rec-codigo p { margin: 8px 0 22px; font-size: 12.5px; line-height: 1.5; color: var(--texto-tenue); }
+
+.rec-acciones { display: flex; gap: 12px; margin-top: 26px; }
+.rec-acciones .btn-primary { flex: 1; }
+.rec-acciones .btn-outline { flex: none; }
+
+.rec-exito { text-align: center; padding: 14px 6px 6px; }
+.rec-exito-icono { display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 72px; margin-bottom: 14px; border-radius: 50%; background: rgba(46, 230, 166, 0.14); color: var(--exito); }
+.rec-exito-icono .material-icons { font-size: 40px; }
+.rec-exito h2 { margin-bottom: 8px; }
+
+/* ---------- columna lateral ---------- */
+.rec-ticket { overflow: hidden; border-radius: 22px; background: var(--bg-elevada); border: 1px solid var(--borde); }
+.rec-ticket-cab { padding: 18px 22px; background: var(--acento-degradado); color: #fff; }
+.rec-ticket-cab small { display: block; font-size: 11.5px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; opacity: 0.85; }
+.rec-ticket-cab strong { font-size: 24px; font-weight: 800; }
+.rec-ticket-cuerpo { padding: 20px 22px 22px; }
+.rec-fila { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 14px; color: var(--texto-secundario); }
+.rec-fila strong { color: var(--texto); font-weight: 700; }
+.rec-fila.mas strong { color: var(--exito); }
+.rec-corte { margin: 12px 0; border-top: 2px dashed var(--borde-suave); }
+.rec-fila.final { font-size: 15px; color: var(--texto); font-weight: 700; }
+.rec-fila.final strong { font-size: 19px; color: var(--acento-1); font-weight: 800; }
+.rec-nota { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--bg-input); font-size: 12.5px; line-height: 1.5; color: var(--texto-tenue); }
+
+.rec-bloque h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 16px; font-weight: 800; }
+.rec-bloque h3 .material-icons { font-size: 20px; color: var(--acento-2); }
+.rec-hist { display: flex; flex-direction: column; }
+.rec-hist-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--borde); }
+.rec-hist-item:last-child { border-bottom: none; padding-bottom: 0; }
+.rec-hist-punto { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--texto-tenue); }
+.rec-hist-punto.yape { background: #b44fe0; }
+.rec-hist-punto.plin { background: #00b8d4; }
+.rec-hist-info { flex: 1; min-width: 0; }
+.rec-hist-info strong { display: block; font-size: 14px; font-weight: 700; }
+.rec-hist-info small { font-size: 12px; color: var(--texto-tenue); }
+.rec-hist-monto { font-size: 14px; font-weight: 800; text-align: right; }
+.rec-hist-monto .estado-pill { display: block; margin-top: 3px; padding: 2px 9px; font-size: 11px; }
+.rec-vacio { font-size: 13.5px; color: var(--texto-tenue); line-height: 1.5; }
+
+.rec-faq details { border-bottom: 1px solid var(--borde); }
+.rec-faq details:last-child { border-bottom: none; }
+.rec-faq summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 0; font-size: 14px; font-weight: 700; cursor: pointer; list-style: none; }
+.rec-faq summary::-webkit-details-marker { display: none; }
+.rec-faq summary::after { content: '+'; flex: none; font-size: 20px; font-weight: 500; color: var(--texto-tenue); transition: transform 0.2s; }
+.rec-faq details[open] summary::after { transform: rotate(45deg); color: var(--acento-1); }
+.rec-faq details p { padding: 0 0 14px; font-size: 13.5px; line-height: 1.6; color: var(--texto-secundario); }
+
+.rec-aviso { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); z-index: 600; padding: 12px 20px; border-radius: 30px; background: var(--bg-elevada-2); border: 1px solid var(--borde-suave); box-shadow: 0 12px 32px var(--sombra-modal); font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; }
+.rec-aviso.visible { opacity: 1; transform: translate(-50%, 0); }
+.rec-aviso.error { border-color: var(--error); color: var(--error); }
+
+/* ---------- celular ---------- */
+@media (max-width: 920px) {
+    .rec-grid { grid-template-columns: 1fr; }
+    .rec-lateral { position: static; }
+}
+@media (max-width: 600px) {
+    .rec-titulo { font-size: 26px; }
+    .rec-card { padding: 22px 18px; border-radius: 20px; }
+    .rec-paso span.rec-paso-txt { display: none; }
+    .rec-paso.activo span.rec-paso-txt { display: inline; }
+    .rec-linea { margin: 0 6px; }
+    .rec-metodos { grid-template-columns: 1fr; }
+    .rec-pago { grid-template-columns: 1fr; justify-items: center; }
+    .rec-qr { width: min(100%, 260px); }
+    .rec-datos { width: 100%; }
+    .rec-acciones { flex-direction: column-reverse; }
+    .rec-acciones .btn-outline { width: 100%; }
+}

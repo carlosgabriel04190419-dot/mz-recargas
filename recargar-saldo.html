@@ -21,6 +21,7 @@
     <meta name="twitter:card" content="summary">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="recargar.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
@@ -55,52 +56,143 @@
         </div>
     </nav>
 
-    <div class="container video-zone" style="padding-top: 40px; padding-bottom: 60px; max-width: 480px;">
+    <div class="container video-zone" style="padding-top: 40px; padding-bottom: 60px; max-width: 1140px;">
 
-        <a href="catalogo" class="back-link-catalogo" style="margin-top:0;"><span class="material-icons">arrow_back</span> Volver al catálogo</a>
-
-        <div class="seccion-header" style="margin-top: 22px;">
-            <h2>Recargar Saldo</h2>
-            <p>Elige tu método de pago y el monto, paga y avísanos por WhatsApp.</p>
+        <div class="rec-cabecera">
+            <a href="catalogo" class="back-link-catalogo" style="margin-top:0;"><span class="material-icons">arrow_back</span> Volver al catálogo</a>
+            <h1 class="rec-titulo">Recarga tu <span>saldo</span></h1>
+            <p class="rec-sub">Elige el monto, paga con Yape o Plin y avísanos por WhatsApp. En cuanto verificamos tu pago, tu saldo queda listo para comprar diamantes.</p>
         </div>
 
-        <div class="saldo-card" style="margin-bottom: 28px;">
-            <p style="color: var(--texto-secundario); font-size: 14px;">Tu saldo disponible</p>
-            <div class="monto" data-nav-saldo>S/ 0.00</div>
+        <div class="rec-grid">
+
+            <!-- ===== ASISTENTE ===== -->
+            <div class="rec-card" id="rec-principal">
+                <div class="rec-pasos" id="rec-pasos">
+                    <button type="button" class="rec-paso activo" data-paso="1"><span class="rec-paso-num">1</span><span class="rec-paso-txt">Monto</span></button>
+                    <div class="rec-linea" id="rec-linea-1"></div>
+                    <button type="button" class="rec-paso" data-paso="2"><span class="rec-paso-num">2</span><span class="rec-paso-txt">Método</span></button>
+                    <div class="rec-linea" id="rec-linea-2"></div>
+                    <button type="button" class="rec-paso" data-paso="3"><span class="rec-paso-num">3</span><span class="rec-paso-txt">Pago</span></button>
+                </div>
+
+                <div id="recargar-msg" class="msg-box"></div>
+
+                <!-- Paso 1 -->
+                <section class="rec-vista activa" id="rec-v1">
+                    <h2>¿Cuánto quieres recargar?</h2>
+                    <p class="rec-ayuda">Elige un monto rápido o escribe el que necesites. Lo recargado se suma a tu saldo y lo usas cuando quieras.</p>
+                    <div class="rec-montos" id="rec-montos">
+                        <button type="button" class="rec-monto" data-monto="10"><small>S/</small>10</button>
+                        <button type="button" class="rec-monto" data-monto="20"><small>S/</small>20</button>
+                        <button type="button" class="rec-monto" data-monto="50"><small>S/</small>50</button>
+                        <button type="button" class="rec-monto" data-monto="100"><small>S/</small>100</button>
+                        <button type="button" class="rec-monto" data-monto="200"><small>S/</small>200</button>
+                    </div>
+                    <label class="rec-otro" id="rec-otro"><span>S/</span><input type="number" id="monto-personalizado" placeholder="Otro monto" min="1" step="0.01" inputmode="decimal" aria-label="Otro monto en soles"></label>
+                    <div class="rec-acciones"><button type="button" class="btn-primary" id="rec-sig-1">Continuar</button></div>
+                </section>
+
+                <!-- Paso 2 -->
+                <section class="rec-vista" id="rec-v2">
+                    <h2>¿Cómo vas a pagar?</h2>
+                    <p class="rec-ayuda">Los dos métodos son transferencias desde tu celular y las verificamos a mano.</p>
+                    <div class="rec-metodos" id="rec-metodos">
+                        <button type="button" class="rec-metodo yape activo" data-metodo="yape"><strong>Yape</strong><span>Escanea el QR o yapea al número que verás en el siguiente paso.</span></button>
+                        <button type="button" class="rec-metodo plin" data-metodo="plin"><strong>Plin</strong><span>Escanea el QR de Plin desde tu app del banco.</span></button>
+                    </div>
+                    <div class="rec-acciones">
+                        <button type="button" class="btn-outline" id="rec-atras-2">Atrás</button>
+                        <button type="button" class="btn-primary" id="rec-sig-2">Continuar</button>
+                    </div>
+                </section>
+
+                <!-- Paso 3 -->
+                <section class="rec-vista" id="rec-v3">
+                    <h2>Haz tu pago</h2>
+                    <p class="rec-ayuda" id="rec-pago-ayuda">&nbsp;</p>
+
+                    <div class="rec-total">
+                        <div>
+                            <div class="rec-total-etq">Vas a pagar</div>
+                            <div class="rec-total-num" id="rec-pago-total">S/ 0.00</div>
+                        </div>
+                        <button type="button" class="rec-btn-mini" id="rec-copiar-monto"><span class="material-icons">content_copy</span>Copiar monto</button>
+                    </div>
+
+                    <div class="rec-pago">
+                        <div class="rec-qr"><img id="rec-qr-img" src="qr-yape.jpeg" alt="Código QR para pagar"></div>
+                        <div class="rec-datos">
+                            <div class="rec-dato" id="rec-dato-titular"><div><small>A nombre de</small><strong id="rec-titular">Raul Mu*</strong></div></div>
+                            <div class="rec-dato" id="rec-dato-numero"><div><small>Número de Yape</small><strong id="rec-numero">901 150 296</strong></div><button type="button" class="rec-btn-mini" id="rec-copiar-numero"><span class="material-icons">content_copy</span>Copiar</button></div>
+                            <a class="rec-btn-mini" id="rec-descargar-qr" href="qr-yape.jpeg" download="qr-yape-mzrecargas.jpeg" style="justify-content:center; padding:11px 12px;"><span class="material-icons">download</span>Descargar QR</a>
+                        </div>
+                    </div>
+
+                    <ol class="rec-pasos-pago">
+                        <li id="rec-paso-pago-1">Abre tu app y escanea el código.</li>
+                        <li id="rec-paso-pago-2">Paga exactamente el monto de arriba.</li>
+                        <li>Toca <strong>Ya pagué</strong>: te llevamos a WhatsApp para que nos mandes tu captura.</li>
+                    </ol>
+
+                    <div class="rec-codigo" id="rec-codigo-caja">
+                        <label for="rec-codigo">Código de seguridad de Yape <span>(opcional)</span></label>
+                        <input type="text" id="rec-codigo" inputmode="numeric" maxlength="3" placeholder="000" autocomplete="off">
+                        <p>Son los 3 dígitos que Yape te muestra justo después de pagar. Nos ayuda a ubicar tu pago más rápido entre varios del mismo monto.</p>
+                    </div>
+
+                    <div class="rec-acciones">
+                        <button type="button" class="btn-outline" id="rec-atras-3">Atrás</button>
+                        <button type="button" class="btn-primary" id="btn-recargar">Ya pagué, avisar por WhatsApp</button>
+                    </div>
+                </section>
+
+                <!-- Listo -->
+                <section class="rec-vista" id="rec-exito">
+                    <div class="rec-exito">
+                        <div class="rec-exito-icono"><span class="material-icons">task_alt</span></div>
+                        <h2>¡Recarga registrada!</h2>
+                        <p class="rec-ayuda" id="rec-exito-txt" style="margin-bottom:22px;">&nbsp;</p>
+                        <div class="rec-acciones" style="justify-content:center; flex-wrap:wrap;">
+                            <button type="button" class="btn-primary" id="rec-abrir-wa" style="flex:none;"><span class="material-icons" style="font-size:18px; vertical-align:-4px;">chat</span> Abrir WhatsApp</button>
+                            <button type="button" class="btn-outline" id="rec-otra">Hacer otra recarga</button>
+                        </div>
+                        <p style="margin-top:18px; font-size:13px;"><a href="historial" style="color:var(--acento-1); text-decoration:underline;">Ver mis pedidos</a></p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ===== LATERAL ===== -->
+            <aside class="rec-lateral">
+                <div class="rec-ticket">
+                    <div class="rec-ticket-cab"><small>Resumen de tu recarga</small><strong id="rec-ticket-monto">S/ 0.00</strong></div>
+                    <div class="rec-ticket-cuerpo">
+                        <div class="rec-fila"><span>Saldo ahora</span><strong data-nav-saldo>S/ 0.00</strong></div>
+                        <div class="rec-fila mas"><span>Recarga</span><strong id="rec-ticket-mas">+ S/ 0.00</strong></div>
+                        <div class="rec-fila"><span>Método</span><strong id="rec-ticket-metodo">—</strong></div>
+                        <div class="rec-corte"></div>
+                        <div class="rec-fila final"><span>Saldo después</span><strong id="rec-ticket-despues">S/ 0.00</strong></div>
+                        <div class="rec-nota">Tu saldo se acredita cuando verificamos el pago, normalmente en pocos minutos.</div>
+                    </div>
+                </div>
+
+                <div class="rec-card rec-bloque" style="padding: 22px;">
+                    <h3><span class="material-icons">history</span>Tus últimas recargas</h3>
+                    <div class="rec-hist" id="rec-hist"><p class="rec-vacio">Cargando…</p></div>
+                </div>
+
+                <div class="rec-card rec-bloque rec-faq" style="padding: 22px;">
+                    <h3><span class="material-icons">help_outline</span>Dudas rápidas</h3>
+                    <details><summary>¿Cuánto tarda en acreditarse?</summary><p>Verificamos cada pago a mano. Normalmente toma pocos minutos desde que nos envías tu captura por WhatsApp.</p></details>
+                    <details><summary>¿Qué monto puedo recargar?</summary><p>El que quieras, desde S/ 1. Si pagas un monto distinto al que registraste, te escribiremos por WhatsApp para aclararlo antes de acreditar.</p></details>
+                    <details><summary>¿Mi pago no se acredita?</summary><p>Escríbenos por WhatsApp con tu captura de Yape o Plin y lo revisamos al toque.</p></details>
+                    <details><summary>¿Puedo retirar mi saldo?</summary><p>El saldo es crédito para comprar dentro de MZ'Recargas: no genera intereses ni se retira en efectivo. Más detalles en los <a href="terminos" style="color:var(--acento-1); text-decoration:underline;">Términos de Servicio</a>.</p></details>
+                </div>
+            </aside>
         </div>
-
-        <div id="recargar-msg" class="msg-box"></div>
-
-        <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Método de pago</label>
-        <div class="monto-btn-grid" id="metodos-pago" style="margin-bottom: 16px;">
-            <button type="button" class="monto-btn activo" data-metodo="yape" onclick="elegirMetodoPago('yape')" style="flex-basis: calc(50% - 5px);">Yape</button>
-            <button type="button" class="monto-btn" data-metodo="plin" onclick="elegirMetodoPago('plin')" style="flex-basis: calc(50% - 5px);">Plin</button>
-        </div>
-
-        <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Monto a recargar</label>
-        <div class="monto-btn-grid" id="montos-rapidos">
-            <button type="button" class="monto-btn" onclick="elegirMontoRapido(10)">S/ 10</button>
-            <button type="button" class="monto-btn" onclick="elegirMontoRapido(20)">S/ 20</button>
-            <button type="button" class="monto-btn" onclick="elegirMontoRapido(50)">S/ 50</button>
-            <button type="button" class="monto-btn" onclick="elegirMontoRapido(100)">S/ 100</button>
-        </div>
-        <input type="number" id="monto-personalizado" class="input-form" placeholder="O ingresa otro monto (S/)" min="1" step="0.01">
-
-        <div class="card" id="pago-info-yape" style="margin: 16px 0; padding: 16px;">
-            <p style="font-size: 13.5px; font-weight: 700; margin-bottom: 8px;">Paga por Yape a:</p>
-            <p style="font-size: 14px; color: var(--texto-secundario);">Número: <strong>901 150 296</strong></p>
-            <p style="font-size: 14px; color: var(--texto-secundario);">A nombre de: <strong>Raul Mu*</strong></p>
-            <p style="font-size: 12.5px; color: var(--texto-tenue); margin-top: 8px;">Después de pagar, dale a "Ya pagué" — te llevamos a WhatsApp para que nos envíes tu captura y acreditemos tu saldo más rápido.</p>
-        </div>
-
-        <div class="card" id="pago-info-plin" style="margin: 16px 0; padding: 16px; display:none; text-align:center;">
-            <p style="font-size: 13.5px; font-weight: 700; margin-bottom: 12px;">Paga por Plin escaneando este QR:</p>
-            <img src="qr-plin.jpeg" alt="Código QR de Plin" style="width: 180px; height: 180px; margin: 0 auto 12px; border-radius: 10px; display: block; object-fit: contain; background: #fff; padding: 6px;">
-            <p style="font-size: 12.5px; color: var(--texto-tenue);">Después de pagar, dale a "Ya pagué" — te llevamos a WhatsApp para que nos envíes tu captura y acreditemos tu saldo más rápido.</p>
-        </div>
-
-        <button type="button" id="btn-recargar" class="btn-primary" style="width:100%;" onclick="confirmarRecarga()">Ya pagué, avisar por WhatsApp</button>
     </div>
+
+    <div class="rec-aviso" id="rec-aviso" role="status" aria-live="polite"></div>
 
     <!-- FOOTER:INICIO (generado: edita scripts/footer.html y corre scripts/sincronizar-footer.py) -->
     <footer>
@@ -156,72 +248,208 @@
     <script src="sesion.js"></script>
     <script>
         const WHATSAPP_NUMERO = '51901150296';
+        const METODOS = {
+            yape: { nombre: 'Yape', qr: 'qr-yape.jpeg', descarga: 'qr-yape-mzrecargas.jpeg', titular: 'Raul Mu*', numero: '901 150 296' },
+            plin: { nombre: 'Plin', qr: 'qr-plin.jpeg', descarga: 'qr-plin-mzrecargas.jpeg', titular: null, numero: null }
+        };
+        const ETIQUETA_ESTADO = { pendiente: 'En revisión', confirmado: 'Acreditada', completado: 'Acreditada', cancelado: 'Cancelada' };
 
         let usuarioActual = null;
-        let montoRecargaElegido = 0;
-        let metodoPagoElegido = 'yape';
+        let paso = 1;
+        let monto = 0;
+        let metodo = 'yape';
+        let textoWhatsApp = '';
+
+        const $ = id => document.getElementById(id);
 
         window.onload = async function () {
             usuarioActual = await verificarSesion();
             if (!usuarioActual) return;
+            prepararEventos();
+            pintarResumen();
+            cargarHistorial();
         };
+
+        function prepararEventos() {
+            $('rec-montos').addEventListener('click', e => {
+                const b = e.target.closest('.rec-monto');
+                if (b) elegirMonto(parseFloat(b.dataset.monto), b);
+            });
+            $('monto-personalizado').addEventListener('input', e => {
+                const v = parseFloat(e.target.value);
+                monto = v > 0 ? Math.round(v * 100) / 100 : 0;
+                document.querySelectorAll('.rec-monto').forEach(x => x.classList.remove('activo'));
+                $('rec-otro').classList.toggle('activo', monto > 0);
+                pintarResumen();
+            });
+            $('rec-metodos').addEventListener('click', e => {
+                const b = e.target.closest('.rec-metodo');
+                if (b) elegirMetodo(b.dataset.metodo);
+            });
+            document.querySelectorAll('.rec-paso').forEach(b => b.addEventListener('click', () => {
+                if (b.classList.contains('hecho')) irAPaso(parseInt(b.dataset.paso, 10));
+            }));
+            $('rec-sig-1').addEventListener('click', () => irAPaso(2));
+            $('rec-atras-2').addEventListener('click', () => irAPaso(1));
+            $('rec-sig-2').addEventListener('click', () => irAPaso(3));
+            $('rec-atras-3').addEventListener('click', () => irAPaso(2));
+            $('btn-recargar').addEventListener('click', confirmarRecarga);
+            $('rec-copiar-monto').addEventListener('click', () => copiar(monto.toFixed(2), 'Monto copiado'));
+            $('rec-copiar-numero').addEventListener('click', () => copiar(METODOS.yape.numero.replace(/\s/g, ''), 'Número copiado'));
+            $('rec-abrir-wa').addEventListener('click', () => abrirWhatsapp(textoWhatsApp));
+            $('rec-otra').addEventListener('click', reiniciar);
+            $('rec-codigo').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 3); });
+        }
+
+        function aviso(texto, tipo) {
+            const el = $('rec-aviso');
+            el.textContent = texto;
+            el.className = 'rec-aviso visible' + (tipo === 'error' ? ' error' : '');
+            clearTimeout(aviso.t);
+            aviso.t = setTimeout(() => el.classList.remove('visible'), 2200);
+        }
+
+        async function copiar(texto, mensaje) {
+            try { await navigator.clipboard.writeText(texto); aviso(mensaje); }
+            catch (e) { aviso('No se pudo copiar. Selecciónalo y cópialo a mano.', 'error'); }
+        }
 
         function abrirWhatsapp(texto) {
             window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
-        function elegirMetodoPago(metodo) {
-            metodoPagoElegido = metodo;
-            document.querySelectorAll('#metodos-pago .monto-btn').forEach(b => b.classList.toggle('activo', b.dataset.metodo === metodo));
-            document.getElementById('pago-info-yape').style.display = metodo === 'yape' ? 'block' : 'none';
-            document.getElementById('pago-info-plin').style.display = metodo === 'plin' ? 'block' : 'none';
+        function mostrarError(texto) {
+            const msg = $('recargar-msg');
+            msg.className = 'msg-box error'; msg.style.display = 'block'; msg.innerText = texto;
         }
-        function elegirMontoRapido(monto) {
-            montoRecargaElegido = monto;
-            document.getElementById('monto-personalizado').value = '';
-            document.querySelectorAll('#montos-rapidos .monto-btn').forEach(b => b.classList.remove('activo'));
-            event.currentTarget.classList.add('activo');
-        }
-        document.addEventListener('input', function (e) {
-            if (e.target.id === 'monto-personalizado' && e.target.value) {
-                montoRecargaElegido = parseFloat(e.target.value);
-                document.querySelectorAll('#montos-rapidos .monto-btn').forEach(b => b.classList.remove('activo'));
-            }
-        });
 
+        // ---------- pasos ----------
+        function elegirMonto(v, boton) {
+            monto = v;
+            $('monto-personalizado').value = '';
+            $('rec-otro').classList.remove('activo');
+            document.querySelectorAll('.rec-monto').forEach(b => b.classList.toggle('activo', b === boton));
+            pintarResumen();
+        }
+
+        function elegirMetodo(m) {
+            metodo = m;
+            document.querySelectorAll('.rec-metodo').forEach(b => b.classList.toggle('activo', b.dataset.metodo === m));
+            pintarResumen();
+        }
+
+        function irAPaso(n) {
+            $('recargar-msg').style.display = 'none';
+            if (n >= 2 && !(monto > 0)) { mostrarError('Elige o escribe un monto para continuar.'); n = 1; }
+            paso = n;
+            ['rec-v1', 'rec-v2', 'rec-v3'].forEach((id, i) => $(id).classList.toggle('activa', i + 1 === n));
+            $('rec-exito').classList.remove('activa');
+            $('rec-pasos').style.display = '';
+            document.querySelectorAll('.rec-paso').forEach(b => {
+                const k = parseInt(b.dataset.paso, 10);
+                b.classList.toggle('activo', k === n);
+                b.classList.toggle('hecho', k < n);
+                b.querySelector('.rec-paso-num').innerHTML = k < n ? '<span class="material-icons">diamond</span>' : String(k);
+            });
+            $('rec-linea-1').classList.toggle('llena', n > 1);
+            $('rec-linea-2').classList.toggle('llena', n > 2);
+            if (n === 3) pintarPago();
+            pintarResumen();
+            $('rec-principal').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ---------- resumen (lado derecho y total) ----------
+        function pintarResumen() {
+            const saldo = Number(usuarioActual ? usuarioActual.saldo : 0);
+            $('rec-ticket-monto').textContent = formatearSoles(monto);
+            $('rec-ticket-mas').textContent = '+ ' + formatearSoles(monto);
+            $('rec-ticket-metodo').textContent = paso >= 2 ? METODOS[metodo].nombre : '—';
+            $('rec-ticket-despues').textContent = formatearSoles(saldo + monto);
+            $('rec-sig-1').disabled = !(monto > 0);
+        }
+
+        // ---------- paso 3: QR y datos del método elegido ----------
+        function pintarPago() {
+            const m = METODOS[metodo];
+            $('rec-pago-total').textContent = formatearSoles(monto) + ' · ' + m.nombre;
+            $('rec-pago-ayuda').textContent = metodo === 'yape'
+                ? 'Escanea el QR con Yape (o yapea al número) y paga el monto exacto.'
+                : 'Escanea el QR con Plin desde tu app y paga el monto exacto.';
+            $('rec-qr-img').src = m.qr;
+            $('rec-qr-img').alt = 'Código QR de ' + m.nombre;
+            $('rec-descargar-qr').href = m.qr;
+            $('rec-descargar-qr').setAttribute('download', m.descarga);
+            $('rec-dato-titular').style.display = m.titular ? '' : 'none';
+            $('rec-titular').textContent = m.titular || '';
+            $('rec-dato-numero').style.display = m.numero ? '' : 'none';
+            $('rec-numero').textContent = m.numero || '';
+            $('rec-paso-pago-1').textContent = `Abre ${m.nombre} y escanea el código${m.numero ? ' (o yapea al número)' : ''}.`;
+            $('rec-paso-pago-2').textContent = `Paga exactamente ${formatearSoles(monto)}, ni más ni menos.`;
+            $('rec-codigo-caja').style.display = metodo === 'yape' ? '' : 'none';
+        }
+
+        // ---------- registrar la recarga ----------
         async function confirmarRecarga() {
-            const msg = document.getElementById('recargar-msg');
-            const btn = document.getElementById('btn-recargar');
-            const personalizado = parseFloat(document.getElementById('monto-personalizado').value);
-            const monto = personalizado > 0 ? personalizado : montoRecargaElegido;
-
-            if (!monto || monto <= 0) {
-                msg.className = 'msg-box error'; msg.style.display = 'block';
-                msg.innerText = 'Elige o ingresa un monto válido.'; return;
-            }
+            const btn = $('btn-recargar');
+            if (!(monto > 0)) { irAPaso(1); return; }
 
             btn.disabled = true; btn.innerText = 'Registrando...';
             const { error } = await supabaseClient.from('pedidos').insert([{
                 usuario_id: usuarioActual.id,
                 tipo: 'recarga_saldo',
                 monto: monto,
-                metodo_pago: metodoPagoElegido
+                metodo_pago: metodo
             }]);
             btn.disabled = false; btn.innerText = 'Ya pagué, avisar por WhatsApp';
 
-            msg.style.display = 'block';
-            if (error) {
-                msg.className = 'msg-box error';
-                msg.innerText = 'No se pudo registrar: ' + error.message;
-                return;
-            }
-            msg.className = 'msg-box exito';
-            msg.innerText = 'Recarga registrada. Te llevamos a WhatsApp para enviar tu captura y acreditar el saldo más rápido.';
+            if (error) { mostrarError('No se pudo registrar: ' + error.message); return; }
 
-            const metodoTexto = metodoPagoElegido === 'plin' ? 'Plin' : 'Yape';
-            abrirWhatsapp(`¡Hola! Vengo de MZ'Recargas 💎. Acabo de pagar S/ ${monto.toFixed(2)} por ${metodoTexto} para recargar mi saldo. Aquí va mi captura de pago 👇`);
+            const codigo = $('rec-codigo').value.trim();
+            textoWhatsApp = `¡Hola! Vengo de MZ'Recargas 💎. Acabo de pagar ${formatearSoles(monto)} por ${METODOS[metodo].nombre} para recargar mi saldo (usuario: ${usuarioActual.nickname}).`
+                + (metodo === 'yape' && codigo.length === 3 ? ` Código de seguridad de Yape: ${codigo}.` : '')
+                + ' Aquí va mi captura de pago 👇';
+
+            $('recargar-msg').style.display = 'none';
+            ['rec-v1', 'rec-v2', 'rec-v3'].forEach(id => $(id).classList.remove('activa'));
+            $('rec-pasos').style.display = 'none';
+            $('rec-exito').classList.add('activa');
+            $('rec-exito-txt').textContent = `Registramos tu recarga de ${formatearSoles(monto)} por ${METODOS[metodo].nombre}. Envíanos la captura por WhatsApp y acreditamos tu saldo apenas verifiquemos el pago.`;
+            $('rec-principal').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            cargarHistorial();
+            abrirWhatsapp(textoWhatsApp);
         }
 
+        function reiniciar() {
+            monto = 0; metodo = 'yape'; textoWhatsApp = '';
+            $('monto-personalizado').value = '';
+            $('rec-otro').classList.remove('activo');
+            $('rec-codigo').value = '';
+            document.querySelectorAll('.rec-monto').forEach(b => b.classList.remove('activo'));
+            elegirMetodo('yape');
+            irAPaso(1);
+        }
+
+        // ---------- últimas recargas ----------
+        async function cargarHistorial() {
+            const cont = $('rec-hist');
+            const { data, error } = await supabaseClient
+                .from('pedidos')
+                .select('created_at, monto, metodo_pago, estado')
+                .eq('tipo', 'recarga_saldo')
+                .order('created_at', { ascending: false })
+                .limit(5);
+            if (error) { cont.innerHTML = '<p class="rec-vacio">No se pudieron cargar tus recargas.</p>'; return; }
+            if (!data || data.length === 0) { cont.innerHTML = '<p class="rec-vacio">Todavía no has recargado. ¡Tu primera recarga aparecerá aquí!</p>'; return; }
+            cont.innerHTML = data.map(p => {
+                const fecha = new Date(p.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                const nombre = (METODOS[p.metodo_pago] || { nombre: p.metodo_pago }).nombre;
+                return `<div class="rec-hist-item">
+                    <span class="rec-hist-punto ${escHtml(p.metodo_pago)}"></span>
+                    <div class="rec-hist-info"><strong>${escHtml(nombre)}</strong><small>${fecha}</small></div>
+                    <div class="rec-hist-monto">${formatearSoles(p.monto)}<span class="estado-pill estado-${escHtml(p.estado)}">${ETIQUETA_ESTADO[p.estado] || escHtml(p.estado)}</span></div>
+                </div>`;
+            }).join('');
+        }
     </script>
     <a href="https://wa.me/51901150296?text=%C2%A1Hola%20MZ%27Recargas!%20Necesito%20ayuda%20con%20la%20web." target="_blank" rel="noopener" class="whatsapp-float" aria-label="Escríbenos por WhatsApp" title="¿Necesitas ayuda? Escríbenos">
         <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
