@@ -84,6 +84,36 @@ function aplicarEstadoTarjetas(mapa) {
     });
 }
 
+// ---------- INTEGRACIÓN CON EL PROVEEDOR (nickname por ID y entrega automática) ----------
+// Todo pasa por la función "integracion" de Supabase: la llave del proveedor vive solo en el servidor
+// y nunca llega al navegador. Devuelve siempre un objeto { ok, motivo?, ... }. Si no hay sesión, no hay
+// red o la función tarda demasiado, responde { ok:false, motivo:'red' | 'tiempo' } y la página sigue
+// con el flujo manual de siempre (nunca se queda colgada).
+async function llamarIntegracion(accion, datos, esperaMs) {
+    let temporizador;
+    try {
+        const espera = new Promise(resolve => { temporizador = setTimeout(() => resolve({ tiempo: true }), esperaMs || 20000); });
+        const r = await Promise.race([
+            supabaseClient.functions.invoke('integracion', { body: Object.assign({ accion: accion }, datos) }),
+            espera
+        ]);
+        if (r.tiempo) return { ok: false, motivo: 'tiempo' };
+        if (r.data && typeof r.data === 'object' && 'ok' in r.data) return r.data;
+        // Errores HTTP (401, 500...): la función casi siempre devuelve igual un JSON con el motivo.
+        if (r.error && r.error.context && typeof r.error.context.json === 'function') {
+            try {
+                const j = await r.error.context.json();
+                if (j && typeof j === 'object' && 'ok' in j) return j;
+            } catch (e) { /* sin cuerpo legible */ }
+        }
+        return { ok: false, motivo: 'red' };
+    } catch (e) {
+        return { ok: false, motivo: 'red' };
+    } finally {
+        clearTimeout(temporizador);
+    }
+}
+
 // URL pública de una foto de cuenta (bucket "cuentas" de Supabase Storage).
 // La base de datos solo guarda el nombre del archivo, no la URL completa.
 function urlFotoCuenta(ruta) {

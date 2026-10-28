@@ -393,6 +393,8 @@ body.fondo-catalogo-activo #cuentas-titulo { color: #f5f7ff; }
 .paquete-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
 .paquete-card .precio { font-size: 22px; font-weight: 800; color: var(--acento-1); }
 .paquete-card .precio-moneda { font-size: 13px; color: var(--texto-tenue); font-weight: 600; }
+.entrega-auto-tag { display: inline-flex; align-items: center; gap: 3px; margin-top: 10px; padding: 3px 10px 3px 7px; border-radius: 20px; font-size: 11.5px; font-weight: 700; color: var(--exito); background: rgba(46, 230, 166, 0.12); }
+.entrega-auto-tag .material-icons { font-size: 14px; }
 
 /* ========================================== */
 /* FORMULARIOS / AUTENTICACIÓN                */
@@ -486,6 +488,27 @@ body.fondo-catalogo-activo #cuentas-titulo { color: #f5f7ff; }
 .msg-box { display: none; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13.5px; text-align: center; font-weight: 600; }
 .msg-box.error { background: rgba(255,71,87,0.1); border: 1px solid var(--error); color: var(--error); }
 .msg-box.exito { background: rgba(46,230,166,0.1); border: 1px solid var(--exito); color: var(--exito); }
+.msg-box.info { background: rgba(59,125,255,0.08); border: 1px solid var(--acento-1); color: var(--acento-1); }
+.msg-box.aviso { background: rgba(245,166,35,0.1); border: 1px solid #f5a623; color: #f5a623; }
+.msg-box .jugador-hallado { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.msg-box .jugador-hallado .material-icons { font-size: 22px; }
+.msg-box .jugador-nick { color: var(--texto); font-weight: 800; word-break: break-word; }
+.msg-box small { display: block; margin-top: 6px; font-weight: 600; font-size: 12px; opacity: 0.85; }
+
+/* Resultado de la compra (dentro del modal de compra) */
+.compra-resultado { text-align: center; padding: 4px 0 2px; }
+.compra-resultado .resultado-icono { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; }
+.compra-resultado .resultado-icono .material-icons { font-size: 34px; }
+.compra-resultado.ok .resultado-icono { background: rgba(46,230,166,0.14); color: var(--exito); }
+.compra-resultado.proceso .resultado-icono { background: rgba(59,125,255,0.14); color: var(--acento-1); }
+.compra-resultado.aviso .resultado-icono { background: rgba(245,166,35,0.14); color: #f5a623; }
+.compra-resultado h3 { font-size: 19px; font-weight: 800; margin-bottom: 8px; }
+.compra-resultado p { font-size: 14px; color: var(--texto-secundario); line-height: 1.5; margin-bottom: 18px; }
+.compra-resultado .resultado-acciones { display: flex; flex-direction: column; gap: 10px; }
+.compra-resultado .resultado-acciones a, .compra-resultado .resultado-acciones button { display: block; width: 100%; text-align: center; text-decoration: none; }
+.girando { animation: girar 1s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .girando { animation: none; } }
 
 /* ========================================== */
 /* TARJETAS GENÉRICAS / SALDO / PEDIDOS       */
@@ -506,6 +529,11 @@ body.fondo-catalogo-activo #cuentas-titulo { color: #f5f7ff; }
 .estado-completado { background: rgba(46,230,166,0.2); color: var(--exito); }
 .estado-cancelado { background: rgba(255,71,87,0.12); color: var(--error); }
 .tabla-vacia { text-align: center; padding: 50px 20px; color: var(--texto-tenue); }
+.detalle-jugador { color: var(--texto-tenue); font-size: 12px; }
+.entrega-nota { display: flex; align-items: center; gap: 4px; margin-top: 7px; font-size: 12px; font-weight: 600; color: var(--texto-tenue); max-width: 220px; line-height: 1.3; }
+.entrega-nota .material-icons { font-size: 15px; flex-shrink: 0; }
+.entrega-nota.entrega-auto_entregado { color: var(--exito); }
+.entrega-nota.entrega-auto_fallo, .entrega-nota.entrega-auto_revisar { color: #f5a623; }
 
 /* ========================================== */
 /* FOOTER                                     */

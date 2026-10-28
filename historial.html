@@ -146,6 +146,16 @@
         const ETIQUETAS_ESTADO = { pendiente: 'Pendiente', confirmado: 'Confirmado', completado: 'Completado', cancelado: 'Cancelado' };
         const ETIQUETAS_CATEGORIA = { ilimitada: 'Recargas Ilimitadas', promo: 'Promo Primera Vez', cajas_tokens: 'Cajas de Tokens', tokens_evolutivos: 'Tokens Evolutivos' };
 
+        // Cómo va la entrega automática de cada compra (si la tienda la tiene activa).
+        const TEXTOS_ENTREGA = {
+            auto_pendiente: ['schedule', 'Preparando la entrega automática'],
+            auto_en_proceso: ['autorenew', 'Entregando tu recarga...'],
+            auto_entregado: ['bolt', 'Entregado automáticamente'],
+            auto_fallo: ['support_agent', 'No se pudo entregar sola: la resolvemos a mano'],
+            auto_revisar: ['hourglass_top', 'Confirmando la entrega con el proveedor']
+        };
+        const entregasReintentadas = new Set();
+
         let usuarioIdActual = null;
         let paginaActual = 0;
         let tamanoPagina = 10;
@@ -270,16 +280,40 @@
                     detalle = escHtml((p.nota_admin || 'Cuenta Free Fire').replace(/^Cuenta: /, ''));
                 } else if (p.tipo === 'compra_diamantes') {
                     const nombrePaquete = p.paquetes_ff ? p.paquetes_ff.nombre : (p.nota_admin ? p.nota_admin.replace('Cantidad personalizada: ', '') : 'Paquete');
-                    detalle = escHtml(nombrePaquete) + (p.id_jugador_ff ? ` · ID ${escHtml(p.id_jugador_ff)}` : '');
+                    detalle = escHtml(nombrePaquete) + (p.id_jugador_ff ? ` · ID ${escHtml(p.id_jugador_ff)}` : '')
+                        + (p.nickname_jugador ? `<br><span class="detalle-jugador">${escHtml(p.nickname_jugador)}</span>` : '');
                 }
                 return `<tr>
                     <td>${fecha}</td>
                     <td>${tipoTxt}</td>
                     <td>${detalle}</td>
                     <td>${formatearSoles(p.monto)}</td>
-                    <td><span class="estado-pill estado-${p.estado}">${ETIQUETAS_ESTADO[p.estado] || p.estado}</span></td>
+                    <td><span class="estado-pill estado-${p.estado}">${ETIQUETAS_ESTADO[p.estado] || p.estado}</span>${notaEntrega(p)}</td>
                 </tr>`;
             }).join('');
+
+            reintentarEntregasPendientes(data);
+        }
+
+        function notaEntrega(p) {
+            if (p.tipo !== 'compra_diamantes' || p.estado === 'cancelado') return '';
+            const t = TEXTOS_ENTREGA[p.entrega];
+            if (!t) return ''; // entrega manual de siempre: no hay nada que aclarar
+            const simulada = p.entrega === 'auto_entregado' && /^SIMULADO/.test(p.entrega_detalle || '');
+            const texto = simulada ? 'Prueba simulada: no se entregó nada' : t[1];
+            return `<span class="entrega-nota entrega-${simulada ? 'auto_revisar' : p.entrega}"><span class="material-icons">${simulada ? 'science' : t[0]}</span><span>${escHtml(texto)}</span></span>`;
+        }
+
+        // Red de seguridad: si la entrega automática de una compra no llegó a pedirse (por ejemplo, se cerró
+        // la página justo al comprar), se pide aquí. El servidor garantiza que nunca se entregue dos veces.
+        async function reintentarEntregasPendientes(pedidos) {
+            const ahora = Date.now();
+            const pendientes = pedidos.filter(p => p.tipo === 'compra_diamantes' && p.estado === 'confirmado' && p.entrega === 'auto_pendiente'
+                && ahora - new Date(p.created_at).getTime() > 45000 && !entregasReintentadas.has(p.id)).slice(0, 5);
+            if (!pendientes.length) return;
+            pendientes.forEach(p => entregasReintentadas.add(p.id));
+            await Promise.all(pendientes.map(p => llamarIntegracion('entregar_pedido', { pedido_id: p.id }, 45000)));
+            cargarPedidos();
         }
 
     </script>

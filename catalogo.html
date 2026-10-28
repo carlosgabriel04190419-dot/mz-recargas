@@ -134,12 +134,12 @@
 
             <div class="paso-card">
                 <div class="paso-titulo"><span class="paso-num">1</span> Ingresa tu ID</div>
-                <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">ID de Jugador (Free Fire)</label>
+                <label for="id-jugador-input" id="id-jugador-label" style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">ID de Jugador (Free Fire)</label>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <input type="text" id="id-jugador-input" class="input-form" placeholder="Introduce el ID del jugador aquí." style="flex:1; min-width:180px; margin-bottom:0;">
-                    <button type="button" class="btn-primary" onclick="validarId()">Validar</button>
+                    <input type="text" id="id-jugador-input" class="input-form" placeholder="Introduce el ID del jugador aquí." inputmode="numeric" autocomplete="off" maxlength="30" oninput="idEditado()" onkeydown="if (event.key === 'Enter') validarId()" style="flex:1; min-width:180px; margin-bottom:0;">
+                    <button type="button" id="btn-validar-id" class="btn-primary" onclick="validarId()">Validar</button>
                 </div>
-                <div id="id-validado-msg" class="msg-box" style="display:none; margin-top:12px;"></div>
+                <div id="id-validado-msg" class="msg-box" role="status" aria-live="polite" style="display:none; margin-top:12px;"></div>
                 <p class="paso-aviso"><span class="material-icons">warning</span> Verifica bien tu ID. No nos hacemos responsables por recargas enviadas a datos incorrectos.</p>
             </div>
 
@@ -250,29 +250,34 @@
     <!-- MODAL: COMPRAR DIAMANTES -->
     <div id="modal-comprar" class="modal-overlay">
         <div class="modal-box">
-            <span class="material-icons close-btn" onclick="cerrarModal('modal-comprar')">close</span>
-            <div class="modal-header">
-                <h2>Confirmar Compra</h2>
-                <p>Revisa los detalles antes de continuar.</p>
-            </div>
-            <div id="comprar-msg" class="msg-box"></div>
+            <span class="material-icons close-btn" id="comprar-cerrar" onclick="cerrarModalCompra()">close</span>
+            <div id="comprar-detalle">
+                <div class="modal-header">
+                    <h2>Confirmar Compra</h2>
+                    <p>Revisa los detalles antes de continuar.</p>
+                </div>
+                <div id="comprar-msg" class="msg-box"></div>
 
-            <div class="resumen-compra">
-                <div class="resumen-fila"><span>Producto:</span><strong id="rc-producto"></strong></div>
-                <div class="resumen-fila"><span id="rc-cantidad-label">Diamantes:</span><strong id="rc-cantidad"></strong></div>
-                <div class="resumen-divisor"></div>
-                <div class="resumen-fila"><span>Costo a descontar:</span><strong id="rc-costo" style="color:var(--error);"></strong></div>
-                <div class="resumen-divisor"></div>
-                <div class="resumen-fila"><span>Tu saldo actual:</span><strong id="rc-saldo-actual"></strong></div>
-                <div class="resumen-fila"><span>Saldo restante:</span><strong id="rc-saldo-restante" style="color:var(--exito);"></strong></div>
-            </div>
+                <div class="resumen-compra">
+                    <div class="resumen-fila"><span>Producto:</span><strong id="rc-producto"></strong></div>
+                    <div class="resumen-fila"><span id="rc-cantidad-label">Diamantes:</span><strong id="rc-cantidad"></strong></div>
+                    <div class="resumen-divisor"></div>
+                    <div class="resumen-fila"><span>Costo a descontar:</span><strong id="rc-costo" style="color:var(--error);"></strong></div>
+                    <div class="resumen-divisor"></div>
+                    <div class="resumen-fila"><span>Tu saldo actual:</span><strong id="rc-saldo-actual"></strong></div>
+                    <div class="resumen-fila"><span>Saldo restante:</span><strong id="rc-saldo-restante" style="color:var(--exito);"></strong></div>
+                </div>
 
-            <div class="resumen-compra">
-                <div class="resumen-fila"><span>Método de pago:</span><strong>Saldo disponible</strong></div>
-                <div class="resumen-fila"><span>ID de jugador:</span><strong id="rc-id-jugador"></strong></div>
-            </div>
+                <div class="resumen-compra">
+                    <div class="resumen-fila"><span>Método de pago:</span><strong>Saldo disponible</strong></div>
+                    <div class="resumen-fila" id="rc-jugador-fila" style="display:none;"><span>Jugador:</span><strong id="rc-jugador"></strong></div>
+                    <div class="resumen-fila"><span>ID de jugador:</span><strong id="rc-id-jugador"></strong></div>
+                    <div class="resumen-fila" id="rc-entrega-fila" style="display:none;"><span>Entrega:</span><strong style="color:var(--exito);">Automática</strong></div>
+                </div>
 
-            <button type="button" id="btn-comprar" class="btn-primary" style="width:100%;" onclick="confirmarCompra()">Comprar ahora</button>
+                <button type="button" id="btn-comprar" class="btn-primary" style="width:100%;" onclick="confirmarCompra()">Comprar ahora</button>
+            </div>
+            <div id="comprar-resultado" class="compra-resultado" role="status" aria-live="polite" style="display:none;"></div>
         </div>
     </div>
 
@@ -374,7 +379,15 @@
         let categoriaActiva = null;
         let paqueteElegido = null;
         let idJugadorValidado = '';
+        let nicknameJugador = '';       // nickname que confirmó el proveedor (vacío si no se pudo verificar)
+        let idVerificado = false;       // true solo si el proveedor encontró ese ID
+        let turnoValidacion = 0;        // evita que una respuesta tardía pise un ID que ya se cambió
+        let compraRealizada = false;
+        let juegos = {};                // tabla "juegos" por slug: reglas del ID y qué está automatizado
         let promoActiva = null;
+
+        // Reglas por defecto si la tabla "juegos" no se pudo leer (coinciden con las del servidor).
+        const JUEGO_POR_DEFECTO = { slug: 'free-fire', nombre: 'Free Fire', patron_id: '^[0-9]{5,15}$', usa_zona: false, validar_auto: false, entrega_auto: false };
 
         window.onload = async function () {
             // Se puede mirar el catálogo sin cuenta; el inicio de sesión se pide recién al comprar.
@@ -388,7 +401,7 @@
             actualizarEnlacesLogin();
             configCatalogos = await cargarConfigCatalogos();
             aplicarEstadoTarjetas(configCatalogos);
-            await cargarPaquetes();
+            await Promise.all([cargarPaquetes(), cargarJuegos()]);
 
             const catalogoUrl = new URLSearchParams(window.location.search).get('catalogo');
             if (catalogoUrl && NOMBRES_CATALOGO[catalogoUrl] && estadoVisualCatalogo(configCatalogos[catalogoUrl]) !== 'oculto') cambiarCatalogo(catalogoUrl);
@@ -490,7 +503,7 @@
             actualizarSeo(categoria);
             actualizarEnlacesLogin();
             pintarAvisoCatalogo(categoria);
-            document.getElementById('id-validado-msg').style.display = 'none';
+            prepararPasoId();
             paqueteElegido = null;
             document.getElementById('paso-confirmar').style.display = 'none';
             document.getElementById('vista-selector').style.display = 'none';
@@ -947,7 +960,8 @@
                     <div class="paquete-icon">${emojiPorTamano(p.categoria, p.cantidad)}</div>
                     <h3>${escHtml(p.nombre)}</h3>
                     <div class="precio">${formatearSoles(p.precio)}</div>
-                    <div class="precio-moneda">Free Fire</div>
+                    <div class="precio-moneda">${escHtml((juegos[p.juego] || JUEGO_POR_DEFECTO).nombre)}</div>
+                    ${entregaAutomatica(p) ? '<div class="entrega-auto-tag"><span class="material-icons">bolt</span> Entrega automática</div>' : ''}
                 </div>
             `).join('');
         }
@@ -955,19 +969,116 @@
         function cerrarModal(id) { document.getElementById(id).classList.remove('abierto'); }
 
         // ---------- PASO 1: ID DE JUGADOR ----------
-        function validarId() {
-            const val = document.getElementById('id-jugador-input').value.trim();
+        // Reglas del ID y qué está automatizado, por juego (tabla "juegos", pública).
+        async function cargarJuegos() {
+            juegos = {};
+            try {
+                const { data } = await supabaseClient.from('juegos').select('slug, nombre, patron_id, usa_zona, validar_auto, entrega_auto');
+                (data || []).forEach(j => { juegos[j.slug] = j; });
+            } catch (e) { /* sin la tabla se usan las reglas por defecto y todo sigue como siempre */ }
+        }
+
+        // El juego al que pertenece el catálogo abierto (hoy todos son de Free Fire).
+        function juegoDe(categoria) {
+            const p = paquetesTodos.find(x => x.categoria === categoria);
+            return juegos[(p && p.juego) || JUEGO_POR_DEFECTO.slug] || JUEGO_POR_DEFECTO;
+        }
+
+        // ¿Se entrega solo? Lo decide el servidor al comprar; esto solo anuncia lo que se espera.
+        function entregaAutomatica(paquete) {
+            const j = juegos[paquete.juego];
+            return !!(j && j.entrega_auto && paquete.entrega_auto);
+        }
+
+        function idConFormato(valor, juego) {
+            if (valor.length > 30) return false;
+            try { return new RegExp(juego.patron_id).test(valor); } catch (e) { return /^[0-9]{5,15}$/.test(valor); }
+        }
+
+        function mostrarMsgId(tipo, texto) {
             const msg = document.getElementById('id-validado-msg');
+            msg.className = 'msg-box ' + tipo;
             msg.style.display = 'block';
-            if (!val) {
-                msg.className = 'msg-box error';
-                msg.innerText = 'Ingresa tu ID de jugador de Free Fire.';
-                idJugadorValidado = '';
-                return;
-            }
-            idJugadorValidado = val;
+            msg.innerText = texto;
+        }
+
+        function mostrarJugadorHallado(nickname) {
+            const msg = document.getElementById('id-validado-msg');
             msg.className = 'msg-box exito';
-            msg.innerText = 'ID listo. Ahora elige tu paquete abajo.';
+            msg.style.display = 'block';
+            msg.innerHTML = `<div class="jugador-hallado"><span class="material-icons">verified</span><span>Jugador encontrado: <strong class="jugador-nick">${escHtml(nickname)}</strong></span></div>
+                <small>Si ese no es tu nickname, corrige el ID antes de comprar.</small>`;
+        }
+
+        // Etiqueta del paso 1 según el juego, y el estado del ID si ya se había validado.
+        function prepararPasoId() {
+            const juego = juegoDe(categoriaActiva);
+            document.getElementById('id-jugador-label').innerText = `ID de Jugador (${juego.nombre})`;
+            document.getElementById('id-jugador-input').inputMode = /^\^?\[0-9\]/.test(juego.patron_id) ? 'numeric' : 'text';
+            if (!idJugadorValidado) { document.getElementById('id-validado-msg').style.display = 'none'; return; }
+            if (idVerificado && nicknameJugador) mostrarJugadorHallado(nicknameJugador);
+            else mostrarMsgId('exito', 'ID listo. Ahora elige tu paquete abajo.');
+        }
+
+        // Si cambian el ID después de validarlo, hay que validarlo de nuevo (y volver a elegir paquete).
+        function idEditado() {
+            const val = document.getElementById('id-jugador-input').value.trim();
+            if (val === idJugadorValidado) return;
+            turnoValidacion++;
+            idJugadorValidado = ''; nicknameJugador = ''; idVerificado = false;
+            const btn = document.getElementById('btn-validar-id');
+            btn.disabled = false; btn.innerText = 'Validar';
+            document.getElementById('id-validado-msg').style.display = 'none';
+            paqueteElegido = null;
+            document.querySelectorAll('.paquete-card').forEach(c => c.classList.remove('seleccionado'));
+            document.getElementById('paso-confirmar').style.display = 'none';
+        }
+
+        async function validarId() {
+            if (document.getElementById('btn-validar-id').disabled) return; // ya se está verificando
+            const val = document.getElementById('id-jugador-input').value.trim();
+            const juego = juegoDe(categoriaActiva);
+            idJugadorValidado = ''; nicknameJugador = ''; idVerificado = false;
+
+            if (!val) return mostrarMsgId('error', `Ingresa tu ID de jugador de ${juego.nombre}.`);
+            if (!idConFormato(val, juego)) {
+                const pista = juego.patron_id === JUEGO_POR_DEFECTO.patron_id ? ' (solo números, entre 5 y 15 dígitos)' : '';
+                return mostrarMsgId('error', `El ID no tiene un formato válido${pista}. Revísalo e inténtalo de nuevo.`);
+            }
+
+            // Sin verificación automática (o sin sesión iniciada) el ID se acepta tal cual, como siempre.
+            if (!juego.validar_auto || !usuarioActual) {
+                idJugadorValidado = val;
+                return mostrarMsgId('exito', 'ID listo. Ahora elige tu paquete abajo.');
+            }
+
+            const turno = ++turnoValidacion;
+            const btn = document.getElementById('btn-validar-id');
+            btn.disabled = true; btn.innerText = 'Verificando...';
+            mostrarMsgId('info', 'Buscando tu jugador...');
+            const r = await llamarIntegracion('validar_jugador', { juego: juego.slug, id_jugador: val }, 20000);
+            if (turno !== turnoValidacion) return; // ya cambiaron el ID: esta respuesta no vale
+            btn.disabled = false; btn.innerText = 'Validar';
+
+            if (r.ok && r.nickname) {
+                idJugadorValidado = val; nicknameJugador = r.nickname; idVerificado = true;
+                return mostrarJugadorHallado(r.nickname);
+            }
+            if (r.motivo === 'no_encontrado') {
+                return mostrarMsgId('error', `No encontramos ese ID en ${juego.nombre}. Revisa que esté bien escrito (lo ves en tu perfil dentro del juego).`);
+            }
+            if (r.motivo === 'id_invalido') {
+                return mostrarMsgId('error', 'El ID no tiene un formato válido. Revísalo e inténtalo de nuevo.');
+            }
+            // Si el proveedor no puede responder ahora, no se frena la compra: la entrega se hace como siempre.
+            idJugadorValidado = val;
+            if (r.motivo === 'limite') {
+                return mostrarMsgId('aviso', 'Hiciste muchas consultas seguidas y no pudimos mostrar tu nickname. Si tu ID es correcto, continúa con tu compra.');
+            }
+            if (r.motivo === 'no_configurado' || r.motivo === 'juego_invalido') {
+                return mostrarMsgId('exito', 'ID listo. Ahora elige tu paquete abajo.');
+            }
+            mostrarMsgId('aviso', 'No pudimos verificar tu nickname en este momento. Revisa bien tu ID: si es correcto, continúa con tu compra.');
         }
 
         // ---------- PASO 2: ELEGIR PAQUETE ----------
@@ -1018,9 +1129,39 @@
             document.getElementById('rc-saldo-actual').innerText = formatearSoles(saldoActual);
             document.getElementById('rc-saldo-restante').innerText = formatearSoles(saldoActual - precio);
             document.getElementById('rc-id-jugador').innerText = idJugadorValidado;
+            document.getElementById('rc-jugador').innerText = nicknameJugador;
+            document.getElementById('rc-jugador-fila').style.display = nicknameJugador ? 'flex' : 'none';
+            const p = paqueteElegido.id ? paquetesTodos.find(x => x.id === paqueteElegido.id) : null;
+            document.getElementById('rc-entrega-fila').style.display = p && entregaAutomatica(p) ? 'flex' : 'none';
 
             document.getElementById('comprar-msg').style.display = 'none';
+            document.getElementById('comprar-detalle').style.display = 'block';
+            document.getElementById('comprar-resultado').style.display = 'none';
+            document.getElementById('comprar-cerrar').style.display = '';
+            compraRealizada = false;
             document.getElementById('modal-comprar').classList.add('abierto');
+        }
+
+        // Al cerrar tras una compra hecha, se pide elegir el paquete otra vez (evita comprar dos veces sin querer).
+        function cerrarModalCompra() {
+            cerrarModal('modal-comprar');
+            if (!compraRealizada) return;
+            compraRealizada = false;
+            paqueteElegido = null;
+            document.querySelectorAll('.paquete-card').forEach(c => c.classList.remove('seleccionado'));
+            document.getElementById('paso-confirmar').style.display = 'none';
+        }
+
+        // Cambia el contenido del modal de compra por el resultado (entregado, en proceso, a mano...).
+        function mostrarResultadoCompra(tipo, icono, titulo, texto, acciones, girando) {
+            document.getElementById('comprar-detalle').style.display = 'none';
+            const cont = document.getElementById('comprar-resultado');
+            cont.className = 'compra-resultado ' + tipo;
+            cont.innerHTML = `<div class="resultado-icono"><span class="material-icons${girando ? ' girando' : ''}">${icono}</span></div>
+                <h3>${escHtml(titulo)}</h3>
+                <p>${texto}</p>
+                <div class="resultado-acciones">${acciones || ''}</div>`;
+            cont.style.display = 'block';
         }
 
         async function confirmarCompra() {
@@ -1038,8 +1179,9 @@
             // Cantidad exacta: no tiene fila en paquetes_ff, así que se guarda la
             // descripción en nota_admin para que el historial no quede genérico.
             if (!paqueteElegido.id) pedido.nota_admin = `Cantidad personalizada: ${paqueteElegido.nombre}`;
-            const { error } = await supabaseClient.from('pedidos').insert([pedido]);
-            btn.disabled = false; btn.innerText = 'Comprar con mi saldo';
+            // .select() devuelve el pedido ya creado: hace falta su id para pedir la entrega automática.
+            const { data: creado, error } = await supabaseClient.from('pedidos').insert([pedido]).select('id, entrega, nickname_jugador').single();
+            btn.disabled = false; btn.innerText = 'Comprar ahora';
 
             msg.style.display = 'block';
             if (error) {
@@ -1056,17 +1198,69 @@
                     // El servidor valida el precio: si cambió (o ya no hay promo) mientras tenías la página abierta.
                     msg.innerText = 'El precio o la disponibilidad de este paquete cambió. Ya actualicé la lista: cierra esto y vuelve a elegir tu paquete.';
                     refrescarPaquetesTrasError();
+                } else if (error.message.includes('ID de jugador no es válido')) {
+                    msg.innerText = 'El ID de jugador no es válido. Cierra esto, revísalo y vuelve a validarlo.';
+                } else if (error.message.includes('juego no está disponible')) {
+                    msg.innerText = 'Este juego no está disponible por ahora. Vuelve a intentarlo más tarde.';
                 } else {
                     msg.innerText = 'No se pudo comprar: ' + error.message;
                 }
                 return;
             }
-            msg.className = 'msg-box exito';
-            msg.innerText = '¡Compra realizada! Te llevamos a WhatsApp para avisarle a MZ\'Recargas y recibir tus diamantes en minutos.';
+            compraRealizada = true;
             usuarioActual = await verificarSesion();
+            await terminarCompra(creado);
+        }
 
+        // ---------- RESULTADO DE LA COMPRA ----------
+        let textoWhatsappCompra = '';
+        function abrirWhatsappCompra() { abrirWhatsapp(textoWhatsappCompra); }
+
+        // Lo que se le muestra a la persona según cómo quedó la entrega del pedido recién creado.
+        async function terminarCompra(creado) {
+            const juego = juegoDe(paqueteElegido.categoria);
+            const nombre = escHtml(paqueteElegido.nombre);
+            const nick = (creado && creado.nickname_jugador) || nicknameJugador;
+            const quien = nick ? `a <strong>${escHtml(nick)}</strong>` : 'a tu cuenta';
+            const refPedido = creado && creado.id ? creado.id.slice(0, 8) : '';
             const catalogoTexto = NOMBRES_CATALOGO[paqueteElegido.categoria] || '';
-            abrirWhatsapp(`¡Hola! Vengo de MZ'Recargas 💎. Compré el paquete ${paqueteElegido.nombre} (${catalogoTexto}) por S/ ${Number(paqueteElegido.precio).toFixed(2)}. Mi ID de Free Fire es: ${idJugadorValidado}`);
+            const baseWsp = `¡Hola! Vengo de MZ'Recargas 💎. Compré el paquete ${paqueteElegido.nombre} (${catalogoTexto}) por S/ ${Number(paqueteElegido.precio).toFixed(2)}. Mi ID de ${juego.nombre} es: ${idJugadorValidado}${refPedido ? ` (pedido #${refPedido})` : ''}`;
+            const btnWsp = '<button type="button" class="btn-primary" onclick="abrirWhatsappCompra()">Escribir por WhatsApp</button>';
+            const btnPedidos = '<a href="historial" class="btn-outline">Ver mis pedidos</a>';
+            const btnSeguir = '<button type="button" class="btn-outline" onclick="cerrarModalCompra()">Seguir comprando</button>';
+
+            // Entrega manual de siempre: se avisa por WhatsApp y el equipo la hace en minutos.
+            const resultadoManual = () => {
+                textoWhatsappCompra = baseWsp;
+                mostrarResultadoCompra('ok', 'check_circle', '¡Compra realizada!', 'Te llevamos a WhatsApp para avisarle a MZ\'Recargas y recibir tus diamantes en minutos.', btnWsp + btnPedidos + btnSeguir);
+                abrirWhatsapp(baseWsp);
+            };
+            if (!creado || creado.entrega !== 'auto_pendiente') return resultadoManual();
+
+            // Entrega automática: el servidor la hace; aquí solo se espera el resultado.
+            document.getElementById('comprar-cerrar').style.display = 'none';
+            mostrarResultadoCompra('proceso', 'autorenew', 'Entregando tus diamantes...', `Estamos enviando <strong>${nombre}</strong> ${quien}. No cierres esta ventana: tarda solo unos segundos.`, '', true);
+            const r = await llamarIntegracion('entregar_pedido', { pedido_id: creado.id }, 45000);
+            document.getElementById('comprar-cerrar').style.display = '';
+
+            const e = r.entrega || '';
+            if (e === 'manual') return resultadoManual();
+            if (e === 'auto_entregado') {
+                if (r.mensaje && r.mensaje.indexOf('Simulado') === 0) {
+                    return mostrarResultadoCompra('aviso', 'science', 'Prueba completada (simulada)', 'Esto fue una prueba: no se entregó nada de verdad. El pedido sigue pendiente de entrega manual.', btnPedidos + btnSeguir);
+                }
+                return mostrarResultadoCompra('ok', 'verified', '¡Recarga entregada!', `Enviamos <strong>${nombre}</strong> ${quien}. Abre el juego para ver tu recarga.`, btnPedidos + btnSeguir);
+            }
+            if (e === 'auto_fallo') {
+                textoWhatsappCompra = baseWsp + '. La entrega automática no se pudo completar, ¿me ayudan por favor?';
+                return mostrarResultadoCompra('aviso', 'support_agent', 'No pudimos entregarla automáticamente', 'Tu compra quedó registrada y tu saldo ya fue descontado. La resolvemos a mano en unos minutos; si quieres, escríbenos para agilizarla.', btnWsp + btnPedidos + btnSeguir);
+            }
+            textoWhatsappCompra = baseWsp + '. Quiero confirmar el estado de mi recarga, gracias.';
+            if (e === 'auto_revisar' || e === 'auto_en_proceso') {
+                return mostrarResultadoCompra('aviso', 'hourglass_top', 'Estamos confirmando tu recarga', 'No recibimos la confirmación al instante. Revisaremos tu pedido y te avisamos: no hace falta que compres otra vez. Mira su estado en Mis pedidos.', btnPedidos + btnWsp + btnSeguir);
+            }
+            // Sin respuesta (red, tiempo...): el pedido está creado y se reintenta solo al abrir Mis pedidos.
+            mostrarResultadoCompra('proceso', 'schedule', 'Tu pedido está registrado', 'La entrega automática está tardando más de lo normal. Mira el estado en Mis pedidos; si en unos minutos no llega, escríbenos por WhatsApp.', btnPedidos + btnWsp + btnSeguir);
         }
 
         async function refrescarEstadoCatalogos() {

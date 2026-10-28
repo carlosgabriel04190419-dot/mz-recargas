@@ -125,7 +125,7 @@
         const codigoReferido = new URLSearchParams(window.location.search).get('ref');
         // Versión vigente de los Términos y la Política (la fecha de su "Última actualización").
         // Si cambias esos textos de fondo, sube esta fecha para que quede registrado qué versión aceptó cada persona.
-        const VERSION_LEGAL = '2026-10-05';
+        const VERSION_LEGAL = '2026-10-27';
 
         window.onload = async function () {
             const { data: { session } } = await supabaseClient.auth.getSession();

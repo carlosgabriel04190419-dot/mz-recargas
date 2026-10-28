@@ -48,6 +48,9 @@
                 <button class="adm-item tono-catalogo" data-ir="cuentas"><span class="adm-ico"><span class="material-icons">badge</span></span>Cuentas</button>
                 <button class="adm-item tono-catalogo" data-ir="promo"><span class="adm-ico"><span class="material-icons">local_fire_department</span></span>Promo del día</button>
                 <button class="adm-item tono-catalogo" data-ir="ventas"><span class="adm-ico"><span class="material-icons">trending_up</span></span>Ventas</button>
+
+                <div class="adm-grupo tono-azul">Automatización</div>
+                <button class="adm-item tono-azul" data-ir="integraciones"><span class="adm-ico"><span class="material-icons">hub</span></span>Integraciones</button>
             </nav>
 
             <div class="adm-pie">
@@ -109,6 +112,11 @@
                     <div class="adm-seccion"><span class="material-icons">storefront</span> Estado de tus catálogos</div>
                     <div class="adm-estados" id="res-catalogos"></div>
 
+                    <div id="res-entregas-bloque" style="display:none;">
+                        <div class="adm-seccion"><span class="material-icons">hub</span> Entregas automáticas</div>
+                        <div class="adm-estados" id="res-entregas"></div>
+                    </div>
+
                     <div class="adm-seccion"><span class="material-icons">bolt</span> Accesos rápidos</div>
                     <div class="adm-rapidos">
                         <button class="adm-rapido" data-ir="solicitudes"><span class="adm-ico"><span class="material-icons">inbox</span></span>Solicitudes</button>
@@ -119,6 +127,7 @@
                         <button class="adm-rapido tono-catalogo" data-ir="cuentas"><span class="adm-ico"><span class="material-icons">badge</span></span>Cuentas</button>
                         <button class="adm-rapido tono-catalogo" data-ir="promo"><span class="adm-ico"><span class="material-icons">local_fire_department</span></span>Promo del día</button>
                         <button class="adm-rapido tono-catalogo" data-ir="ventas"><span class="adm-ico"><span class="material-icons">trending_up</span></span>Ventas</button>
+                        <button class="adm-rapido tono-azul" data-ir="integraciones"><span class="adm-ico"><span class="material-icons">hub</span></span>Integraciones</button>
                     </div>
                 </section>
 
@@ -285,6 +294,39 @@
                     <div class="adm-grafica-caja"><div class="adm-hbarras" id="ven-catalogos"></div></div>
                 </section>
 
+                <!-- ===== INTEGRACIONES ===== -->
+                <section class="adm-vista" id="vista-integraciones">
+                    <div class="adm-cabecera">
+                        <div class="adm-titulo"><span class="adm-ico tono-azul"><span class="material-icons">hub</span></span><h1>Integraciones</h1></div>
+                        <button class="btn-outline btn-sm" type="button" onclick="cargarIntegraciones(true)"><span class="material-icons" style="font-size:17px; vertical-align:-4px;">refresh</span> Actualizar</button>
+                    </div>
+                    <p class="adm-sub">Conecta la tienda con tu proveedor de recargas (por medio de su API) para <strong>mostrar el nickname</strong> del jugador al escribir su ID y <strong>entregar los pedidos solos</strong>. Mientras esté apagado, la tienda funciona exactamente igual que siempre: tú entregas a mano.</p>
+
+                    <div class="adm-conexion" id="int-conexion"><p style="color: var(--texto-tenue);">Cargando…</p></div>
+
+                    <div class="adm-seccion"><span class="material-icons">sports_esports</span> Juegos</div>
+                    <div class="adm-cat-grid" id="int-juegos"><p style="color: var(--texto-tenue);">Cargando…</p></div>
+
+                    <div class="adm-seccion"><span class="material-icons">receipt_long</span> Registro de actividad</div>
+                    <div class="adm-tarjeta">
+                        <table class="adm-tabla" id="tabla-int-logs">
+                            <thead><tr><th>Cuándo</th><th>Qué</th><th>Juego</th><th>Resultado</th><th>Detalle</th><th>Pedido</th></tr></thead>
+                            <tbody id="tabla-int-logs-body"><tr><td colspan="6" class="adm-vacio">Cargando...</td></tr></tbody>
+                        </table>
+                    </div>
+
+                    <div class="adm-seccion"><span class="material-icons">menu_book</span> Cómo conectarlo</div>
+                    <ol class="adm-pasos">
+                        <li><strong>Pide a tu proveedor</strong> la dirección de su API (URL), tu llave (API key) y su documentación: cómo consultar un jugador por ID, cómo crear una recarga, cómo ver el saldo y los códigos de cada producto. Si te da acceso por tiempo limitado, anota cuándo vence.</li>
+                        <li><strong>Guarda la llave solo en Supabase</strong>: en <em>Edge Functions → Secrets</em> crea <span class="adm-codigo">PROVEEDOR_URL</span> y <span class="adm-codigo">PROVEEDOR_API_KEY</span>. Nunca la pegues en esta web, en el código ni en un chat.</li>
+                        <li><strong>Prueba primero en modo simulado</strong>: crea el secret <span class="adm-codigo">PROVEEDOR_MODO</span> con el valor <span class="adm-codigo">simulado</span> y pulsa <em>Probar conexión</em>. Con un ID que termine en <span class="adm-codigo">000</span> el jugador "no existe"; en <span class="adm-codigo">111</span> el proveedor "está caído"; en <span class="adm-codigo">999</span> la recarga "se rechaza"; en <span class="adm-codigo">888</span> "no responde". Cualquier otro ID funciona y no se entrega nada de verdad.</li>
+                        <li><strong>Completa el adaptador</strong> con la documentación de la API (archivo <span class="adm-codigo">supabase/functions/integracion/proveedor.ts</span>, las funciones marcadas "MODO REAL"). Es lo único que falta programar; pásale la documentación a quien mantiene la web.</li>
+                        <li>Cambia <span class="adm-codigo">PROVEEDOR_MODO</span> a <span class="adm-codigo">real</span> y pulsa <em>Probar conexión</em>: debe decir <strong>Conectada</strong>.</li>
+                        <li>En <strong>Paquetes → Editar</strong> escribe el código de cada producto en el proveedor (si el proveedor tiene catálogo, <em>Ver catálogo del proveedor</em> te lo muestra para copiarlo). Los paquetes sin código se siguen entregando a mano.</li>
+                        <li>Activa los interruptores de cada juego (primero el nickname, si tu proveedor lo ofrece, y cuando todo salga bien la entrega automática). Haz una compra pequeña de prueba antes de abrirlo a todos.</li>
+                    </ol>
+                </section>
+
             </div>
         </main>
     </div>
@@ -331,6 +373,10 @@
                     <input type="number" id="pq-orden" class="input-form" min="0">
                 </div>
             </div>
+            <label for="pq-codigo" style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Código en el proveedor <span style="font-weight:400; color:var(--texto-tenue);">(opcional)</span></label>
+            <input type="text" id="pq-codigo" class="input-form" maxlength="80" autocomplete="off" list="pq-codigos" placeholder="El código tal cual lo usa tu proveedor" style="margin-bottom: 6px;">
+            <datalist id="pq-codigos"></datalist>
+            <p class="adm-nota" style="margin-bottom: 16px;">Si lo llenas, este paquete se entrega solo cuando la entrega automática esté activa. Debe ser el código <strong>tal cual</strong> lo usa tu proveedor (si tiene catálogo, míralo en Integraciones → Ver catálogo del proveedor). Déjalo vacío para entregarlo a mano.</p>
             <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom: 12px; cursor:pointer;">
                 <input type="checkbox" id="pq-destacado" style="width:16px; height:16px;"> Marcar como destacado
             </label>
@@ -338,6 +384,19 @@
                 <input type="checkbox" id="pq-activo" checked style="width:16px; height:16px;"> Activo (visible en la web)
             </label>
             <button type="button" class="btn-primary" id="btn-guardar-paquete" style="width:100%;" onclick="guardarPaquete()">Guardar</button>
+        </div>
+    </div>
+
+    <!-- Modal: catálogo del proveedor -->
+    <div class="modal-overlay" id="modal-catalogo-proveedor">
+        <div class="modal-box" style="max-width: 540px; max-height: 90vh; overflow-y: auto;">
+            <span class="material-icons close-btn" onclick="cerrarCatalogoProveedor()">close</span>
+            <div class="modal-header">
+                <h2>Catálogo del proveedor</h2>
+                <p id="cat-prov-sub">Copia el código de cada producto tal cual en <strong>Paquetes → Editar → Código en el proveedor</strong>.</p>
+            </div>
+            <div id="cat-prov-msg" class="msg-box error"></div>
+            <div class="adm-lista-codigos" id="cat-prov-body"></div>
         </div>
     </div>
 
@@ -398,7 +457,8 @@
             paquetes:    { titulo: 'Paquetes',       buscar: 'paquetes productos precios', cargar: () => cargarPaquetes() },
             cuentas:     { titulo: 'Cuentas',        buscar: 'cuentas free fire fotos', cargar: () => cargarCuentasAdmin() },
             promo:       { titulo: 'Promo del día',  buscar: 'promo oferta del dia descuento', cargar: () => cargarPromo() },
-            ventas:      { titulo: 'Ventas',         buscar: 'ventas ganancias grafica ingresos', cargar: () => cargarVentas() }
+            ventas:      { titulo: 'Ventas',         buscar: 'ventas ganancias grafica ingresos', cargar: () => cargarVentas() },
+            integraciones: { titulo: 'Integraciones', buscar: 'integraciones api proveedor nickname entrega automatica llave simulado conexion', cargar: () => cargarIntegraciones() }
         };
         const CFG_LISTAS = {
             solicitudes: { estado: 'pendiente',  tipos: ['recarga_saldo'],                       cuerpo: 'tabla-solicitudes-body', vacio: 'No hay solicitudes de saldo pendientes. ¡Todo al día! 🎉' },
@@ -495,7 +555,7 @@
             document.addEventListener('click', async e => {
                 const b = e.target.closest('[data-copiar]');
                 if (!b) return;
-                try { await navigator.clipboard.writeText(b.dataset.copiar); avisar('ID copiado: ' + b.dataset.copiar); }
+                try { await navigator.clipboard.writeText(b.dataset.copiar); avisar((b.dataset.aviso || 'ID copiado') + ': ' + b.dataset.copiar); }
                 catch (err) { avisar('No se pudo copiar. Selecciónalo a mano.', 'error'); }
             });
 
@@ -558,9 +618,10 @@
             document.getElementById('res-fecha').textContent = ahora.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
             document.getElementById('res-saludo').textContent = h < 12 ? 'Buenos días ☀️' : h < 19 ? 'Buenas tardes 👋' : 'Buenas noches 🌙';
 
-            const [{ data, error }, { data: cats }] = await Promise.all([
+            const [{ data, error }, { data: cats }, { data: integ }] = await Promise.all([
                 supabaseClient.rpc('admin_resumen_tienda'),
-                supabaseClient.rpc('admin_listar_catalogos')
+                supabaseClient.rpc('admin_listar_catalogos'),
+                supabaseClient.rpc('admin_integracion_estado')
             ]);
             if (error || !data || !data[0]) {
                 document.getElementById('res-estado').textContent = 'No se pudo cargar el resumen';
@@ -599,8 +660,22 @@
                     return `<button class="adm-chip-cat" data-ir="catalogo"><span class="adm-punto ${e.clave === 'visible' ? '' : e.clave}"></span>${CATALOGOS[c.categoria].nombre}<span style="color:var(--texto-tenue); font-weight:500;">· ${e.texto}</span></button>`;
                 }).join('');
             }
+            pintarEntregasResumen(r, integ && integ[0]);
             if (manual) avisar('Resumen actualizado');
             actualizarInsignias();
+        }
+
+        // Avisos de la entrega automática: solo aparecen cuando hay algo que mirar.
+        function pintarEntregasResumen(r, integ) {
+            const chip = (punto, texto, extra, destino) => `<button class="adm-chip-cat" data-ir="${destino}"><span class="adm-punto ${punto}"></span>${texto}${extra ? `<span style="color:var(--texto-tenue); font-weight:500;">· ${extra}</span>` : ''}</button>`;
+            const prob = Number(r.entregas_problema || 0), esp = Number(r.entregas_auto_pendientes || 0);
+            const chips = [];
+            if (prob > 0) chips.push(chip('stock', `${prob} ${plural(prob, 'entrega con problema', 'entregas con problema')}`, 'revísalas en Pedidos', 'pedidos'));
+            if (esp > 0) chips.push(chip('mant', `${esp} ${plural(esp, 'entrega automática en espera', 'entregas automáticas en espera')}`, 'míralas en Pedidos', 'pedidos'));
+            if (integ && integ.modo === 'simulado') chips.push(chip('mant', 'Integración en modo de prueba', 'nada se entrega de verdad', 'integraciones'));
+            else if (integ && integ.verificado_at && !integ.listo) chips.push(chip('stock', 'La última prueba de conexión falló', 'revisa Integraciones', 'integraciones'));
+            document.getElementById('res-entregas').innerHTML = chips.join('');
+            document.getElementById('res-entregas-bloque').style.display = chips.length ? 'block' : 'none';
         }
 
         // ---------- SOLICITUDES / PEDIDOS / HISTORIAL ----------
@@ -631,7 +706,8 @@
                     const nombrePaquete = p.paquete_nombre || (p.nota_admin ? p.nota_admin.replace('Cantidad personalizada: ', '') : 'Paquete');
                     detalle = escHtml(nombrePaquete) + (p.id_jugador_ff
                         ? `<br><span style="color:var(--texto-tenue); font-size:12px;">ID: ${escHtml(p.id_jugador_ff)}</span><button class="adm-copiar" type="button" data-copiar="${escHtml(p.id_jugador_ff)}"><span class="material-icons">content_copy</span>Copiar</button>`
-                        : '');
+                        : '')
+                        + (p.nickname_jugador ? `<br><span style="color:var(--texto-secundario); font-size:12px; font-weight:600;">Jugador: ${escHtml(p.nickname_jugador)}</span>` : '');
                 }
                 return `<tr>
                     <td>${fecha}</td>
@@ -640,7 +716,7 @@
                     <td>${detalle}</td>
                     <td style="font-weight:700;">${formatearSoles(p.monto)}</td>
                     <td style="text-transform:capitalize;">${escHtml(p.metodo_pago)}</td>
-                    <td><span class="estado-pill estado-${p.estado}">${ETIQUETAS_ESTADO[p.estado] || p.estado}</span></td>
+                    <td><span class="estado-pill estado-${p.estado}">${ETIQUETAS_ESTADO[p.estado] || p.estado}</span>${notaEntregaAdmin(p)}</td>
                     <td style="max-width:160px; font-size:12.5px; color:var(--texto-secundario);">${escHtml(p.tipo === 'compra_cuenta' ? '—' : (p.nota_admin || '—'))}</td>
                     <td style="white-space:nowrap;">${botonesAccion(p)}</td>
                 </tr>`;
@@ -651,6 +727,9 @@
             const btns = [];
             if (p.tipo === 'recarga_saldo' && p.estado === 'pendiente') {
                 btns.push(`<button class="btn-primary btn-sm" onclick="cambiarEstadoPedido('${p.id}','confirmado')">Confirmar pago</button>`);
+            }
+            if (p.tipo === 'compra_diamantes' && p.estado === 'confirmado' && puedeReintentarEntrega(p)) {
+                btns.push(`<button class="btn-outline btn-sm" onclick="reintentarEntrega('${p.id}','${p.entrega}')">${p.entrega === 'auto_pendiente' ? 'Entregar ahora' : 'Reintentar entrega'}</button>`);
             }
             if ((p.tipo === 'compra_diamantes' || p.tipo === 'compra_cuenta') && p.estado === 'confirmado') {
                 btns.push(`<button class="btn-primary btn-sm" onclick="cambiarEstadoPedido('${p.id}','completado')">Marcar entregado</button>`);
@@ -677,6 +756,55 @@
                 return;
             }
             avisar(nuevoEstado === 'confirmado' ? 'Pago confirmado: saldo acreditado' : nuevoEstado === 'completado' ? 'Pedido marcado como entregado' : 'Pedido cancelado');
+            if (CFG_LISTAS[seccionActual]) await cargarLista(seccionActual);
+            actualizarInsignias();
+        }
+
+        // ---------- ENTREGA AUTOMÁTICA DE UN PEDIDO ----------
+        const ENTREGA_ADMIN = {
+            auto_pendiente:  ['schedule',       'Entrega automática en espera', ''],
+            auto_en_proceso: ['autorenew',      'Entregando con la API…',        ''],
+            auto_entregado:  ['bolt',           'Entregado por la API',          'ok'],
+            auto_fallo:      ['error_outline',  'La API no pudo entregarlo',     'mal'],
+            auto_revisar:    ['help_outline',   'Sin confirmación: revisa en el panel del proveedor', 'aviso']
+        };
+
+        function notaEntregaAdmin(p) {
+            if (p.tipo !== 'compra_diamantes' || !ENTREGA_ADMIN[p.entrega]) return '';
+            const [icono, texto, tono] = ENTREGA_ADMIN[p.entrega];
+            const simulada = p.entrega === 'auto_entregado' && /^SIMULADO/.test(p.entrega_detalle || '');
+            const partes = [];
+            if (p.entrega_detalle) partes.push(escHtml(p.entrega_detalle));
+            if (p.entrega_ref) partes.push('Ref. ' + escHtml(p.entrega_ref));
+            if (Number(p.entrega_intentos) > 1) partes.push(`${Number(p.entrega_intentos)} intentos`);
+            return `<span class="adm-entrega ${simulada ? 'aviso' : tono}"><span class="material-icons">${simulada ? 'science' : icono}</span>${simulada ? 'Entrega simulada (no real)' : texto}</span>`
+                + (partes.length ? `<span class="adm-entrega-det">${partes.join(' · ')}</span>` : '');
+        }
+
+        // En proceso solo se puede reintentar si lleva mucho rato (la función se habrá caído a medias).
+        function puedeReintentarEntrega(p) {
+            if (p.entrega === 'auto_pendiente' || p.entrega === 'auto_fallo' || p.entrega === 'auto_revisar') return true;
+            return p.entrega === 'auto_en_proceso' && !!p.entrega_at && Date.now() - new Date(p.entrega_at).getTime() > 10 * 60 * 1000;
+        }
+
+        async function reintentarEntrega(id, entregaActual) {
+            let pregunta = '¿Entregar este pedido ahora con la API del proveedor?';
+            if (entregaActual === 'auto_revisar' || entregaActual === 'auto_en_proceso') {
+                pregunta = 'Antes de reintentar, revisa en el panel del proveedor que esta recarga NO se haya hecho ya: si se hizo, se entregaría dos veces.\n\n¿Reintentar de todos modos?';
+            } else if (entregaActual === 'auto_fallo') {
+                pregunta = '¿Reintentar la entrega con la API del proveedor?';
+            }
+            if (!confirm(pregunta)) return;
+
+            avisar('Entregando con la API…');
+            const r = await llamarIntegracion('entregar_pedido', { pedido_id: id, forzar: true }, 45000);
+            if (r.entrega === 'auto_entregado') avisar(r.mensaje && r.mensaje.indexOf('Simulado') === 0 ? 'Simulado: no se entregó nada de verdad' : 'Entregado por la API ✓');
+            else if (r.entrega === 'auto_fallo') avisar('La API no pudo entregarlo. Mira el detalle en el pedido.', 'error');
+            else if (r.entrega === 'auto_revisar') avisar('Sin confirmación del proveedor: revisa su panel antes de repetir.', 'error');
+            else if (r.motivo === 'no_configurado') avisar('La conexión con el proveedor no está lista (ver Integraciones).', 'error');
+            else if (r.motivo === 'red' || r.motivo === 'tiempo') avisar('No se pudo contactar la función de integración.', 'error');
+            else avisar(r.mensaje || 'No se pudo entregar: ' + (r.motivo || 'error'), 'error');
+
             if (CFG_LISTAS[seccionActual]) await cargarLista(seccionActual);
             actualizarInsignias();
         }
@@ -818,7 +946,7 @@
             }
             cuerpo.innerHTML = lista.map(p => `<tr data-pq="${p.id}">
                 <td style="color:var(--texto-secundario);">${ETIQUETAS_CATEGORIA[p.categoria] || p.categoria}</td>
-                <td style="font-weight:700;">${escHtml(p.nombre)}<br><span style="color:var(--texto-tenue); font-size:12px; font-weight:400;">${escHtml(p.unidad)}</span></td>
+                <td style="font-weight:700;">${escHtml(p.nombre)}<br><span style="color:var(--texto-tenue); font-size:12px; font-weight:400;">${escHtml(p.unidad)}</span>${p.codigo_proveedor ? `<br><span class="adm-entrega ok" title="Código de este producto en el proveedor"><span class="material-icons">bolt</span><span class="adm-codigo">${escHtml(p.codigo_proveedor)}</span></span>` : ''}</td>
                 <td>${Number(p.cantidad).toLocaleString('es-PE')}</td>
                 <td style="font-weight:700;">${formatearSoles(p.precio)}</td>
                 <td>${p.destacado ? '⭐' : '—'}</td>
@@ -862,10 +990,12 @@
             document.getElementById('pq-unidad').value = paquete ? paquete.unidad : 'Diamantes';
             document.getElementById('pq-precio').value = paquete ? paquete.precio : '';
             document.getElementById('pq-orden').value = paquete ? paquete.orden : (cacheePaquetes.length + 1);
+            document.getElementById('pq-codigo').value = paquete ? (paquete.codigo_proveedor || '') : '';
             document.getElementById('pq-destacado').checked = paquete ? paquete.destacado : false;
             document.getElementById('pq-activo').checked = paquete ? paquete.activo : true;
 
             document.getElementById('modal-paquete').classList.add('abierto');
+            precargarCatalogoProveedor().catch(() => {}); // solo para sugerir nombres; si falla, se escribe a mano
         }
 
         function cerrarModalPaquete() {
@@ -891,7 +1021,7 @@
             const btn = document.getElementById('btn-guardar-paquete');
             btn.disabled = true; btn.textContent = 'Guardando...';
 
-            const { error } = await supabaseClient.rpc('admin_guardar_paquete', {
+            const { data: idGuardado, error } = await supabaseClient.rpc('admin_guardar_paquete', {
                 p_id: idRaw ? parseInt(idRaw, 10) : null,
                 p_nombre: nombre,
                 p_cantidad: cantidad,
@@ -903,17 +1033,212 @@
                 p_orden: orden
             });
 
-            btn.disabled = false; btn.textContent = 'Guardar';
-
             if (error) {
+                btn.disabled = false; btn.textContent = 'Guardar';
                 msg.style.display = 'block';
                 msg.textContent = 'No se pudo guardar: ' + error.message;
                 return;
             }
 
+            // Código del producto en el proveedor (solo si cambió).
+            const idPaquete = idRaw ? parseInt(idRaw, 10) : idGuardado;
+            const anterior = idRaw ? ((cacheePaquetes.find(p => p.id === idPaquete) || {}).codigo_proveedor || '') : '';
+            const codigo = document.getElementById('pq-codigo').value.trim();
+            if (idPaquete && codigo !== anterior) {
+                const { error: errCodigo } = await supabaseClient.rpc('admin_guardar_proveedor_paquete', { p_paquete_id: idPaquete, p_codigo: codigo });
+                if (errCodigo) {
+                    btn.disabled = false; btn.textContent = 'Guardar';
+                    msg.style.display = 'block';
+                    msg.textContent = 'El paquete se guardó, pero el código no: ' + errCodigo.message;
+                    await cargarPaquetes();
+                    return;
+                }
+            }
+
+            btn.disabled = false; btn.textContent = 'Guardar';
             cerrarModalPaquete();
             avisar('Paquete guardado');
             await cargarPaquetes();
+        }
+
+        // ---------- INTEGRACIONES ----------
+        let integracionEstado = null;
+        let juegosAdmin = [];
+        const TIPOS_REGISTRO = { validar: 'Nickname', entregar: 'Entrega', probar: 'Prueba' };
+
+        async function cargarIntegraciones(manual) {
+            const [{ data: est, error: errEstado }, { data: juegos, error: errJuegos }, { data: logs, error: errLogs }] = await Promise.all([
+                supabaseClient.rpc('admin_integracion_estado'),
+                supabaseClient.rpc('admin_listar_juegos'),
+                supabaseClient.rpc('admin_logs_integracion', { p_limite: 40 })
+            ]);
+            integracionEstado = (est && est[0]) || null;
+            juegosAdmin = juegos || [];
+
+            if (errEstado) { document.getElementById('int-conexion').className = 'adm-conexion error'; document.getElementById('int-conexion').innerHTML = '<p style="color:var(--texto-secundario);">No se pudo leer el estado de la conexión. Intenta de nuevo.</p>'; }
+            else pintarConexion();
+            if (errJuegos) document.getElementById('int-juegos').innerHTML = '<p style="color:var(--texto-tenue);">No se pudo cargar los juegos.</p>';
+            else pintarJuegosIntegracion();
+            pintarRegistroIntegracion(logs, errLogs);
+            if (manual) avisar('Actualizado');
+        }
+
+        function pintarConexion() {
+            const e = integracionEstado || { modo: 'apagado', listo: false, mensaje: null, verificado_at: null, saldo: null, moneda: null };
+            let clase = '', icono = 'power_settings_new', titulo = 'Sin probar';
+            let texto = 'Todo funciona como siempre: el ID se acepta sin nickname y tú entregas a mano. Cuando tengas la API, sigue los pasos de abajo y pulsa Probar conexión.';
+            if (e.verificado_at) {
+                if (e.listo && e.modo === 'simulado') { clase = 'simulado'; icono = 'science'; titulo = 'Modo de prueba (simulado)'; texto = 'Las respuestas son inventadas para ensayar el flujo. No se entrega nada de verdad: no lo dejes así con clientes reales.'; }
+                else if (e.listo) { clase = 'listo'; icono = 'check_circle'; titulo = 'Conectada'; texto = e.mensaje || 'La conexión con el proveedor funciona.'; }
+                else if (e.modo === 'apagado') { titulo = 'Apagada'; texto = e.mensaje || 'La integración está apagada.'; }
+                else { clase = 'error'; icono = 'error_outline'; titulo = 'Sin conexión'; texto = e.mensaje || 'La última prueba falló.'; }
+            }
+            const modoTxt = { apagado: 'Apagado', simulado: 'Simulado', real: 'Real' }[e.modo] || 'Apagado';
+            const saldo = e.saldo !== null && e.saldo !== undefined
+                ? `<div class="adm-dato"><b>Saldo en el proveedor</b><span>${Number(e.saldo).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${escHtml(e.moneda || '')}</span></div>` : '';
+            const caja = document.getElementById('int-conexion');
+            caja.className = 'adm-conexion ' + clase;
+            caja.innerHTML = `<div class="adm-conexion-estado">
+                    <span class="adm-conexion-ico"><span class="material-icons">${icono}</span></span>
+                    <div><h2>${titulo}</h2><p class="adm-conexion-msg">${escHtml(texto)}</p></div>
+                </div>
+                <div class="adm-conexion-datos">
+                    <div class="adm-dato"><b>Modo</b><span>${modoTxt}</span></div>
+                    ${saldo}
+                    <div class="adm-dato"><b>Última prueba</b><span>${e.verificado_at ? escHtml(tiempoRelativo(e.verificado_at)) : 'Nunca'}</span></div>
+                </div>
+                <div class="adm-conexion-acciones">
+                    <button class="btn-primary" id="btn-probar-conexion" type="button" onclick="probarConexion()">Probar conexión</button>
+                    ${e.listo ? '<button class="btn-outline" type="button" onclick="abrirCatalogoProveedor()">Ver catálogo del proveedor</button>' : ''}
+                </div>`;
+        }
+
+        // ---------- catálogo del proveedor (los nombres exactos de sus paquetes) ----------
+        let catalogoProveedor = null; // { paquetes: [{ codigo, precio }], saldo, moneda } o null si aún no se pidió
+        const escAttr = v => escHtml(v).replace(/"/g, '&quot;');
+
+        async function pedirCatalogoProveedor() {
+            const r = await llamarIntegracion('catalogo', {}, 30000);
+            if (r.ok && Array.isArray(r.paquetes)) {
+                catalogoProveedor = r;
+                const lista = document.getElementById('pq-codigos');
+                lista.innerHTML = '';
+                r.paquetes.forEach(p => {
+                    const o = document.createElement('option');
+                    o.value = p.codigo;
+                    o.textContent = `${r.moneda ? r.moneda + ' ' : ''}${Number(p.precio).toFixed(2)}`;
+                    lista.appendChild(o);
+                });
+            }
+            return r;
+        }
+
+        // Al abrir un paquete, si la conexión está lista, se piden (una vez) los nombres para sugerirlos al escribir.
+        async function precargarCatalogoProveedor() {
+            if (catalogoProveedor) return;
+            const { data } = await supabaseClient.rpc('admin_integracion_estado');
+            if (!data || !data[0] || !data[0].listo) return;
+            await pedirCatalogoProveedor();
+        }
+
+        async function abrirCatalogoProveedor() {
+            const msg = document.getElementById('cat-prov-msg');
+            const cuerpo = document.getElementById('cat-prov-body');
+            msg.style.display = 'none';
+            cuerpo.innerHTML = '<div class="adm-vacio" style="padding:30px 16px;">Cargando…</div>';
+            document.getElementById('modal-catalogo-proveedor').classList.add('abierto');
+
+            const r = await pedirCatalogoProveedor();
+            if (!r.ok) {
+                cuerpo.innerHTML = '';
+                msg.style.display = 'block';
+                msg.textContent = r.mensaje || 'No se pudo leer el catálogo del proveedor. Intenta de nuevo.';
+                return;
+            }
+            const saldo = r.saldo !== null && r.saldo !== undefined ? ` Tu saldo allí: ${Number(r.saldo).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${escHtml(r.moneda || '')}.` : '';
+            document.getElementById('cat-prov-sub').innerHTML = `Copia el código de cada producto tal cual en <strong>Paquetes → Editar → Código en el proveedor</strong>.${saldo}`;
+            cuerpo.innerHTML = r.paquetes.length === 0
+                ? '<div class="adm-vacio" style="padding:30px 16px;">El proveedor no devolvió paquetes.</div>'
+                : r.paquetes.map(p => `<div class="adm-fila-codigo">
+                    <div><strong>${escHtml(p.codigo)}</strong><span class="precio">Te cuesta ${escHtml(r.moneda || '')} ${Number(p.precio).toFixed(2)}</span></div>
+                    <button class="adm-copiar" type="button" data-copiar="${escAttr(p.codigo)}" data-aviso="Código copiado"><span class="material-icons">content_copy</span>Copiar</button>
+                </div>`).join('');
+        }
+
+        function cerrarCatalogoProveedor() {
+            document.getElementById('modal-catalogo-proveedor').classList.remove('abierto');
+        }
+
+        async function probarConexion() {
+            catalogoProveedor = null; // lo que diga el proveedor puede haber cambiado
+            const btn = document.getElementById('btn-probar-conexion');
+            btn.disabled = true; btn.textContent = 'Probando…';
+            const r = await llamarIntegracion('probar', {}, 30000);
+            if (r.motivo === 'red' || r.motivo === 'tiempo') avisar('No se pudo contactar la función "integracion". ¿Está desplegada en Supabase?', 'error');
+            else if (r.motivo === 'sin_permiso' || r.motivo === 'no_autorizado') avisar('Tu sesión no tiene permiso para probar la conexión.', 'error');
+            else avisar(r.ok ? (r.modo === 'simulado' ? 'Modo de prueba listo (nada es real)' : 'Conexión correcta ✓') : (r.mensaje || 'La prueba no pasó'), r.ok ? undefined : 'error');
+            await cargarIntegraciones();
+        }
+
+        function pintarJuegosIntegracion() {
+            const cont = document.getElementById('int-juegos');
+            if (juegosAdmin.length === 0) { cont.innerHTML = '<p style="color:var(--texto-tenue);">Todavía no hay juegos configurados.</p>'; return; }
+            const lista = !!(integracionEstado && integracionEstado.listo);
+            cont.innerHTML = juegosAdmin.map(j => {
+                const total = Number(j.paquetes_total), conCodigo = Number(j.paquetes_con_codigo);
+                // Sin conexión probada no se puede ENCENDER nada (el servidor también lo impide); apagar siempre se puede.
+                const sw = (campo, texto) => {
+                    const bloqueado = !lista && !j[campo];
+                    return `<label class="sw ${bloqueado ? 'bloqueado' : ''}" ${bloqueado ? 'title="Primero prueba la conexión"' : ''}><input type="checkbox" data-campo="${campo}" ${j[campo] ? 'checked' : ''} ${bloqueado ? 'disabled' : ''}><span class="sw-pista"></span>${texto}</label>`;
+                };
+                return `<div class="adm-juego" data-juego="${escHtml(j.slug)}">
+                    <div class="adm-juego-cab"><h3>${escHtml(j.nombre)}</h3><span class="adm-etiqueta ${j.activo ? 'visible' : 'oculto'}"><span class="material-icons">${j.activo ? 'check_circle' : 'pause_circle'}</span>${j.activo ? 'Activo' : 'Pausado'}</span></div>
+                    <div class="adm-cat-conteo">${conCodigo} de ${total} ${plural(total, 'paquete tiene', 'paquetes tienen')} código del proveedor</div>
+                    <div class="adm-cat-switches">
+                        ${sw('validar_auto', 'Mostrar el nickname al validar el ID')}
+                        ${sw('entrega_auto', 'Entregar los pedidos automáticamente')}
+                    </div>
+                    ${lista ? '' : '<p class="adm-nota">Para activar estas opciones primero prueba la conexión (arriba) y que salga <strong>Conectada</strong> o en modo de prueba.</p>'}
+                    <p class="adm-nota">Solo se entregan solos los paquetes que tengan su código del proveedor (Paquetes → Editar).</p>
+                    <button class="adm-cat-ver" type="button" data-ver-paquetes><span class="material-icons">inventory_2</span>Ver paquetes</button>
+                </div>`;
+            }).join('');
+
+            if (cont.dataset.listo) return;
+            cont.dataset.listo = '1';
+            cont.addEventListener('change', async e => {
+                const caja = e.target.closest('input[data-campo]');
+                const tarjeta = e.target.closest('.adm-juego');
+                if (!caja || !tarjeta) return;
+                const j = juegosAdmin.find(x => x.slug === tarjeta.dataset.juego);
+                const campo = caja.dataset.campo;
+                const anterior = j[campo];
+                j[campo] = caja.checked;
+                caja.disabled = true;
+                const { error } = await supabaseClient.rpc('admin_guardar_juego', { p_slug: j.slug, p_activo: null, p_validar_auto: j.validar_auto, p_entrega_auto: j.entrega_auto });
+                if (error) {
+                    j[campo] = anterior;
+                    avisar('No se pudo guardar: ' + error.message, 'error');
+                } else {
+                    avisar(`${j.nombre}: ${campo === 'validar_auto' ? 'nickname' : 'entrega automática'} ${j[campo] ? 'activado' : 'desactivado'}`);
+                }
+                pintarJuegosIntegracion();
+            });
+            cont.addEventListener('click', e => { if (e.target.closest('[data-ver-paquetes]')) irA('paquetes'); });
+        }
+
+        function pintarRegistroIntegracion(logs, error) {
+            const cuerpo = document.getElementById('tabla-int-logs-body');
+            if (error) { cuerpo.innerHTML = '<tr><td colspan="6" class="adm-vacio">No se pudo cargar el registro.</td></tr>'; return; }
+            if (!logs || logs.length === 0) { cuerpo.innerHTML = '<tr><td colspan="6" class="adm-vacio">Todavía no hay actividad. Aquí verás cada consulta de nickname, entrega y prueba de conexión.</td></tr>'; return; }
+            cuerpo.innerHTML = logs.map(l => `<tr>
+                <td style="white-space:nowrap;">${new Date(l.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td>
+                <td><span class="adm-tipo">${escHtml(TIPOS_REGISTRO[l.tipo] || l.tipo)}</span></td>
+                <td>${escHtml(l.juego || '—')}</td>
+                <td>${l.ok ? '<span class="adm-log-ok">✓ Bien</span>' : '<span class="adm-log-mal">✗ Falló</span>'}</td>
+                <td style="max-width:360px; font-size:12.5px; color:var(--texto-secundario); word-break:break-word;">${escHtml(l.detalle || '—')}</td>
+                <td style="white-space:nowrap; font-family:ui-monospace, Menlo, monospace; font-size:12px;">${l.pedido_id ? escHtml(String(l.pedido_id).slice(0, 8)) : '—'}</td>
+            </tr>`).join('');
         }
 
         // ---------- VENTAS ----------

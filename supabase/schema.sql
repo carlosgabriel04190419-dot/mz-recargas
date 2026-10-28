@@ -1516,3 +1516,689 @@ grant execute on function public.admin_listar_paquetes() to authenticated;
 grant execute on function public.admin_resumen_tienda() to authenticated;
 grant execute on function public.admin_ventas_dias(integer) to authenticated;
 grant execute on function public.admin_ventas_catalogos(integer) to authenticated;
+
+
+-- ============================================================
+-- INTEGRACIÓN CON EL PROVEEDOR DE RECARGAS (27 de octubre de 2026)
+-- Nickname por ID y entrega automática. Ver el README, sección "Integración
+-- con el proveedor de recargas". Son 4 migraciones, en este orden:
+--   integracion_proveedor_api_base, integracion_proveedor_api_ayudas_servicio,
+--   integracion_proveedor_api_info_juego y entrega_pasar_a_manual.
+-- Las funciones "entrega_*" e "integracion_*" las usa SOLO la Edge Function
+-- "integracion" (rol service_role): nadie más puede ejecutarlas.
+-- ============================================================
+
+-- >>> migración: integracion_proveedor_api_base
+-- ---------- INTEGRACIÓN CON LA API DEL PROVEEDOR (nickname por ID y entrega automática) ----------
+-- Todo lo que toca al proveedor corre en el servidor (Edge Functions). La llave de la API vive
+-- en los "secrets" de Supabase, nunca en la web. Aquí está solo el estado, los códigos de cada
+-- paquete, la caché de nicknames y los registros. Mientras la integración esté apagada, todo
+-- sigue funcionando a mano como siempre.
+
+-- 1) Juegos (hoy solo Free Fire; la estructura queda lista para otros)
+create table public.juegos (
+  slug text primary key check (slug ~ '^[a-z0-9-]{2,40}$'),
+  nombre text not null check (length(trim(nombre)) > 0),
+  activo boolean not null default true,
+  etiqueta_id text not null default 'ID de jugador',
+  patron_id text not null default '^[0-9]{5,15}$' check (('x' ~ patron_id) is not null),
+  usa_zona boolean not null default false,
+  etiqueta_zona text,
+  validar_auto boolean not null default false,
+  entrega_auto boolean not null default false,
+  created_at timestamptz not null default now()
+);
+insert into public.juegos (slug, nombre) values ('free-fire', 'Free Fire');
+alter table public.juegos enable row level security;
+create policy "ver_juegos" on public.juegos for select using (true);
+revoke all on public.juegos from anon, authenticated;
+grant select on public.juegos to anon, authenticated;
+grant all on public.juegos to service_role;
+
+-- 2) Cada paquete pertenece a un juego; "entrega_auto" es solo la marca pública para mostrar el aviso
+alter table public.paquetes_ff add column juego text not null default 'free-fire' references public.juegos(slug);
+alter table public.paquetes_ff add column entrega_auto boolean not null default false;
+
+-- 3) Código de cada paquete en el proveedor (privado: nadie lo lee desde la web)
+create table public.paquetes_proveedor (
+  paquete_id integer primary key references public.paquetes_ff(id) on delete cascade,
+  codigo text not null check (codigo ~ '^[A-Za-z0-9._:/@+ -]{1,80}$'),
+  updated_at timestamptz not null default now()
+);
+alter table public.paquetes_proveedor enable row level security;
+revoke all on public.paquetes_proveedor from anon, authenticated;
+grant all on public.paquetes_proveedor to service_role;
+
+-- 4) Estado de la conexión (lo escribe la función "integracion", acción "probar")
+create table public.integracion_estado (
+  id integer primary key default 1 check (id = 1),
+  modo text not null default 'apagado' check (modo in ('apagado', 'simulado', 'real')),
+  listo boolean not null default false,
+  saldo numeric(12,2),
+  moneda text,
+  mensaje text,
+  verificado_at timestamptz
+);
+insert into public.integracion_estado (id) values (1);
+alter table public.integracion_estado enable row level security;
+revoke all on public.integracion_estado from anon, authenticated;
+grant all on public.integracion_estado to service_role;
+
+-- 5) Caché de nicknames, límite de consultas y registro de lo que pasa con el proveedor
+create table public.jugadores_cache (
+  juego text not null references public.juegos(slug) on delete cascade,
+  id_jugador text not null,
+  zona text not null default '',
+  nickname text not null,
+  extra jsonb,
+  consultado_at timestamptz not null default now(),
+  primary key (juego, id_jugador, zona)
+);
+alter table public.jugadores_cache enable row level security;
+revoke all on public.jugadores_cache from anon, authenticated;
+grant all on public.jugadores_cache to service_role;
+
+create table public.consultas_jugador (
+  id bigint generated always as identity primary key,
+  usuario_id uuid not null,
+  juego text not null,
+  created_at timestamptz not null default now()
+);
+create index consultas_jugador_usuario_idx on public.consultas_jugador (usuario_id, created_at desc);
+alter table public.consultas_jugador enable row level security;
+revoke all on public.consultas_jugador from anon, authenticated;
+grant all on public.consultas_jugador to service_role;
+
+create table public.integracion_logs (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  tipo text not null check (tipo in ('validar', 'entregar', 'probar')),
+  juego text,
+  pedido_id uuid,
+  usuario_id uuid,
+  ok boolean not null,
+  detalle text
+);
+create index integracion_logs_fecha_idx on public.integracion_logs (created_at desc);
+alter table public.integracion_logs enable row level security;
+revoke all on public.integracion_logs from anon, authenticated;
+grant all on public.integracion_logs to service_role;
+
+-- 6) Datos de entrega en cada pedido (los llena solo el servidor)
+alter table public.pedidos
+  add column nickname_jugador text,
+  add column entrega text not null default 'manual'
+    check (entrega in ('manual', 'auto_pendiente', 'auto_en_proceso', 'auto_entregado', 'auto_fallo', 'auto_revisar')),
+  add column entrega_ref text,
+  add column entrega_detalle text,
+  add column entrega_intentos integer not null default 0,
+  add column entrega_at timestamptz;
+create index pedidos_entrega_idx on public.pedidos (entrega) where entrega <> 'manual';
+
+-- 7) Compra de diamantes: ahora también valida el ID, guarda el nickname verificado y decide si la
+--    entrega es automática. Los campos de entrega NUNCA se aceptan desde el navegador.
+create or replace function public.procesar_nuevo_pedido()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  saldo_actual numeric(10,2);
+  v_paquete public.paquetes_ff%rowtype;
+  v_precio_valido boolean;
+  v_cantidad integer;
+  v_juego public.juegos%rowtype;
+  v_slug text;
+begin
+  new.nickname_jugador := null;
+  new.entrega := 'manual';
+  new.entrega_ref := null;
+  new.entrega_detalle := null;
+  new.entrega_intentos := 0;
+  new.entrega_at := null;
+
+  if new.tipo = 'compra_diamantes' then
+    if new.id_jugador_ff is null or length(trim(new.id_jugador_ff)) = 0 then
+      raise exception 'Falta el ID del jugador de Free Fire';
+    end if;
+    new.id_jugador_ff := trim(new.id_jugador_ff);
+
+    if new.paquete_id is not null then
+      select * into v_paquete from public.paquetes_ff where id = new.paquete_id;
+      if not found or not v_paquete.activo then
+        raise exception 'Este paquete ya no está disponible';
+      end if;
+      if not public.catalogo_disponible(v_paquete.categoria) then
+        raise exception 'Este catálogo no está disponible por ahora';
+      end if;
+      if v_paquete.agotado then
+        raise exception 'Este paquete está agotado por ahora';
+      end if;
+      v_slug := v_paquete.juego;
+
+      v_precio_valido := (new.monto = v_paquete.precio);
+      if not v_precio_valido then
+        select coalesce(pr.activo and pr.paquete_id = new.paquete_id and pr.precio_promo = new.monto, false)
+          into v_precio_valido
+          from public.promo_diamantes pr where pr.id = 1;
+        v_precio_valido := coalesce(v_precio_valido, false);
+      end if;
+      if not v_precio_valido then
+        raise exception 'El precio de este paquete cambió. Recarga la página e inténtalo de nuevo.';
+      end if;
+    else
+      v_slug := 'free-fire';
+      if not public.catalogo_disponible('cajas_tokens') then
+        raise exception 'Este catálogo no está disponible por ahora';
+      end if;
+      if new.nota_admin is null or new.nota_admin !~ '^Cantidad personalizada: [0-9]{1,6} Cajas Evolutivas$' then
+        raise exception 'Compra no válida';
+      end if;
+      v_cantidad := substring(new.nota_admin from '^Cantidad personalizada: ([0-9]{1,6}) Cajas Evolutivas$')::integer;
+      if v_cantidad < 20 or new.monto <> round(v_cantidad * 0.48, 2) then
+        raise exception 'Compra no válida';
+      end if;
+    end if;
+
+    select * into v_juego from public.juegos where slug = v_slug;
+    if not found or not v_juego.activo then
+      raise exception 'Este juego no está disponible por ahora';
+    end if;
+    if new.id_jugador_ff !~ v_juego.patron_id then
+      raise exception 'El ID de jugador no es válido. Revísalo e inténtalo de nuevo.';
+    end if;
+
+    -- Nickname verificado por la API en los últimos días (si se consultó); si no, queda vacío.
+    select jc.nickname into new.nickname_jugador
+      from public.jugadores_cache jc
+      where jc.juego = v_slug and jc.id_jugador = new.id_jugador_ff and jc.zona = ''
+        and jc.consultado_at > now() - interval '3 days';
+
+    -- Entrega automática solo si el juego la tiene activa, el paquete tiene su código en el
+    -- proveedor y la conexión está probada. Si no, la entrega sigue siendo a mano.
+    if v_juego.entrega_auto and new.paquete_id is not null
+       and exists (select 1 from public.paquetes_proveedor pp where pp.paquete_id = new.paquete_id)
+       and exists (select 1 from public.integracion_estado ie where ie.id = 1 and ie.listo) then
+      new.entrega := 'auto_pendiente';
+    end if;
+
+    select saldo into saldo_actual
+      from public.perfiles where id = new.usuario_id for update;
+
+    if saldo_actual < new.monto then
+      raise exception 'Saldo insuficiente. Recarga tu saldo antes de comprar.';
+    end if;
+
+    update public.perfiles
+      set saldo = saldo - new.monto,
+          puntos = puntos + floor(new.monto)::integer
+      where id = new.usuario_id;
+    new.estado := 'confirmado';
+
+    perform public.otorgar_bono_referido(new.usuario_id, new.id);
+  end if;
+
+  return new;
+end;
+$$;
+
+-- 8) El admin no puede cambiar a mano un pedido mientras el servidor lo está entregando
+create or replace function public.admin_actualizar_pedido(p_id uuid, p_estado text, p_nota text default null)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_actual text;
+  v_entrega text;
+  v_entrega_at timestamptz;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if p_estado is null then
+    raise exception 'Falta el estado del pedido';
+  end if;
+
+  select estado, entrega, entrega_at into v_actual, v_entrega, v_entrega_at
+    from public.pedidos where id = p_id for update;
+  if not found then
+    raise exception 'Ese pedido no existe';
+  end if;
+
+  if p_estado <> v_actual and not (
+       (v_actual = 'pendiente'  and p_estado in ('confirmado', 'cancelado'))
+    or (v_actual = 'confirmado' and p_estado in ('completado', 'cancelado'))
+  ) then
+    raise exception 'No se puede pasar un pedido de "%" a "%"', v_actual, p_estado;
+  end if;
+
+  if p_estado <> v_actual and v_entrega = 'auto_en_proceso' and v_entrega_at > now() - interval '10 minutes' then
+    raise exception 'La entrega automática de este pedido está en proceso. Espera un momento y vuelve a intentar.';
+  end if;
+
+  update public.pedidos
+    set estado = p_estado,
+        nota_admin = coalesce(p_nota, nota_admin)
+    where id = p_id;
+end;
+$$;
+
+-- 9) Funciones que SOLO usa el servidor (Edge Functions con la llave de servicio)
+-- Reclama un pedido para entregarlo: devuelve fila solo a quien lo logra primero, así nunca se
+-- envía dos veces al proveedor. p_forzar = reintento pedido por el admin.
+create function public.entrega_reclamar(p_pedido uuid, p_forzar boolean default false)
+returns table (pedido_id uuid, id_jugador text, juego text, codigo text, nombre_paquete text, cantidad integer, intentos integer)
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_p public.pedidos%rowtype;
+  v_codigo text;
+  v_pq public.paquetes_ff%rowtype;
+begin
+  update public.pedidos pe
+    set entrega = 'auto_en_proceso', entrega_intentos = pe.entrega_intentos + 1, entrega_at = now()
+    where pe.id = p_pedido and pe.tipo = 'compra_diamantes' and pe.estado = 'confirmado'
+      and (
+        pe.entrega = 'auto_pendiente'
+        or (p_forzar and pe.entrega in ('auto_fallo', 'auto_revisar'))
+        or (p_forzar and pe.entrega = 'auto_en_proceso' and pe.entrega_at < now() - interval '10 minutes')
+      )
+    returning pe.* into v_p;
+  if not found then
+    return;
+  end if;
+
+  select pp.codigo into v_codigo from public.paquetes_proveedor pp where pp.paquete_id = v_p.paquete_id;
+  if v_codigo is null then
+    update public.pedidos set entrega = 'manual', entrega_detalle = 'El paquete ya no tiene código del proveedor', entrega_at = now() where id = v_p.id;
+    return;
+  end if;
+
+  select * into v_pq from public.paquetes_ff where id = v_p.paquete_id;
+  return query select v_p.id, v_p.id_jugador_ff, v_pq.juego, v_codigo, v_pq.nombre, v_pq.cantidad, v_p.entrega_intentos;
+end;
+$$;
+
+-- Cierra una entrega: 'entregado', 'fallo' (el proveedor la rechazó) o 'revisar' (no sabemos qué pasó).
+-- Si fue simulada NO se marca el pedido como entregado de verdad.
+create function public.entrega_cerrar(p_pedido uuid, p_resultado text, p_ref text, p_detalle text, p_simulado boolean default false)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if p_resultado = 'entregado' then
+    update public.pedidos
+      set entrega = 'auto_entregado',
+          entrega_ref = left(p_ref, 120),
+          entrega_detalle = case when p_simulado then 'SIMULADO: no se entregó nada de verdad' else null end,
+          entrega_at = now(),
+          estado = case when p_simulado then estado else 'completado' end
+      where id = p_pedido and entrega = 'auto_en_proceso';
+  elsif p_resultado = 'fallo' then
+    update public.pedidos
+      set entrega = 'auto_fallo', entrega_detalle = left(coalesce(p_detalle, 'El proveedor no pudo hacer la entrega'), 200), entrega_at = now()
+      where id = p_pedido and entrega = 'auto_en_proceso';
+  elsif p_resultado = 'revisar' then
+    update public.pedidos
+      set entrega = 'auto_revisar', entrega_detalle = left(coalesce(p_detalle, 'No sabemos si el proveedor entregó: revisa su panel'), 200), entrega_at = now()
+      where id = p_pedido and entrega = 'auto_en_proceso';
+  else
+    raise exception 'Resultado no válido';
+  end if;
+  if not found then
+    raise exception 'El pedido no está en proceso de entrega';
+  end if;
+end;
+$$;
+
+-- Límite de consultas de nickname por usuario (ventana deslizante) y limpieza de datos viejos.
+create function public.integracion_permitir_consulta(p_usuario uuid, p_juego text, p_max integer default 20, p_minutos integer default 60)
+returns boolean
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_n integer;
+begin
+  delete from public.consultas_jugador where created_at < now() - interval '2 days';
+  delete from public.jugadores_cache where consultado_at < now() - interval '30 days';
+  select count(*) into v_n from public.consultas_jugador
+    where usuario_id = p_usuario and created_at > now() - make_interval(mins => p_minutos);
+  if v_n >= p_max then
+    return false;
+  end if;
+  insert into public.consultas_jugador (usuario_id, juego) values (p_usuario, p_juego);
+  return true;
+end;
+$$;
+
+create function public.integracion_log(p_tipo text, p_juego text, p_pedido uuid, p_usuario uuid, p_ok boolean, p_detalle text)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.integracion_logs (tipo, juego, pedido_id, usuario_id, ok, detalle)
+  values (p_tipo, p_juego, p_pedido, p_usuario, p_ok, left(p_detalle, 300));
+  delete from public.integracion_logs where created_at < now() - interval '30 days';
+end;
+$$;
+
+create function public.integracion_guardar_estado(p_modo text, p_listo boolean, p_saldo numeric, p_moneda text, p_mensaje text)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  update public.integracion_estado
+    set modo = p_modo, listo = p_listo, saldo = p_saldo, moneda = left(p_moneda, 10),
+        mensaje = left(p_mensaje, 300), verificado_at = now()
+    where id = 1;
+end;
+$$;
+
+-- 10) Funciones del panel admin
+create function public.admin_integracion_estado()
+returns table (modo text, listo boolean, saldo numeric, moneda text, mensaje text, verificado_at timestamptz)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  return query select ie.modo, ie.listo, ie.saldo, ie.moneda, ie.mensaje, ie.verificado_at from public.integracion_estado ie where ie.id = 1;
+end;
+$$;
+
+create function public.admin_listar_juegos()
+returns table (slug text, nombre text, activo boolean, validar_auto boolean, entrega_auto boolean, paquetes_total integer, paquetes_con_codigo integer)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  return query
+    select j.slug, j.nombre, j.activo, j.validar_auto, j.entrega_auto,
+      (select count(*)::integer from public.paquetes_ff p where p.juego = j.slug),
+      (select count(*)::integer from public.paquetes_ff p join public.paquetes_proveedor pp on pp.paquete_id = p.id where p.juego = j.slug)
+    from public.juegos j
+    order by j.created_at;
+end;
+$$;
+
+-- Activar la validación o la entrega automática exige haber probado la conexión antes.
+create function public.admin_guardar_juego(p_slug text, p_activo boolean, p_validar_auto boolean, p_entrega_auto boolean)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_j public.juegos%rowtype;
+  v_listo boolean;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  select * into v_j from public.juegos where slug = p_slug for update;
+  if not found then
+    raise exception 'Juego no encontrado';
+  end if;
+  select ie.listo into v_listo from public.integracion_estado ie where ie.id = 1;
+  if ((coalesce(p_validar_auto, v_j.validar_auto) and not v_j.validar_auto)
+      or (coalesce(p_entrega_auto, v_j.entrega_auto) and not v_j.entrega_auto)) and not coalesce(v_listo, false) then
+    raise exception 'Primero prueba la conexión con el proveedor (sección Integraciones)';
+  end if;
+  update public.juegos
+    set activo = coalesce(p_activo, activo),
+        validar_auto = coalesce(p_validar_auto, validar_auto),
+        entrega_auto = coalesce(p_entrega_auto, entrega_auto)
+    where slug = p_slug;
+end;
+$$;
+
+-- Guarda (o quita, si viene vacío) el código del paquete en el proveedor.
+create function public.admin_guardar_proveedor_paquete(p_paquete_id integer, p_codigo text)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_codigo text := nullif(trim(coalesce(p_codigo, '')), '');
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if not exists (select 1 from public.paquetes_ff where id = p_paquete_id) then
+    raise exception 'Paquete no encontrado';
+  end if;
+  if v_codigo is null then
+    delete from public.paquetes_proveedor where paquete_id = p_paquete_id;
+    update public.paquetes_ff set entrega_auto = false where id = p_paquete_id;
+  else
+    if v_codigo !~ '^[A-Za-z0-9._:/@+ -]{1,80}$' then
+      raise exception 'El código del proveedor solo puede llevar letras, números y . _ : / @ + -';
+    end if;
+    insert into public.paquetes_proveedor (paquete_id, codigo) values (p_paquete_id, v_codigo)
+      on conflict (paquete_id) do update set codigo = excluded.codigo, updated_at = now();
+    update public.paquetes_ff set entrega_auto = true where id = p_paquete_id;
+  end if;
+end;
+$$;
+
+create function public.admin_logs_integracion(p_limite integer default 40)
+returns table (created_at timestamptz, tipo text, juego text, pedido_id uuid, ok boolean, detalle text)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  return query
+    select l.created_at, l.tipo, l.juego, l.pedido_id, l.ok, l.detalle
+    from public.integracion_logs l
+    order by l.created_at desc
+    limit greatest(1, least(coalesce(p_limite, 40), 200));
+end;
+$$;
+
+-- Listados del panel con los datos nuevos (cambia lo que devuelven, por eso se recrean).
+drop function public.admin_listar_paquetes();
+create function public.admin_listar_paquetes()
+returns table (
+  id integer, nombre text, cantidad integer, precio numeric, categoria text, unidad text,
+  destacado boolean, activo boolean, orden integer, agotado boolean, juego text, codigo_proveedor text
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select pa.id, pa.nombre, pa.cantidad, pa.precio, pa.categoria, pa.unidad, pa.destacado, pa.activo, pa.orden, pa.agotado,
+           pa.juego, pp.codigo
+    from public.paquetes_ff pa
+    left join public.paquetes_proveedor pp on pp.paquete_id = pa.id
+    order by pa.categoria, pa.orden;
+end;
+$$;
+
+drop function public.admin_listar_pedidos(text);
+create function public.admin_listar_pedidos(p_estado text default null)
+returns table (
+  id uuid, created_at timestamptz, tipo text, estado text, monto numeric, metodo_pago text,
+  id_jugador_ff text, nota_admin text, usuario_id uuid, nickname text, correo text, paquete_nombre text,
+  nickname_jugador text, entrega text, entrega_ref text, entrega_detalle text, entrega_intentos integer, entrega_at timestamptz
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select pe.id, pe.created_at, pe.tipo, pe.estado, pe.monto, pe.metodo_pago,
+           pe.id_jugador_ff, pe.nota_admin, pe.usuario_id,
+           pf.nickname, u.email::text, pa.nombre,
+           pe.nickname_jugador, pe.entrega, pe.entrega_ref, pe.entrega_detalle, pe.entrega_intentos, pe.entrega_at
+    from public.pedidos pe
+    join public.perfiles pf on pf.id = pe.usuario_id
+    join auth.users u on u.id = pe.usuario_id
+    left join public.paquetes_ff pa on pa.id = pe.paquete_id
+    where p_estado is null or pe.estado = p_estado
+    order by pe.created_at desc;
+end;
+$$;
+
+drop function public.admin_resumen_tienda();
+create function public.admin_resumen_tienda()
+returns table (
+  solicitudes_pendientes bigint, monto_solicitudes numeric, por_entregar bigint,
+  total_usuarios bigint, usuarios_hoy bigint, saldo_clientes numeric,
+  ventas_hoy numeric, ventas_mes numeric, n_ventas_hoy bigint,
+  recargado_hoy numeric, recargado_mes numeric,
+  cuentas_disponibles bigint, ultima_venta timestamptz,
+  entregas_problema bigint, entregas_auto_pendientes bigint
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+declare
+  v_hoy date := (now() at time zone 'America/Lima')::date;
+  v_mes date := date_trunc('month', now() at time zone 'America/Lima')::date;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select
+      (select count(*) from public.pedidos where tipo = 'recarga_saldo' and estado = 'pendiente'),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo = 'recarga_saldo' and estado = 'pendiente'),
+      (select count(*) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado = 'confirmado'),
+      (select count(*) from public.perfiles),
+      (select count(*) from public.perfiles where (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(saldo), 0) from public.perfiles),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date >= v_mes),
+      (select count(*) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo = 'recarga_saldo' and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo = 'recarga_saldo' and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date >= v_mes),
+      (select count(*) from public.cuentas_ff where estado = 'disponible'),
+      (select max(created_at) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado')),
+      (select count(*) from public.pedidos where tipo = 'compra_diamantes' and estado = 'confirmado' and entrega in ('auto_fallo', 'auto_revisar')),
+      (select count(*) from public.pedidos where tipo = 'compra_diamantes' and estado = 'confirmado' and entrega in ('auto_pendiente', 'auto_en_proceso'));
+end;
+$$;
+
+-- 11) Permisos
+revoke execute on function public.entrega_reclamar(uuid, boolean) from public, anon, authenticated;
+revoke execute on function public.entrega_cerrar(uuid, text, text, text, boolean) from public, anon, authenticated;
+revoke execute on function public.integracion_permitir_consulta(uuid, text, integer, integer) from public, anon, authenticated;
+revoke execute on function public.integracion_log(text, text, uuid, uuid, boolean, text) from public, anon, authenticated;
+revoke execute on function public.integracion_guardar_estado(text, boolean, numeric, text, text) from public, anon, authenticated;
+grant execute on function public.entrega_reclamar(uuid, boolean) to service_role;
+grant execute on function public.entrega_cerrar(uuid, text, text, text, boolean) to service_role;
+grant execute on function public.integracion_permitir_consulta(uuid, text, integer, integer) to service_role;
+grant execute on function public.integracion_log(text, text, uuid, uuid, boolean, text) to service_role;
+grant execute on function public.integracion_guardar_estado(text, boolean, numeric, text, text) to service_role;
+
+revoke execute on function public.admin_integracion_estado() from public;
+revoke execute on function public.admin_listar_juegos() from public;
+revoke execute on function public.admin_guardar_juego(text, boolean, boolean, boolean) from public;
+revoke execute on function public.admin_guardar_proveedor_paquete(integer, text) from public;
+revoke execute on function public.admin_logs_integracion(integer) from public;
+revoke execute on function public.admin_listar_paquetes() from public;
+revoke execute on function public.admin_listar_pedidos(text) from public;
+revoke execute on function public.admin_resumen_tienda() from public;
+grant execute on function public.admin_integracion_estado() to authenticated;
+grant execute on function public.admin_listar_juegos() to authenticated;
+grant execute on function public.admin_guardar_juego(text, boolean, boolean, boolean) to authenticated;
+grant execute on function public.admin_guardar_proveedor_paquete(integer, text) to authenticated;
+grant execute on function public.admin_logs_integracion(integer) to authenticated;
+grant execute on function public.admin_listar_paquetes() to authenticated;
+grant execute on function public.admin_listar_pedidos(text) to authenticated;
+grant execute on function public.admin_resumen_tienda() to authenticated;
+
+-- >>> migración: integracion_proveedor_api_ayudas_servicio
+-- El rol de servicio (service_role) no tiene permisos directos sobre las tablas viejas (pedidos,
+-- perfiles...). En vez de dárselos, solo puede llamar estas funciones puntuales.
+create function public.integracion_es_admin(p_usuario uuid)
+returns boolean
+language sql stable
+security definer set search_path = public
+as $$
+  select coalesce((select es_admin from public.perfiles where id = p_usuario), false);
+$$;
+
+create function public.entrega_pedido_info(p_pedido uuid)
+returns table (id uuid, usuario_id uuid, tipo text, estado text, entrega text, entrega_at timestamptz, id_jugador text, paquete_id integer)
+language sql stable
+security definer set search_path = public
+as $$
+  select pe.id, pe.usuario_id, pe.tipo, pe.estado, pe.entrega, pe.entrega_at, pe.id_jugador_ff, pe.paquete_id
+  from public.pedidos pe where pe.id = p_pedido;
+$$;
+
+revoke execute on function public.integracion_es_admin(uuid) from public, anon, authenticated;
+revoke execute on function public.entrega_pedido_info(uuid) from public, anon, authenticated;
+grant execute on function public.integracion_es_admin(uuid) to service_role;
+grant execute on function public.entrega_pedido_info(uuid) to service_role;
+
+-- >>> migración: integracion_proveedor_api_info_juego
+-- La función necesita saber de qué juego es el pedido (para revisar si la entrega automática sigue activa).
+drop function public.entrega_pedido_info(uuid);
+create function public.entrega_pedido_info(p_pedido uuid)
+returns table (id uuid, usuario_id uuid, tipo text, estado text, entrega text, entrega_at timestamptz, id_jugador text, paquete_id integer, juego text)
+language sql stable
+security definer set search_path = public
+as $$
+  select pe.id, pe.usuario_id, pe.tipo, pe.estado, pe.entrega, pe.entrega_at, pe.id_jugador_ff, pe.paquete_id,
+         coalesce(pa.juego, 'free-fire')
+  from public.pedidos pe
+  left join public.paquetes_ff pa on pa.id = pe.paquete_id
+  where pe.id = p_pedido;
+$$;
+revoke execute on function public.entrega_pedido_info(uuid) from public, anon, authenticated;
+grant execute on function public.entrega_pedido_info(uuid) to service_role;
+
+-- >>> migración: entrega_pasar_a_manual
+-- Si un pedido quedó marcado para entrega automática pero la integración ya no está disponible
+-- (se apagó el proveedor o el juego), vuelve al flujo manual de siempre en vez de quedarse esperando.
+create or replace function public.entrega_pasar_a_manual(p_pedido uuid, p_detalle text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.pedidos
+    set entrega = 'manual',
+        entrega_detalle = left(coalesce(p_detalle, 'La entrega automática no estaba disponible: se hace a mano'), 200),
+        entrega_at = now()
+    where id = p_pedido
+      and tipo = 'compra_diamantes'
+      and estado = 'confirmado'
+      and entrega = 'auto_pendiente';
+end;
+$$;
+
+revoke all on function public.entrega_pasar_a_manual(uuid, text) from public, anon, authenticated;
+grant execute on function public.entrega_pasar_a_manual(uuid, text) to service_role;
