@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MZ'Recargas | Recargar Diamantes Free Fire</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261102b">
     <meta name="theme-color" content="#0c0f18">
     <meta name="description" content="Catálogo de Free Fire: recargas de diamantes ilimitadas, promo primera vez, cajas de tokens, tokens evolutivos y cuentas. Paga con Yape o Plin en MZ'Recargas.">
     <link rel="canonical" href="https://mzrecargas.com/catalogo">
@@ -20,7 +20,7 @@
     <meta property="og:url" content="https://mzrecargas.com/catalogo">
     <meta name="twitter:card" content="summary">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-    <link rel="stylesheet" href="style.css?v=20261102a">
+    <link rel="stylesheet" href="style.css?v=20261102b">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
@@ -30,7 +30,7 @@
 
     <nav class="navbar">
         <a href="./" class="nav-logo-premium">
-            <img src="logo.svg?v=2" alt="MZ'Recargas" class="logo-img">
+            <img src="logo.svg?v=20261102b" alt="MZ'Recargas" class="logo-img">
             <div class="logo-text"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></div>
         </a>
         <div class="nav-links">
@@ -134,12 +134,15 @@
 
             <div class="paso-card">
                 <div class="paso-titulo"><span class="paso-num">1</span> Ingresa tu ID</div>
+                <div id="id-entrada">
                 <label for="id-jugador-input" id="id-jugador-label" style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">ID de Jugador (Free Fire)</label>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <input type="text" id="id-jugador-input" class="input-form" placeholder="Introduce el ID del jugador aquí." inputmode="numeric" autocomplete="off" maxlength="30" oninput="idEditado()" onkeydown="if (event.key === 'Enter') validarId()" style="flex:1; min-width:180px; margin-bottom:0;">
                     <button type="button" id="btn-validar-id" class="btn-primary" onclick="validarId()">Validar</button>
                 </div>
+                </div>
                 <div id="id-validado-msg" class="msg-box" role="status" aria-live="polite" style="display:none; margin-top:12px;"></div>
+                <div id="id-jugador-card" role="status" aria-live="polite" style="display:none;"></div>
                 <p class="paso-aviso"><span class="material-icons">warning</span> Verifica bien tu ID. No nos hacemos responsables por recargas enviadas a datos incorrectos.</p>
             </div>
 
@@ -189,7 +192,7 @@
         <div class="footer-grid">
             <div class="footer-col">
                 <div class="footer-logo">
-                    <img src="logo.svg?v=2" alt="MZ'Recargas" style="width:30px; height:30px;">
+                    <img src="logo.svg?v=20261102b" alt="MZ'Recargas" style="width:30px; height:30px;">
                     <span style="font-size:18px; font-weight:800;"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></span>
                 </div>
                 <p>Tu tienda de confianza para recargas de diamantes de Free Fire. Pagos verificados a mano y entrega rápida.</p>
@@ -341,7 +344,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="sesion.js?v=20261102a"></script>
+    <script src="sesion.js?v=20261102b"></script>
     <script>
         const WHATSAPP_NUMERO = '51901150296';
         const NOMBRES_CATALOGO = {
@@ -381,6 +384,7 @@
         let idJugadorValidado = '';
         let nicknameJugador = '';       // nickname que confirmó el proveedor (vacío si no se pudo verificar)
         let idVerificado = false;       // true solo si el proveedor encontró ese ID
+        let perfilJugador = {};         // nivel, región y likes del jugador verificado (los que haya dado el proveedor)
         let turnoValidacion = 0;        // evita que una respuesta tardía pise un ID que ya se cambió
         let compraRealizada = false;
         let juegos = {};                // tabla "juegos" por slug: reglas del ID y qué está automatizado
@@ -995,19 +999,42 @@
             try { return new RegExp(juego.patron_id).test(valor); } catch (e) { return /^[0-9]{5,15}$/.test(valor); }
         }
 
+        // Quita la tarjeta del jugador y vuelve a mostrar dónde escribir el ID.
+        function ocultarTarjetaJugador() {
+            document.getElementById('id-jugador-card').style.display = 'none';
+            document.getElementById('id-entrada').style.display = '';
+        }
+
         function mostrarMsgId(tipo, texto) {
+            ocultarTarjetaJugador();
             const msg = document.getElementById('id-validado-msg');
             msg.className = 'msg-box ' + tipo;
             msg.style.display = 'block';
             msg.innerText = texto;
         }
 
-        function mostrarJugadorHallado(nickname) {
-            const msg = document.getElementById('id-validado-msg');
-            msg.className = 'msg-box exito';
-            msg.style.display = 'block';
-            msg.innerHTML = `<div class="jugador-hallado"><span class="material-icons">verified</span><span>Jugador encontrado: <strong class="jugador-nick">${escHtml(nickname)}</strong></span></div>
-                <small>Si ese no es tu nickname, corrige el ID antes de comprar.</small>`;
+        // La tarjeta del jugador verificado: su nickname, su ID y los datos de su cuenta (nivel, región y likes, si el proveedor los dio).
+        function mostrarJugadorHallado(nickname, perfil) {
+            perfil = perfil || {};
+            const chips = [];
+            if (perfil.nivel) chips.push(`<span class="jugador-chip"><span class="material-icons">military_tech</span>Nivel <b>${escHtml(perfil.nivel)}</b></span>`);
+            if (perfil.region) chips.push(`<span class="jugador-chip" title="Servidor de la cuenta"><span class="material-icons">public</span><b>${escHtml(perfil.region)}</b></span>`);
+            if (perfil.likes) chips.push(`<span class="jugador-chip like" title="Likes del perfil"><span class="material-icons">favorite</span><b>${escHtml(Number(perfil.likes).toLocaleString('es-PE'))}</b></span>`);
+            document.getElementById('id-validado-msg').style.display = 'none';
+            document.getElementById('id-entrada').style.display = 'none';
+            const tarjeta = document.getElementById('id-jugador-card');
+            tarjeta.innerHTML = `<div class="jugador-card">
+                    <div class="jugador-avatar" aria-hidden="true"><span class="material-icons">sports_esports</span><span class="jugador-verif"><span class="material-icons">check</span></span></div>
+                    <div class="jugador-datos">
+                        <div class="jugador-etq"><span class="material-icons">verified_user</span>Jugador verificado</div>
+                        <div class="jugador-nick">${escHtml(nickname)}</div>
+                        <div class="jugador-id">ID de jugador <b>${escHtml(idJugadorValidado)}</b></div>
+                        ${chips.length ? `<div class="jugador-chips">${chips.join('')}</div>` : ''}
+                    </div>
+                    <button type="button" class="jugador-cambiar" onclick="cambiarId()"><span class="material-icons">swap_horiz</span>Cambiar ID</button>
+                </div>
+                <p class="jugador-nota">Si ese no es tu nickname, cambia el ID antes de comprar.</p>`;
+            tarjeta.style.display = 'block';
         }
 
         // Etiqueta del paso 1 según el juego, y el estado del ID si ya se había validado.
@@ -1015,17 +1042,15 @@
             const juego = juegoDe(categoriaActiva);
             document.getElementById('id-jugador-label').innerText = `ID de Jugador (${juego.nombre})`;
             document.getElementById('id-jugador-input').inputMode = /^\^?\[0-9\]/.test(juego.patron_id) ? 'numeric' : 'text';
-            if (!idJugadorValidado) { document.getElementById('id-validado-msg').style.display = 'none'; return; }
-            if (idVerificado && nicknameJugador) mostrarJugadorHallado(nicknameJugador);
+            if (!idJugadorValidado) { document.getElementById('id-validado-msg').style.display = 'none'; ocultarTarjetaJugador(); return; }
+            if (idVerificado && nicknameJugador) mostrarJugadorHallado(nicknameJugador, perfilJugador);
             else mostrarMsgId('exito', 'ID listo. Ahora elige tu paquete abajo.');
         }
 
-        // Si cambian el ID después de validarlo, hay que validarlo de nuevo (y volver a elegir paquete).
-        function idEditado() {
-            const val = document.getElementById('id-jugador-input').value.trim();
-            if (val === idJugadorValidado) return;
+        // Deja el paso 1 como al principio, sin ID validado (y se olvida el paquete elegido, que dependía de ese ID).
+        function reiniciarPasoId() {
             turnoValidacion++;
-            idJugadorValidado = ''; nicknameJugador = ''; idVerificado = false;
+            idJugadorValidado = ''; nicknameJugador = ''; idVerificado = false; perfilJugador = {};
             const btn = document.getElementById('btn-validar-id');
             btn.disabled = false; btn.innerText = 'Validar';
             document.getElementById('id-validado-msg').style.display = 'none';
@@ -1034,11 +1059,26 @@
             document.getElementById('paso-confirmar').style.display = 'none';
         }
 
+        // Si cambian el ID después de validarlo, hay que validarlo de nuevo (y volver a elegir paquete).
+        function idEditado() {
+            const val = document.getElementById('id-jugador-input').value.trim();
+            if (val === idJugadorValidado) return;
+            reiniciarPasoId();
+        }
+
+        // Botón "Cambiar ID" de la tarjeta del jugador.
+        function cambiarId() {
+            reiniciarPasoId();
+            ocultarTarjetaJugador();
+            const entrada = document.getElementById('id-jugador-input');
+            entrada.focus(); entrada.select();
+        }
+
         async function validarId() {
             if (document.getElementById('btn-validar-id').disabled) return; // ya se está verificando
             const val = document.getElementById('id-jugador-input').value.trim();
             const juego = juegoDe(categoriaActiva);
-            idJugadorValidado = ''; nicknameJugador = ''; idVerificado = false;
+            idJugadorValidado = ''; nicknameJugador = ''; idVerificado = false; perfilJugador = {};
 
             if (!val) return mostrarMsgId('error', `Ingresa tu ID de jugador de ${juego.nombre}.`);
             if (!idConFormato(val, juego)) {
@@ -1061,8 +1101,8 @@
             btn.disabled = false; btn.innerText = 'Validar';
 
             if (r.ok && r.nickname) {
-                idJugadorValidado = val; nicknameJugador = r.nickname; idVerificado = true;
-                return mostrarJugadorHallado(r.nickname);
+                idJugadorValidado = val; nicknameJugador = r.nickname; idVerificado = true; perfilJugador = r.perfil || {};
+                return mostrarJugadorHallado(r.nickname, perfilJugador);
             }
             if (r.motivo === 'no_encontrado') {
                 return mostrarMsgId('error', `No encontramos ese ID en ${juego.nombre}. Revisa que esté bien escrito (lo ves en tu perfil dentro del juego). Si juegas en otro servidor, escríbenos por WhatsApp.`);

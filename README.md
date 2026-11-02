@@ -83,7 +83,7 @@ Los datos de acceso de cada cuenta **no** se guardan en la web: se los pasas tú
 
 La web se conecta a la API de un proveedor de recargas, con **su llave**, para dos cosas:
 
-1. **Nickname por ID**: al validar el ID, la web muestra el nickname del jugador para que el cliente confirme que es su cuenta (y si el ID no existe, no lo deja comprar). El proveedor solo ofrece esta consulta para **Free Fire**.
+1. **Nickname por ID**: al validar el ID, la web muestra una tarjeta del jugador con su nickname, su ID y los datos de su cuenta (nivel, servidor y likes, si el proveedor los da) para que el cliente confirme que es su cuenta, con un botón *Cambiar ID* (y si el ID no existe, no lo deja comprar). El proveedor solo ofrece esta consulta para **Free Fire**.
 2. **Entrega automática**: al comprar, el pedido se entrega solo, sin que tú hagas nada, y pasa a `completado`.
 
 **Estado actual: todo escrito y probado con respuestas de mentira; apagada hasta poner los secrets.** Mientras no se pongan, todo funciona exactamente igual que antes (el ID se acepta sin nickname y tú entregas a mano). El **adaptador** (`supabase/functions/integracion/proveedor.ts`, sección "MODO REAL") sigue la documentación del proveedor: acciones `saldo`, `validar_id`, `comprar` y `pedido`. Todavía nadie ha llamado a su API de verdad desde aquí: la primera conexión real es el botón *Probar conexión*.
@@ -118,7 +118,7 @@ La web se conecta a la API de un proveedor de recargas, con **su llave**, para d
 
 **Probar sin proveedor (modo simulado)**: con `PROVEEDOR_MODO` = `simulado` las respuestas son inventadas. Según cómo termine el ID de jugador: `…000` no existe, `…111` proveedor caído, `…999` recarga rechazada (`auto_fallo`), `…888` sin respuesta (`auto_revisar`), `…777` queda aplicándose y a los 20 segundos se entrega, `…666` queda aplicándose y luego el proveedor la rechaza, `…555` queda aplicándose para siempre; cualquier otro funciona y el nickname sale como `Jugador####`. Un pedido "entregado" en simulado se queda `confirmado` y el panel y la web avisan que fue de mentira. **No dejes el modo simulado puesto con clientes reales** (el Resumen del panel te lo recuerda).
 
-**Pruebas de la lógica**: `deno test supabase/functions/integracion/` (86 pruebas con datos falsos y un `fetch` de mentira que repite las respuestas que documenta el proveedor: validación, entrega única, cada respuesta y cada error posible, órdenes en proceso, consulta de estado, llave rechazada, permisos, modos y que la llave nunca salga en una respuesta).
+**Pruebas de la lógica**: `deno test supabase/functions/integracion/` (94 pruebas con datos falsos y un `fetch` de mentira que repite las respuestas que documenta el proveedor: validación, entrega única, cada respuesta y cada error posible, órdenes en proceso, consulta de estado, llave rechazada, permisos, modos y que la llave nunca salga en una respuesta).
 
 **Límites conocidos**
 - Por ahora solo juegos con un único ID (como Free Fire). Los que piden además servidor o zona (por ejemplo Mobile Legends) necesitan guardar esa zona en el pedido; la tabla `juegos` y el adaptador ya la contemplan, falta esa columna. Si un paquete de esos juegos llegara a tener código, el proveedor lo rechaza (`falta_zone_id`) y el pedido queda en `auto_fallo` con el motivo en el registro.

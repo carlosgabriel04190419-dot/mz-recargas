@@ -53,7 +53,7 @@ export type Cierre = 'entregado' | 'fallo' | 'revisar' | 'confirmando';
 
 export interface Repo {
   obtenerJuego(slug: string): Promise<Juego | null>;
-  obtenerCache(juego: string, id: string, zona: string): Promise<{ nickname: string; consultado_at: string } | null>;
+  obtenerCache(juego: string, id: string, zona: string): Promise<{ nickname: string; consultado_at: string; extra?: unknown } | null>;
   guardarCache(juego: string, id: string, zona: string, nickname: string, extra: unknown): Promise<void>;
   permitirConsulta(usuarioId: string, juego: string): Promise<boolean>;
   log(tipo: 'validar' | 'entregar' | 'probar', juego: string | null, pedidoId: string | null, usuarioId: string | null, ok: boolean, detalle: string): Promise<void>;
@@ -128,8 +128,28 @@ async function apagarConexion(d: Deps, usuarioId: string, tipo: 'validar' | 'ent
 // ---------------------------------------------------------------------------
 // 1) Nickname a partir del ID
 // ---------------------------------------------------------------------------
+export interface PerfilJugador { nivel?: string; region?: string; likes?: string }
+
+/** Datos públicos del perfil que se muestran junto al nickname (nivel, región y likes). Solo se aceptan valores con la forma esperada. */
+export function perfilDe(extra: unknown): PerfilJugador {
+  if (!extra || typeof extra !== 'object') return {};
+  const e = extra as Record<string, unknown>;
+  const valido = (v: unknown, patron: RegExp): string | undefined => {
+    const t = String(v ?? '').trim();
+    return patron.test(t) ? t : undefined;
+  };
+  const perfil: PerfilJugador = {};
+  const nivel = valido(e.nivel, /^\d{1,3}$/);
+  const region = valido(e.region, /^[A-Za-z]{2,12}$/);
+  const likes = valido(e.likes, /^\d{1,9}$/);
+  if (nivel) perfil.nivel = nivel;
+  if (region) perfil.region = region.toUpperCase();
+  if (likes) perfil.likes = likes;
+  return perfil;
+}
+
 export type RespuestaValidar =
-  | { ok: true; nickname: string; cache: boolean }
+  | { ok: true; nickname: string; cache: boolean; perfil: PerfilJugador }
   | { ok: false; motivo: 'no_configurado' | 'juego_invalido' | 'id_invalido' | 'no_encontrado' | 'no_disponible' | 'limite' };
 
 export async function validarJugador(d: Deps, usuarioId: string, entrada: Record<string, unknown> | null): Promise<RespuestaValidar> {
@@ -151,7 +171,7 @@ export async function validarJugador(d: Deps, usuarioId: string, entrada: Record
 
   const guardado = await d.repo.obtenerCache(slug, id, zona);
   if (guardado && ahora() - new Date(guardado.consultado_at).getTime() < TTL_CACHE_MS) {
-    return { ok: true, nickname: guardado.nickname, cache: true };
+    return { ok: true, nickname: guardado.nickname, cache: true, perfil: perfilDe(guardado.extra) };
   }
 
   // Si la última prueba falló o la llave se apagó, no se vuelve a llamar al proveedor hasta que el admin la pruebe de nuevo.
@@ -177,7 +197,7 @@ export async function validarJugador(d: Deps, usuarioId: string, entrada: Record
     }
     await d.repo.guardarCache(slug, id, zona, nickname, r.extra ?? null);
     await d.repo.log('validar', slug, null, usuarioId, true, `${ocultarId(id)} → encontrado`);
-    return { ok: true, nickname, cache: false };
+    return { ok: true, nickname, cache: false, perfil: perfilDe(r.extra) };
   }
 
   // "no_encontrado" es un resultado normal (el cliente escribió mal el ID); lo demás es un problema del proveedor.

@@ -490,8 +490,34 @@ body.fondo-catalogo-activo #cuentas-titulo { color: #f5f7ff; }
 .msg-box.exito { background: rgba(46,230,166,0.1); border: 1px solid var(--exito); color: var(--exito); }
 .msg-box.info { background: rgba(59,125,255,0.08); border: 1px solid var(--acento-1); color: var(--acento-1); }
 .msg-box.aviso { background: rgba(245,166,35,0.1); border: 1px solid #f5a623; color: #f5a623; }
-.msg-box .jugador-hallado { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
-.msg-box .jugador-hallado .material-icons { font-size: 22px; }
+
+/* ---------- tarjeta del jugador verificado (paso 1 del catálogo) ---------- */
+.jugador-card { display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: 18px; background: linear-gradient(135deg, rgba(59, 125, 255, 0.12), rgba(139, 63, 251, 0.12)); border: 1px solid rgba(110, 120, 255, 0.4); }
+.jugador-avatar { position: relative; flex: none; display: flex; align-items: center; justify-content: center; width: 58px; height: 58px; border-radius: 50%; background: var(--acento-degradado); color: #fff; box-shadow: 0 8px 20px rgba(91, 80, 255, 0.35); }
+.jugador-avatar .material-icons { font-size: 30px; }
+.jugador-verif { position: absolute; right: -4px; bottom: -4px; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--exito); color: #062b1f; border: 3px solid var(--bg-elevada); }
+.jugador-avatar .jugador-verif .material-icons { font-size: 14px; font-weight: 800; }
+.jugador-datos { flex: 1; min-width: 0; }
+.jugador-etq { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--exito); }
+.jugador-etq .material-icons { font-size: 15px; }
+:root[data-theme="light"] .jugador-etq { color: #0b8f63; }
+.jugador-nick { margin-top: 3px; font-size: 20px; font-weight: 800; line-height: 1.25; word-break: break-word; }
+.jugador-id { margin-top: 2px; font-size: 13px; color: var(--texto-secundario); }
+.jugador-id b { color: var(--texto); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.5px; }
+.jugador-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.jugador-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px 5px 8px; border-radius: 30px; background: var(--bg-elevada-2); border: 1px solid var(--borde-suave); font-size: 12.5px; font-weight: 600; color: var(--texto-secundario); }
+.jugador-chip b { color: var(--texto); font-weight: 800; }
+.jugador-chip .material-icons { font-size: 16px; color: var(--acento-1); }
+.jugador-chip.like .material-icons { color: #ff5d7a; }
+.jugador-cambiar { flex: none; align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 10px; border: 1px solid var(--borde-suave); background: none; color: var(--texto-secundario); font: 600 12.5px 'Poppins', sans-serif; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.jugador-cambiar:hover { border-color: var(--acento-1); color: var(--acento-1); }
+.jugador-cambiar .material-icons { font-size: 16px; }
+.jugador-nota { margin-top: 10px; font-size: 12.5px; color: var(--texto-tenue); text-align: center; }
+@media (max-width: 520px) {
+    .jugador-card { flex-wrap: wrap; padding: 16px; }
+    .jugador-nick { font-size: 18px; }
+    .jugador-cambiar { align-self: stretch; justify-content: center; width: 100%; }
+}
 .msg-box .jugador-nick { color: var(--texto); font-weight: 800; word-break: break-word; }
 .msg-box small { display: block; margin-top: 6px; font-weight: 600; font-size: 12px; opacity: 0.85; }
 

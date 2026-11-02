@@ -4,7 +4,7 @@
 // deno-lint-ignore-file require-await
 import { assertEquals, assertNotEquals } from 'jsr:@std/assert@1';
 import type { Cierre, EstadoGuardado, InfoPedido, Juego, Reclamo, Repo } from './logica.ts';
-import { actualizarSaldo, catalogoProveedor, entregarPedido, limpiarNickname, probarIntegracion, revisarPedido, validarJugador } from './logica.ts';
+import { actualizarSaldo, catalogoProveedor, entregarPedido, limpiarNickname, perfilDe, probarIntegracion, revisarPedido, validarJugador } from './logica.ts';
 import { crearProveedor, type PedidoRecarga, type Proveedor, type ResultadoPedido } from './proveedor.ts';
 
 const ADMIN = '00000000-0000-4000-8000-0000000000aa';
@@ -28,7 +28,7 @@ function crearRepoFalso(inicial: { juego?: Juego | null; pedido?: Partial<InfoPe
       entrega_at: null, id_jugador: '123456789', paquete_id: 7, juego: 'free-fire', intentos: 0, ...inicial.pedido,
     } as InfoPedido,
     admins: inicial.admins ?? [ADMIN],
-    cache: new Map<string, { nickname: string; consultado_at: string }>(),
+    cache: new Map<string, { nickname: string; consultado_at: string; extra?: unknown }>(),
     logs: [] as Array<{ tipo: string; ok: boolean; detalle: string }>,
     cierres: [] as Array<{ resultado: string; ref: string | null; detalle: string | null; simulado: boolean }>,
     reclamos: 0,
@@ -44,7 +44,7 @@ function crearRepoFalso(inicial: { juego?: Juego | null; pedido?: Partial<InfoPe
   const repo: Repo = {
     obtenerJuego: async () => estado.juego,
     obtenerCache: async (j, id, z) => estado.cache.get(`${j}|${id}|${z}`) ?? null,
-    guardarCache: async (j, id, z, nickname) => { estado.cache.set(`${j}|${id}|${z}`, { nickname, consultado_at: new Date().toISOString() }); },
+    guardarCache: async (j, id, z, nickname, extra) => { estado.cache.set(`${j}|${id}|${z}`, { nickname, consultado_at: new Date().toISOString(), extra }); },
     permitirConsulta: async () => { estado.consultasGastadas++; return estado.consultasPermitidas; },
     log: async (tipo, _j, _p, _u, ok, detalle) => { estado.logs.push({ tipo, ok, detalle }); },
     esAdmin: async (u) => estado.admins.includes(u),
@@ -155,9 +155,9 @@ Deno.test('validar: encuentra el nickname, lo guarda en caché y la segunda vez 
   const base = simulado();
   const proveedor: Proveedor = { ...base, consultarJugador: async (c) => { llamadas++; return base.consultarJugador(c); } };
   const r1 = await validarJugador({ repo, proveedor }, CLIENTE, { juego: 'free-fire', id_jugador: '123456789' });
-  assertEquals(r1, { ok: true, nickname: 'Jugador6789', cache: false });
+  assertEquals(r1, { ok: true, nickname: 'Jugador6789', cache: false, perfil: { region: 'SIMULADO' } });
   const r2 = await validarJugador({ repo, proveedor }, OTRO, { juego: 'free-fire', id_jugador: '123456789' });
-  assertEquals(r2, { ok: true, nickname: 'Jugador6789', cache: true });
+  assertEquals(r2, { ok: true, nickname: 'Jugador6789', cache: true, perfil: { region: 'SIMULADO' } });
   assertEquals(llamadas, 1);
   assertEquals(estado.logs.at(-1)?.detalle.includes('123456789'), false, 'el ID completo no debe quedar en los registros');
 });
@@ -166,7 +166,7 @@ Deno.test('validar: caché vencida (más de 24 h) vuelve a consultar', async () 
   const { repo, estado } = crearRepoFalso();
   estado.cache.set('free-fire|123456789|', { nickname: 'Viejo', consultado_at: new Date(Date.now() - 25 * 3600 * 1000).toISOString() });
   const r = await validarJugador({ repo, proveedor: simulado() }, CLIENTE, { juego: 'free-fire', id_jugador: '123456789' });
-  assertEquals(r, { ok: true, nickname: 'Jugador6789', cache: false });
+  assertEquals(r, { ok: true, nickname: 'Jugador6789', cache: false, perfil: { region: 'SIMULADO' } });
 });
 
 Deno.test('validar: no encontrado, proveedor caído, error inesperado y límite de consultas', async () => {
@@ -185,7 +185,7 @@ Deno.test('validar: el proveedor responde con nickname vacío o raro', async () 
   assertEquals(await validarJugador({ repo, proveedor: vacio }, CLIENTE, { juego: 'free-fire', id_jugador: '123456789' }), { ok: false, motivo: 'no_disponible' });
   const raro: Proveedor = { ...simulado(), consultarJugador: async () => ({ ok: true, nickname: '<b>Hola</b>\n' }) };
   const r = await validarJugador({ repo: crearRepoFalso().repo, proveedor: raro }, CLIENTE, { juego: 'free-fire', id_jugador: '123456789' });
-  assertEquals(r, { ok: true, nickname: '<b>Hola</b>', cache: false }); // el HTML se escapa en la web, aquí solo se limpian controles
+  assertEquals(r, { ok: true, nickname: '<b>Hola</b>', cache: false, perfil: {} }); // el HTML se escapa en la web, aquí solo se limpian controles
 });
 
 Deno.test('validar: juego con zona exige zona válida', async () => {
@@ -226,7 +226,7 @@ Deno.test('validar (real): con la conexión apagada no se llama al proveedor, pe
   assertEquals(estado.consultasGastadas, 0, 'tampoco se gasta un intento por hora del usuario');
 
   estado.cache.set('free-fire|123456789|', { nickname: 'Guardado', consultado_at: new Date().toISOString() });
-  assertEquals(await validarJugador({ repo, proveedor }, CLIENTE, { juego: 'free-fire', id_jugador: '123456789' }), { ok: true, nickname: 'Guardado', cache: true });
+  assertEquals(await validarJugador({ repo, proveedor }, CLIENTE, { juego: 'free-fire', id_jugador: '123456789' }), { ok: true, nickname: 'Guardado', cache: true, perfil: {} });
 });
 
 Deno.test('validar (real): anota lo que queda del cupo de consultas, en aciertos y en "no existe"', async () => {
@@ -263,6 +263,33 @@ Deno.test('validar (real): si la llave ya no sirve, la conexión se apaga y el n
   // la siguiente consulta ya no llega al proveedor
   assertEquals(await validarJugador({ repo, proveedor: vencida }, OTRO, { juego: 'free-fire', id_jugador: '987654321' }), { ok: false, motivo: 'no_configurado' });
   assertEquals(consultas, 1);
+});
+
+Deno.test('perfilDe: solo deja pasar nivel, región y likes con la forma esperada', () => {
+  assertEquals(perfilDe({ region: 'sac', nivel: '58', likes: '776' }), { nivel: '58', region: 'SAC', likes: '776' });
+  assertEquals(perfilDe({ nivel: 58, likes: 776 }), { nivel: '58', likes: '776' });
+  assertEquals(perfilDe({ region: null, nivel: null, likes: null }), {});
+  assertEquals(perfilDe({ nivel: '<script>', region: 'SAC<b>', likes: '1e9' }), {}, 'nada raro llega a la web');
+  assertEquals(perfilDe({ nivel: '12345', likes: '1234567890' }), {}, 'valores desmesurados se descartan');
+  assertEquals(perfilDe(null), {});
+  assertEquals(perfilDe('texto'), {});
+});
+
+Deno.test('validar: devuelve el nivel, la región y los likes del jugador, y los mismos datos cuando sale de la caché', async () => {
+  const { repo } = crearRepoFalso();
+  let consultas = 0;
+  const proveedor = proveedorRealFalso({
+    consultarJugador: () => { consultas++; return Promise.resolve({ ok: true as const, nickname: '~Δ•KIRITO-16', extra: { region: 'SAC', nivel: '58', likes: '776' } }); },
+  });
+  const perfil = { nivel: '58', region: 'SAC', likes: '776' };
+  assertEquals(await validarJugador({ repo, proveedor }, CLIENTE, { juego: 'free-fire', id_jugador: '2680134508' }), { ok: true, nickname: '~Δ•KIRITO-16', cache: false, perfil });
+  assertEquals(await validarJugador({ repo, proveedor }, OTRO, { juego: 'free-fire', id_jugador: '2680134508' }), { ok: true, nickname: '~Δ•KIRITO-16', cache: true, perfil });
+  assertEquals(consultas, 1);
+});
+
+Deno.test('validar: si el proveedor no trae nivel, región o likes, la respuesta sigue siendo válida (perfil vacío)', async () => {
+  const proveedor = proveedorRealFalso({ consultarJugador: () => Promise.resolve({ ok: true as const, nickname: 'Solo nick', extra: { region: null, nivel: null, likes: null } }) });
+  assertEquals(await validarJugador({ repo: crearRepoFalso().repo, proveedor }, CLIENTE, { juego: 'free-fire', id_jugador: '2680134508' }), { ok: true, nickname: 'Solo nick', cache: false, perfil: {} });
 });
 
 // ------------------------------------------------------------ entregarPedido

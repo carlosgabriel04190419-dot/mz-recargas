@@ -61,7 +61,7 @@ export function repoSupabase(admin: SupabaseClient): Repo {
     },
 
     async obtenerCache(juego, id, zona) {
-      const { data, error } = await admin.from('jugadores_cache').select('nickname, consultado_at')
+      const { data, error } = await admin.from('jugadores_cache').select('nickname, extra, consultado_at')
         .eq('juego', juego).eq('id_jugador', id).eq('zona', zona).maybeSingle();
       if (error) throw error;
       return data;
