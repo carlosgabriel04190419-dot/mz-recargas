@@ -159,6 +159,16 @@ La web se conecta a la API de un proveedor de recargas, con **su llave**, para d
 
 Todos los enlaces del sitio son limpios: `mzrecargas.com/catalogo`, `/terminos`, `/login`, y el inicio es solo `mzrecargas.com/`. GitHub Pages sirve cada archivo `.html` también sin la extensión, así que no hay que configurar nada. Si alguien entra con un enlace o favorito viejo que trae `.html` (sigue funcionando), `sesion.js` le limpia la dirección en la barra. Al crear páginas nuevas, enlázalas sin `.html` (el inicio como `./`) y usa también la dirección limpia en el `canonical`, el `og:url` y `sitemap.xml`. Para probar en local con estas direcciones hace falta un servidor que las entienda (el `python3 -m http.server` común solo abre las que llevan `.html`).
 
+## Al cambiar estilos o scripts (`?v=`)
+
+GitHub Pages deja los archivos en la caché del navegador unos 10 minutos. Si cambias un `.css` o `sesion.js` junto con el HTML que lo usa, quien ya tenía la copia vieja vería la página sin estilos o mezclada hasta que pase ese rato. Para evitarlo, cada página carga esos archivos con un número de versión (`style.css?v=20261102a`, `admin.css?v=...`, `recargar.css?v=...`, `sesion.js?v=...`). **Cada vez que cambies uno de esos cuatro archivos, sube ese número en todos los HTML** (el mismo en todos), por ejemplo:
+
+```bash
+sed -i '' 's/?v=[0-9a-z]*"/?v=20261103a"/g' *.html
+```
+
+(En Linux es `sed -i` sin las comillas vacías.) Los cambios solo en HTML no lo necesitan.
+
 ## Pie de página (una sola fuente)
 
 El pie de página vive en `scripts/footer.html` y se copia, como HTML estático, a las 9 páginas que lo llevan (`index`, `catalogo`, `soporte`, `ranking`, `historial`, `perfil`, `recargar-saldo`, `terminos`, `privacidad`). **Para cambiarlo** (por ejemplo, agregar el enlace al Libro de Reclamaciones o las redes sociales) edita `scripts/footer.html` y corre:
