@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MZ'Recargas | Recargar Diamantes Free Fire</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261102c">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261102d">
     <meta name="theme-color" content="#0c0f18">
     <meta name="description" content="Catálogo de Free Fire: recargas de diamantes ilimitadas, promo primera vez, cajas de tokens, tokens evolutivos y cuentas. Paga con Yape o Plin en MZ'Recargas.">
     <link rel="canonical" href="https://mzrecargas.com/catalogo">
@@ -20,7 +20,7 @@
     <meta property="og:url" content="https://mzrecargas.com/catalogo">
     <meta name="twitter:card" content="summary">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-    <link rel="stylesheet" href="style.css?v=20261102c">
+    <link rel="stylesheet" href="style.css?v=20261102d">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
@@ -30,7 +30,7 @@
 
     <nav class="navbar">
         <a href="./" class="nav-logo-premium">
-            <img src="logo.svg?v=20261102c" alt="MZ'Recargas" class="logo-img">
+            <img src="logo.svg?v=20261102d" alt="MZ'Recargas" class="logo-img">
             <div class="logo-text"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></div>
         </a>
         <div class="nav-links">
@@ -132,57 +132,78 @@
                 <span class="material-icons">arrow_forward</span>
             </button>
 
-            <div class="paso-card">
-                <div class="paso-titulo"><span class="paso-num">1</span> Ingresa tu ID</div>
-                <div id="id-entrada">
-                <label for="id-jugador-input" id="id-jugador-label" style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">ID de Jugador (Free Fire)</label>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <input type="text" id="id-jugador-input" class="input-form" placeholder="Introduce el ID del jugador aquí." inputmode="numeric" autocomplete="off" maxlength="30" oninput="idEditado()" onkeydown="if (event.key === 'Enter') validarId()" style="flex:1; min-width:180px; margin-bottom:0;">
-                    <button type="button" id="btn-validar-id" class="btn-primary" onclick="validarId()">Validar</button>
-                </div>
-                </div>
-                <div id="id-validado-msg" class="msg-box" role="status" aria-live="polite" style="display:none; margin-top:12px;"></div>
-                <div id="id-jugador-card" role="status" aria-live="polite" style="display:none;"></div>
-                <p class="paso-aviso"><span class="material-icons">warning</span> Verifica bien tu ID. No nos hacemos responsables por recargas enviadas a datos incorrectos.</p>
-            </div>
+            <details class="guia-compra" id="guia-compra" open>
+                <summary class="guia-titulo"><span class="material-icons">help_outline</span> ¿Cómo comprar? <small>4 pasos, menos de un minuto</small><span class="material-icons guia-flecha">expand_more</span></summary>
+                <ol class="guia-lista" id="guia-lista">
+                    <li data-paso="1"><span class="guia-num">1</span><div><b>Ingresa tu ID</b><small>Escribe tu ID de jugador y pulsa <em>Validar</em>.</small></div></li>
+                    <li data-paso="2"><span class="guia-num">2</span><div><b>Elige tu paquete</b><small>Toca el que quieras: lo verás en tu pedido.</small></div></li>
+                    <li data-paso="3"><span class="guia-num">3</span><div><b>Paga con tu saldo</b><small>Pulsa <em>Comprar ahora</em>. ¿Sin saldo? Recárgalo con Yape o Plin.</small></div></li>
+                    <li data-paso="4"><span class="guia-num">4</span><div><b>Recibe tu recarga</b><small>Automática en segundos o por WhatsApp.</small></div></li>
+                </ol>
+            </details>
 
-            <div class="paso-card">
-                <div class="paso-titulo"><span class="paso-num">2</span> Elige tu paquete</div>
-                <div id="paquetes-grid" class="paquetes-grid">
-                    <p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">Cargando paquetes...</p>
-                </div>
+            <div class="compra-layout">
+                <div class="compra-pasos">
+                    <div class="paso-card" id="paso-id">
+                        <div class="paso-titulo"><span class="paso-num">1</span> Ingresa tu ID</div>
+                        <div id="id-entrada">
+                        <label for="id-jugador-input" id="id-jugador-label" style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">ID de Jugador (Free Fire)</label>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <input type="text" id="id-jugador-input" class="input-form" placeholder="Introduce el ID del jugador aquí." inputmode="numeric" autocomplete="off" maxlength="30" oninput="idEditado()" onkeydown="if (event.key === 'Enter') validarId()" style="flex:1; min-width:180px; margin-bottom:0;">
+                            <button type="button" id="btn-validar-id" class="btn-primary" onclick="validarId()">Validar</button>
+                        </div>
+                        </div>
+                        <div id="id-validado-msg" class="msg-box" role="status" aria-live="polite" style="display:none; margin-top:12px;"></div>
+                        <div id="id-jugador-card" role="status" aria-live="polite" style="display:none;"></div>
+                        <p class="paso-aviso"><span class="material-icons">warning</span> Verifica bien tu ID. No nos hacemos responsables por recargas enviadas a datos incorrectos.</p>
+                    </div>
 
-                <div class="cantidad-exacta" id="cantidad-exacta" style="display:none;">
-                    <div class="cantidad-exacta-header">
-                        <div class="paquete-icon" style="font-size:28px; margin-bottom:0;" id="cantidad-exacta-icono"></div>
-                        <div class="cantidad-exacta-info">
-                            <h4>¿Buscas una cantidad exacta?</h4>
-                            <p id="cantidad-exacta-desc"></p>
+                    <div class="paso-card" id="paso-paquete">
+                        <div class="paso-titulo"><span class="paso-num">2</span> Elige tu paquete</div>
+                        <div id="paquetes-grid" class="paquetes-grid">
+                            <p style="grid-column: 1/-1; text-align:center; color: var(--texto-tenue);">Cargando paquetes...</p>
+                        </div>
+
+                        <div class="cantidad-exacta" id="cantidad-exacta" style="display:none;">
+                            <div class="cantidad-exacta-header">
+                                <div class="paquete-icon" style="font-size:28px; margin-bottom:0;" id="cantidad-exacta-icono"></div>
+                                <div class="cantidad-exacta-info">
+                                    <h4>¿Buscas una cantidad exacta?</h4>
+                                    <p id="cantidad-exacta-desc"></p>
+                                </div>
+                            </div>
+                            <div class="cantidad-exacta-controles">
+                                <input type="number" id="cantidad-exacta-input" class="input-form" placeholder="Ej: 120" min="1" oninput="actualizarCantidadExacta()">
+                                <div class="cantidad-exacta-precio" id="cantidad-exacta-precio">S/ 0.00</div>
+                                <button type="button" class="btn-primary" onclick="elegirCantidadExacta()">Elegir <span class="material-icons" style="font-size:16px; vertical-align:middle;">arrow_forward</span></button>
+                            </div>
                         </div>
                     </div>
-                    <div class="cantidad-exacta-controles">
-                        <input type="number" id="cantidad-exacta-input" class="input-form" placeholder="Ej: 120" min="1" oninput="actualizarCantidadExacta()">
-                        <div class="cantidad-exacta-precio" id="cantidad-exacta-precio">S/ 0.00</div>
-                        <button type="button" class="btn-primary" onclick="elegirCantidadExacta()">Elegir <span class="material-icons" style="font-size:16px; vertical-align:middle;">arrow_forward</span></button>
-                    </div>
                 </div>
-            </div>
 
-            <div class="paso-card" id="paso-confirmar" style="display:none;">
-                <div class="paso-titulo"><span class="paso-num">3</span> Confirmar compra</div>
-                <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px;">
-                    <div style="flex:1; min-width:140px; background:var(--bg-input); border:1px solid var(--borde); border-radius:10px; padding:14px;">
-                        <p style="font-size:12.5px; color:var(--texto-tenue); margin-bottom:4px;">Paquete</p>
-                        <p id="confirmar-paquete-nombre" style="font-weight:700; font-size:16px;"></p>
-                    </div>
-                    <div style="flex:1; min-width:140px; background:var(--bg-input); border:1px solid var(--borde); border-radius:10px; padding:14px;">
-                        <p style="font-size:12.5px; color:var(--texto-tenue); margin-bottom:4px;">Costo</p>
-                        <p id="confirmar-paquete-precio" style="font-weight:700; font-size:16px; color:var(--acento-1);"></p>
-                    </div>
-                </div>
-                <button type="button" class="btn-primary" style="width:100%;" onclick="abrirModalComprar()">
-                    <span class="material-icons" style="font-size:18px; vertical-align:middle;">shopping_cart</span> Comprar ahora
-                </button>
+                <aside class="compra-lateral" aria-label="Resumen de tu pedido">
+                    <section class="pedido-card" id="paso-confirmar">
+                        <div class="pedido-cabecera"><span class="material-icons">receipt_long</span><h3>Tu pedido</h3></div>
+                        <div class="pedido-cuerpo" id="pedido-cuerpo" aria-live="polite"></div>
+                    </section>
+                    <section class="aviso-compra">
+                        <div class="aviso-fila">
+                            <span class="aviso-icono auto"><span class="material-icons">bolt</span></span>
+                            <div>
+                                <strong id="aviso-entrega-titulo">Entrega automática</strong>
+                                <p id="aviso-entrega-texto"></p>
+                            </div>
+                        </div>
+                        <div class="aviso-fila">
+                            <span class="aviso-icono soporte"><span class="material-icons">support_agent</span></span>
+                            <div>
+                                <strong>¿Tu pedido no se ejecutó?</strong>
+                                <p>Escríbenos a soporte y lo resolvemos. Tu pedido queda guardado en <a href="historial">Mis pedidos</a>.</p>
+                                <button type="button" class="aviso-btn" onclick="escribirSoporte()"><span class="material-icons">chat</span> Escribir a soporte</button>
+                            </div>
+                        </div>
+                    </section>
+                </aside>
             </div>
         </div>
     </div>
@@ -192,7 +213,7 @@
         <div class="footer-grid">
             <div class="footer-col">
                 <div class="footer-logo">
-                    <img src="logo.svg?v=20261102c" alt="MZ'Recargas" style="width:30px; height:30px;">
+                    <img src="logo.svg?v=20261102d" alt="MZ'Recargas" style="width:30px; height:30px;">
                     <span style="font-size:18px; font-weight:800;"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></span>
                 </div>
                 <p>Tu tienda de confianza para recargas de diamantes de Free Fire. Pagos verificados a mano y entrega rápida.</p>
@@ -344,7 +365,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="sesion.js?v=20261102c"></script>
+    <script src="sesion.js?v=20261102d"></script>
     <script>
         const WHATSAPP_NUMERO = '51901150296';
         const NOMBRES_CATALOGO = {
@@ -403,6 +424,7 @@
                 document.getElementById('aviso-invitado').style.display = 'block';
             }
             actualizarEnlacesLogin();
+            if (window.matchMedia('(max-width: 560px)').matches) document.getElementById('guia-compra').open = false;
             configCatalogos = await cargarConfigCatalogos();
             aplicarEstadoTarjetas(configCatalogos);
             await Promise.all([cargarPaquetes(), cargarJuegos()]);
@@ -452,8 +474,7 @@
             const config = CONFIG_CATALOGO[categoria] || { emoji: '💎', tamanos: [] };
             const rango = config.tamanos.indexOf(cantidad);
             const repeticiones = Math.min(rango >= 0 ? rango + 1 : 1, 6);
-            const tamanoFuente = repeticiones >= 5 ? 22 : repeticiones === 4 ? 28 : 36;
-            return `<span style="font-size:${tamanoFuente}px;">${config.emoji.repeat(repeticiones)}</span>`;
+            return `<span class="gemas" style="--n:${repeticiones};">${config.emoji.repeat(repeticiones)}</span>`;
         }
 
         function abrirWhatsapp(texto) {
@@ -507,9 +528,8 @@
             actualizarSeo(categoria);
             actualizarEnlacesLogin();
             pintarAvisoCatalogo(categoria);
-            prepararPasoId();
             paqueteElegido = null;
-            document.getElementById('paso-confirmar').style.display = 'none';
+            prepararPasoId();
             document.getElementById('vista-selector').style.display = 'none';
 
             const bgImg = document.getElementById('paquetes-bg-img');
@@ -532,6 +552,7 @@
             document.getElementById('vista-paquetes').style.display = 'block';
             document.getElementById('paquetes-titulo').innerText = NOMBRES_CATALOGO[categoria];
             pintarCatalogo();
+            pintarResumen();
 
             const cantExacta = CANTIDAD_EXACTA[categoria];
             const bloqueCantExacta = document.getElementById('cantidad-exacta');
@@ -609,11 +630,8 @@
             };
 
             document.querySelectorAll('.paquete-card').forEach(c => c.classList.remove('seleccionado'));
-            document.getElementById('confirmar-paquete-nombre').innerText = paqueteElegido.nombre;
-            document.getElementById('confirmar-paquete-precio').innerText = formatearSoles(paqueteElegido.precio);
-            const pasoConfirmar = document.getElementById('paso-confirmar');
-            pasoConfirmar.style.display = 'block';
-            pasoConfirmar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            pintarResumen();
+            enfocarResumen();
         }
 
         function actualizarCantidadExacta() {
@@ -653,11 +671,8 @@
             };
 
             document.querySelectorAll('.paquete-card').forEach(c => c.classList.remove('seleccionado'));
-            document.getElementById('confirmar-paquete-nombre').innerText = paqueteElegido.nombre;
-            document.getElementById('confirmar-paquete-precio').innerText = formatearSoles(paqueteElegido.precio);
-            const pasoConfirmar = document.getElementById('paso-confirmar');
-            pasoConfirmar.style.display = 'block';
-            pasoConfirmar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            pintarResumen();
+            enfocarResumen();
         }
 
         function volverASelector(e) {
@@ -965,9 +980,107 @@
                     <h3>${escHtml(p.nombre)}</h3>
                     <div class="precio">${formatearSoles(p.precio)}</div>
                     <div class="precio-moneda">${escHtml((juegos[p.juego] || JUEGO_POR_DEFECTO).nombre)}</div>
-                    ${entregaAutomatica(p) ? '<div class="entrega-auto-tag"><span class="material-icons">bolt</span> Entrega automática</div>' : ''}
+                    ${entregaAutomatica(p) ? '<div class="entrega-auto-tag"><span class="material-icons">bolt</span><span class="tag-largo">Entrega automática</span><span class="tag-corto">Automática</span></div>' : ''}
                 </div>
             `).join('');
+        }
+
+        // ---------- RESUMEN DEL PEDIDO (el recuadro del costado) ----------
+        // ¿El paquete elegido se entrega solo? (la cantidad exacta no tiene paquete propio: va por WhatsApp)
+        function entregaAutoDelPedido() {
+            const p = paqueteElegido && paqueteElegido.id ? paquetesTodos.find(x => x.id === paqueteElegido.id) : null;
+            return !!(p && entregaAutomatica(p));
+        }
+
+        // Muestra lo que se va armando (jugador, paquete, entrega y total) con el botón de comprar, y marca
+        // en la guía de 4 pasos en cuál va la persona. Se repinta cada vez que cambia algo.
+        function pintarResumen() {
+            if (!categoriaActiva || categoriaActiva === 'cuentas') return;
+            const paso = !idJugadorValidado ? 1 : (!paqueteElegido ? 2 : 3);
+            document.getElementById('paso-id').classList.toggle('completo', paso > 1);
+            document.getElementById('paso-paquete').classList.toggle('completo', paso > 2);
+            document.querySelectorAll('#guia-lista li').forEach(li => {
+                const n = Number(li.dataset.paso);
+                li.classList.toggle('hecho', n < paso);
+                li.classList.toggle('actual', n === paso);
+            });
+
+            const nAuto = paquetes.filter(p => entregaAutomatica(p)).length;
+            document.getElementById('aviso-entrega-titulo').innerText = nAuto ? 'Entrega automática' : 'Entrega rápida';
+            document.getElementById('aviso-entrega-texto').innerText = !nAuto
+                ? 'Apenas compras te llevamos a WhatsApp y recibes tu recarga en pocos minutos.'
+                : nAuto === paquetes.length
+                    ? 'Todos los paquetes de este catálogo se entregan solos, en segundos, apenas compras.'
+                    : 'Los paquetes marcados con "Entrega automática" se entregan solos, en segundos. Los demás te llegan por WhatsApp en pocos minutos.';
+
+            const cuerpo = document.getElementById('pedido-cuerpo');
+            if (!paqueteElegido) {
+                const v = catalogoBloqueado(categoriaActiva)
+                    ? { icono: 'block', titulo: 'No disponible por ahora', texto: 'Este catálogo no está recibiendo pedidos en este momento.', boton: 'No disponible' }
+                    : paso === 1
+                        ? { icono: 'badge', titulo: 'Empieza con tu ID', texto: 'Valida tu ID de jugador y luego toca el paquete que quieras.', boton: 'Primero valida tu ID' }
+                        : { icono: 'touch_app', titulo: 'Ahora elige tu paquete', texto: 'Toca un paquete de la lista: aquí verás su precio y el total a pagar.', boton: 'Elige un paquete' };
+                cuerpo.innerHTML = `<div class="pedido-vacio">
+                        <span class="pedido-vacio-icono"><span class="material-icons">${v.icono}</span></span>
+                        <strong>${v.titulo}</strong>
+                        <p>${v.texto}</p>
+                    </div>
+                    <button type="button" class="btn-primary pedido-boton" disabled>${v.boton}</button>`;
+                return;
+            }
+
+            const precio = Number(paqueteElegido.precio);
+            const emoji = (CONFIG_CATALOGO[paqueteElegido.categoria] || { emoji: '💎' }).emoji;
+            const juego = juegoDe(paqueteElegido.categoria);
+            const jugador = nicknameJugador
+                ? `${escHtml(nicknameJugador)}<small>ID ${escHtml(idJugadorValidado)}</small>`
+                : `ID ${escHtml(idJugadorValidado)}`;
+            const entrega = entregaAutoDelPedido()
+                ? '<span class="pedido-auto"><span class="material-icons">bolt</span>Automática</span>'
+                : '<span class="pedido-manual"><span class="material-icons">chat</span>Por WhatsApp</span>';
+
+            let saldoHtml, boton;
+            if (!usuarioActual) {
+                saldoHtml = '<p class="pedido-saldo"><span class="material-icons">account_circle</span><span>Para pagar con tu saldo necesitas una cuenta. Es gratis y toma un minuto.</span></p>';
+                boton = '<button type="button" class="btn-primary pedido-boton" onclick="abrirModalComprar()"><span class="material-icons">login</span> Inicia sesión para comprar</button>';
+            } else {
+                const saldo = Number(usuarioActual.saldo);
+                const falta = Math.round((precio - saldo) * 100) / 100;
+                if (falta > 0) {
+                    saldoHtml = `<p class="pedido-saldo falta"><span class="material-icons">account_balance_wallet</span><span>Tu saldo es ${formatearSoles(saldo)}. Te faltan <b>${formatearSoles(falta)}</b> para esta compra.</span></p>`;
+                    boton = '<a href="recargar-saldo" class="btn-primary pedido-boton"><span class="material-icons">account_balance_wallet</span> Recargar saldo</a>';
+                } else {
+                    saldoHtml = `<p class="pedido-saldo"><span class="material-icons">account_balance_wallet</span><span>Pagas con tu saldo (${formatearSoles(saldo)}). Te quedarán <b>${formatearSoles(saldo - precio)}</b>.</span></p>`;
+                    boton = '<button type="button" class="btn-primary pedido-boton" onclick="abrirModalComprar()"><span class="material-icons">shopping_cart</span> Comprar ahora</button>';
+                }
+            }
+
+            cuerpo.innerHTML = `<div class="pedido-producto">
+                    <span class="pedido-producto-icono">${emoji}</span>
+                    <div>
+                        <strong>${escHtml(paqueteElegido.nombre)}</strong>
+                        <small>${escHtml(NOMBRES_CATALOGO[paqueteElegido.categoria] || '')} · ${escHtml(juego.nombre)}</small>
+                    </div>
+                </div>
+                <dl class="pedido-datos">
+                    <div><dt>Jugador</dt><dd>${jugador}</dd></div>
+                    <div><dt>Entrega</dt><dd>${entrega}</dd></div>
+                </dl>
+                <div class="pedido-total"><span>Total a pagar</span><strong>${formatearSoles(precio)}</strong></div>
+                ${saldoHtml}
+                ${boton}`;
+        }
+
+        // En pantallas angostas el resumen queda debajo de los paquetes: al elegir uno, lo traemos a la vista.
+        function enfocarResumen() {
+            if (!window.matchMedia('(max-width: 959px)').matches) return;
+            document.getElementById('paso-confirmar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Botón "Escribir a soporte": abre WhatsApp con el ID ya puesto para que no tengan que explicarlo todo.
+        function escribirSoporte() {
+            const id = idJugadorValidado ? ` Mi ID de ${juegoDe(categoriaActiva).nombre} es ${idJugadorValidado}.` : '';
+            abrirWhatsapp(`¡Hola MZ'Recargas! Mi pedido no se ejecutó y necesito ayuda.${id}`);
         }
 
         function cerrarModal(id) { document.getElementById(id).classList.remove('abierto'); }
@@ -1011,6 +1124,7 @@
             msg.className = 'msg-box ' + tipo;
             msg.style.display = 'block';
             msg.innerText = texto;
+            pintarResumen();
         }
 
         // La tarjeta del jugador verificado: su nickname, su ID y los datos de su cuenta (nivel, región y likes, si el proveedor los dio).
@@ -1035,6 +1149,7 @@
                 </div>
                 <p class="jugador-nota">Si ese no es tu nickname, cambia el ID antes de comprar.</p>`;
             tarjeta.style.display = 'block';
+            pintarResumen();
         }
 
         // Etiqueta del paso 1 según el juego, y el estado del ID si ya se había validado.
@@ -1056,7 +1171,7 @@
             document.getElementById('id-validado-msg').style.display = 'none';
             paqueteElegido = null;
             document.querySelectorAll('.paquete-card').forEach(c => c.classList.remove('seleccionado'));
-            document.getElementById('paso-confirmar').style.display = 'none';
+            pintarResumen();
         }
 
         // Si cambian el ID después de validarlo, hay que validarlo de nuevo (y volver a elegir paquete).
@@ -1146,11 +1261,8 @@
             const cardEl = document.querySelector(`.paquete-card[data-id="${paqueteId}"]`);
             if (cardEl) cardEl.classList.add('seleccionado');
 
-            document.getElementById('confirmar-paquete-nombre').innerText = paqueteElegido.nombre;
-            document.getElementById('confirmar-paquete-precio').innerText = formatearSoles(paqueteElegido.precio);
-            const pasoConfirmar = document.getElementById('paso-confirmar');
-            pasoConfirmar.style.display = 'block';
-            pasoConfirmar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            pintarResumen();
+            enfocarResumen();
         }
 
         // ---------- PASO 3: CONFIRMAR COMPRA ----------
@@ -1171,8 +1283,7 @@
             document.getElementById('rc-id-jugador').innerText = idJugadorValidado;
             document.getElementById('rc-jugador').innerText = nicknameJugador;
             document.getElementById('rc-jugador-fila').style.display = nicknameJugador ? 'flex' : 'none';
-            const p = paqueteElegido.id ? paquetesTodos.find(x => x.id === paqueteElegido.id) : null;
-            document.getElementById('rc-entrega-fila').style.display = p && entregaAutomatica(p) ? 'flex' : 'none';
+            document.getElementById('rc-entrega-fila').style.display = entregaAutoDelPedido() ? 'flex' : 'none';
 
             document.getElementById('comprar-msg').style.display = 'none';
             document.getElementById('comprar-detalle').style.display = 'block';
@@ -1189,7 +1300,7 @@
             compraRealizada = false;
             paqueteElegido = null;
             document.querySelectorAll('.paquete-card').forEach(c => c.classList.remove('seleccionado'));
-            document.getElementById('paso-confirmar').style.display = 'none';
+            pintarResumen();
         }
 
         // Cambia el contenido del modal de compra por el resultado (entregado, en proceso, a mano...).
@@ -1315,8 +1426,8 @@
         async function refrescarPaquetesTrasError() {
             await cargarPaquetes();
             paqueteElegido = null;
-            document.getElementById('paso-confirmar').style.display = 'none';
             pintarCatalogo();
+            pintarResumen();
             cargarPromoDelDia();
         }
 

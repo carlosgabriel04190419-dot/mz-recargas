@@ -25,6 +25,8 @@ compartir usuarios ni datos).
 4. Cuando ya entregaste los diamantes, lo marcas como `completado` desde `admin.html` ("Marcar entregado"). (Si conectas un proveedor de recargas, los paquetes con código lo hacen solos: ver "Integración con el proveedor de recargas" más abajo.)
 5. Si cancelas una compra que ya estaba cobrada (`confirmado`, aún sin entregar), el sistema le **devuelve el saldo** al cliente y le quita los puntos de esa compra. Un pedido `completado` o `cancelado` ya no se puede reabrir ni cambiar (así no se puede acreditar ni devolver dos veces).
 
+**La pantalla de compra** (`catalogo.html`, al abrir un catálogo de paquetes) tiene tres partes: arriba una guía de 4 pasos que marca en cuál va la persona (en el celular arranca cerrada), a la izquierda los pasos (1 ID del jugador, 2 paquete) y al costado el recuadro **Tu pedido**, que se queda fijo al bajar en pantalla grande. Ese recuadro muestra el paquete elegido, el jugador, si la entrega es automática o por WhatsApp, el total, el saldo que le quedaría y el botón de comprar (si falta saldo, el botón lleva a *Recargar saldo*; sin sesión, a iniciar sesión). Debajo van los avisos de entrega automática y de soporte. Todo lo dibuja `pintarResumen()`, que se vuelve a llamar cada vez que cambia el ID, el paquete, el catálogo o el saldo.
+
 **Los precios los valida el servidor**: aunque alguien manipule el navegador, la base de datos solo acepta una compra si el monto coincide con el precio real del paquete (o con el precio de la promo del día si está activa), o con S/ 0.48 × cantidad en las cajas de cantidad exacta. Si cambias un precio mientras un cliente tiene la página abierta, a ese cliente le sale un aviso y se actualiza la lista sola.
 
 ### Panel de administración (`admin.html`)
