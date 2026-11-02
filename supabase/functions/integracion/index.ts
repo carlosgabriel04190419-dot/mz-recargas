@@ -8,6 +8,7 @@
 //   accion: 'revisar_pedido'   { pedido_id }                 → en qué quedó una entrega que no terminó (la consulta al proveedor)
 //   accion: 'probar'           { solo_config? }              → solo admin: prueba la conexión
 //   accion: 'catalogo'         {}                            → solo admin: productos del proveedor y su precio
+//   accion: 'actualizar_saldo' {}                            → solo admin: pone al día saldo, vencimiento y cupo (sin apagar nada si falla)
 //
 // Secrets (Supabase → Edge Functions → Secrets):
 //   PROVEEDOR_MODO      apagado | simulado | real      (sin él, queda apagado)
@@ -15,7 +16,7 @@
 //   PROVEEDOR_API_KEY   la llave de la API (solo modo real)
 // ============================================================================
 import { clienteServicio, cabecerasCors, repoSupabase, responder, usuarioDeLaPeticion } from './comun.ts';
-import { catalogoProveedor, entregarPedido, probarIntegracion, revisarPedido, validarJugador } from './logica.ts';
+import { actualizarSaldo, catalogoProveedor, entregarPedido, probarIntegracion, revisarPedido, validarJugador } from './logica.ts';
 import { crearProveedor } from './proveedor.ts';
 
 Deno.serve(async (req: Request) => {
@@ -51,6 +52,8 @@ Deno.serve(async (req: Request) => {
         return responder(req, await probarIntegracion(deps, usuario.id, cuerpo));
       case 'catalogo':
         return responder(req, await catalogoProveedor(deps, usuario.id));
+      case 'actualizar_saldo':
+        return responder(req, await actualizarSaldo(deps, usuario.id));
       default:
         return responder(req, { ok: false, motivo: 'accion_invalida' }, 400);
     }

@@ -4,7 +4,7 @@
 // deno-lint-ignore-file require-await
 import { assertEquals, assertNotEquals } from 'jsr:@std/assert@1';
 import type { Cierre, EstadoGuardado, InfoPedido, Juego, Reclamo, Repo } from './logica.ts';
-import { catalogoProveedor, entregarPedido, limpiarNickname, probarIntegracion, revisarPedido, validarJugador } from './logica.ts';
+import { actualizarSaldo, catalogoProveedor, entregarPedido, limpiarNickname, probarIntegracion, revisarPedido, validarJugador } from './logica.ts';
 import { crearProveedor, type PedidoRecarga, type Proveedor, type ResultadoPedido } from './proveedor.ts';
 
 const ADMIN = '00000000-0000-4000-8000-0000000000aa';
@@ -783,4 +783,63 @@ Deno.test('entregar: el motivo real del rechazo va solo al registro, no al pedid
   assertEquals(estado.cierres[0].detalle, 'El proveedor no pudo procesar el paquete');
   assertEquals(estado.logs.at(-1)?.detalle.includes('Saldo insuficiente'), true);
   assertEquals(estado.cierres[0].detalle?.includes('Saldo'), false);
+});
+
+// ----------------------------------------------------------- actualizarSaldo
+const saldoNuevo = () => proveedorRealFalso({
+  consultarSaldo: () => Promise.resolve({ ok: true, saldo: 8, moneda: 'USDT', detalle: 'Conexión correcta: 49 paquetes en el catálogo', vence_en: '2026-11-15T00:53:31.620Z', consultas_limite: 800, consultas_usadas: 12 }),
+});
+
+Deno.test('actualizar saldo: solo el admin', async () => {
+  const { repo, estado } = crearRepoFalso();
+  assertEquals(await actualizarSaldo({ repo, proveedor: saldoNuevo() }, CLIENTE), { ok: false, motivo: 'sin_permiso' });
+  assertEquals(estado.estadoGuardado, null);
+});
+
+Deno.test('actualizar saldo: guarda el saldo, el vencimiento y el cupo nuevos, sin dejar rastro en el registro', async () => {
+  const { repo, estado } = crearRepoFalso();
+  assertEquals(await actualizarSaldo({ repo, proveedor: saldoNuevo() }, ADMIN), { ok: true });
+  assertEquals(estado.estadoGuardado, {
+    modo: 'real', listo: true, saldo: 8, moneda: 'USDT', mensaje: 'Conexión correcta: 49 paquetes en el catálogo',
+    vence_at: '2026-11-15T00:53:31.620Z', consultas_limite: 800, consultas_usadas: 12,
+  });
+  assertEquals(estado.logs.length, 0);
+  assertEquals(estado.conexion, true);
+});
+
+Deno.test('actualizar saldo: sin conexión real y probada no llama al proveedor (apagado, simulado o conexión apagada)', async () => {
+  const sinLlamar = (extra: Partial<Proveedor> = {}) => proveedorRealFalso({ consultarSaldo: () => { throw new Error('no debe llamarse'); }, ...extra });
+  for (const [proveedor, conexion] of [
+    [crearProveedor(env({})), true],
+    [simulado(), true],
+    [sinLlamar(), false], // la conexión se apagó (llave vencida, prueba fallida...): se vuelve a encender solo con "Probar conexión"
+    [sinLlamar({ listo: () => false }), true],
+  ] as Array<[Proveedor, boolean]>) {
+    const { repo, estado } = crearRepoFalso({ conexion });
+    assertEquals(await actualizarSaldo({ repo, proveedor }, ADMIN), { ok: false, motivo: 'no_configurado' });
+    assertEquals(estado.estadoGuardado, null);
+  }
+});
+
+Deno.test('actualizar saldo: si el proveedor falla o no responde NO se apaga nada y solo se avisa', async () => {
+  for (const consultarSaldo of [
+    () => Promise.resolve({ ok: false, detalle: 'No se pudo contactar al proveedor: no respondió a tiempo' }),
+    () => Promise.resolve({ ok: false, detalle: 'El acceso a la API venció (o no incluye este juego): pide que te lo renueven.' }),
+    () => Promise.reject(new Error('sin red')),
+  ] as Array<Proveedor['consultarSaldo']>) {
+    const { repo, estado } = crearRepoFalso();
+    const r = await actualizarSaldo({ repo, proveedor: proveedorRealFalso({ consultarSaldo }) }, ADMIN);
+    assertEquals(r.ok, false);
+    assertEquals(typeof r.mensaje, 'string');
+    assertEquals(estado.estadoGuardado, null, 'una falla pasajera no cambia el estado de la conexión');
+    assertEquals(estado.conexion, true);
+  }
+});
+
+Deno.test('actualizar saldo: si no se puede guardar, avisa sin romper nada', async () => {
+  const { repo } = crearRepoFalso();
+  repo.guardarEstado = () => Promise.reject(new Error('base de datos caída'));
+  const r = await actualizarSaldo({ repo, proveedor: saldoNuevo() }, ADMIN);
+  assertEquals(r.ok, false);
+  assertEquals(r.mensaje?.includes('base de datos caída'), true);
 });

@@ -475,6 +475,37 @@ export async function catalogoProveedor(d: Deps, usuarioId: string): Promise<Res
   }
 }
 
+// ---------------------------------------------------------------------------
+// 6) Poner al día el saldo, el vencimiento y el cupo (solo admin)
+//    Es lo mismo que "Probar conexión" pero sin ruido: si sale bien, guarda los datos nuevos; si falla (sin red, proveedor
+//    caído...) NO cambia nada, porque una falla pasajera no debe apagar la entrega automática; solo avisa. Tampoco vuelve a
+//    encender una conexión que se apagó: eso se hace a propósito con "Probar conexión".
+// ---------------------------------------------------------------------------
+export interface RespuestaActualizar { ok: boolean; motivo?: 'sin_permiso' | 'no_configurado'; mensaje?: string }
+
+export async function actualizarSaldo(d: Deps, usuarioId: string): Promise<RespuestaActualizar> {
+  if (!(await d.repo.esAdmin(usuarioId))) return { ok: false, motivo: 'sin_permiso' };
+  if (d.proveedor.modo() !== 'real' || !d.proveedor.listo() || !(await d.repo.conexionLista().catch(() => false))) return { ok: false, motivo: 'no_configurado' };
+
+  let s;
+  try {
+    s = await d.proveedor.consultarSaldo();
+  } catch (e) {
+    return { ok: false, mensaje: `No se pudo consultar al proveedor: ${mensajeError(e)}` };
+  }
+  if (!s.ok) return { ok: false, mensaje: s.detalle };
+
+  try {
+    await d.repo.guardarEstado({
+      modo: 'real', listo: true, saldo: typeof s.saldo === 'number' ? s.saldo : null, moneda: s.moneda ?? null, mensaje: s.detalle,
+      vence_at: s.vence_en ?? null, consultas_limite: s.consultas_limite ?? null, consultas_usadas: s.consultas_usadas ?? null,
+    });
+  } catch (e) {
+    return { ok: false, mensaje: `No se pudo guardar: ${mensajeError(e)}` };
+  }
+  return { ok: true };
+}
+
 function configuracionTexto(diag: { modo: string; adaptador_implementado: boolean; tiene_url: boolean; tiene_llave: boolean }): string {
   if (diag.modo === 'apagado') return 'La integración está apagada: falta el secret PROVEEDOR_MODO (simulado o real).';
   if (diag.modo === 'simulado') return 'Modo simulado listo para probar (no se entrega nada de verdad).';

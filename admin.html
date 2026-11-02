@@ -321,7 +321,7 @@
                         <li><strong>Guarda la llave solo en Supabase</strong>: en <em>Edge Functions → Secrets</em> crea <span class="adm-codigo">PROVEEDOR_URL</span> (la dirección) y <span class="adm-codigo">PROVEEDOR_API_KEY</span> (la llave). Nunca la pegues en esta web, en el código ni en un chat.</li>
                         <li><strong>Si quieres ensayar antes</strong>, crea el secret <span class="adm-codigo">PROVEEDOR_MODO</span> con el valor <span class="adm-codigo">simulado</span> y pulsa <em>Probar conexión</em>. Según en qué termine el ID: <span class="adm-codigo">000</span> el jugador "no existe"; <span class="adm-codigo">111</span> el proveedor "está caído"; <span class="adm-codigo">999</span> la recarga "se rechaza"; <span class="adm-codigo">888</span> "no responde"; <span class="adm-codigo">777</span> queda "en proceso" y a los 20 segundos se entrega; <span class="adm-codigo">666</span> queda "en proceso" y luego se rechaza; <span class="adm-codigo">555</span> se queda "en proceso". Cualquier otro ID funciona. En este modo no se entrega nada de verdad.</li>
                         <li>Pon <span class="adm-codigo">PROVEEDOR_MODO</span> en <span class="adm-codigo">real</span> y pulsa <em>Probar conexión</em>: debe decir <strong>Conectada</strong> y mostrar tu saldo, cuándo vence la API y cuántas consultas de nickname te quedan. Esa prueba solo consulta datos; no compra nada.</li>
-                        <li><strong>Carga saldo en el proveedor</strong> (se paga en USDT): cada recarga automática se descuenta de ahí. Sin saldo, las entregas fallan. El saldo de arriba se actualiza con cada compra.</li>
+                        <li><strong>Carga saldo en el proveedor</strong> (se paga en USDT): cada recarga automática se descuenta de ahí. Sin saldo, las entregas fallan. El saldo de arriba se pone al día solo con cada compra y cada vez que abres este panel (o pulsas <em>Actualizar</em>).</li>
                         <li>Pulsa <em>Ver catálogo del proveedor</em> y luego <em>Asignar los que coinciden por nombre</em>: los paquetes que se llaman exactamente igual en tu tienda y en el proveedor (por ejemplo los diamantes de Free Fire) reciben su código solos. Para el resto, copia el código a mano en <strong>Paquetes → Editar → Código en el proveedor</strong>. Lo que el proveedor no vende por API (promo de primera recarga, cajas, fragmentos, Pase Booyah) se sigue entregando a mano.</li>
                         <li>Activa <em>Entregar los pedidos automáticamente</em> y haz una compra pequeña con tu propio ID antes de abrirlo a todos.</li>
                         <li>El <strong>nickname</strong> solo existe para Free Fire. Cada consulta nueva gasta una del cupo de la API (se reinicia al renovar) y los IDs ya consultados se recuerdan 24 horas. Si el cupo se acaba o el validador falla, la compra sigue normal, solo que sin nickname.</li>
@@ -667,7 +667,10 @@
                     return `<button class="adm-chip-cat" data-ir="catalogo"><span class="adm-punto ${e.clave === 'visible' ? '' : e.clave}"></span>${CATALOGOS[c.categoria].nombre}<span style="color:var(--texto-tenue); font-weight:500;">· ${e.texto}</span></button>`;
                 }).join('');
             }
+            integracionEstado = (integ && integ[0]) || integracionEstado;
             pintarEntregasResumen(r, integ && integ[0]);
+            // El saldo guardado puede estar viejo (por ejemplo, se recargó después de la última prueba): se pone al día sin frenar la pantalla.
+            refrescarSaldo(manual).then(res => { if (res.hecho) pintarEntregasResumen(r, integracionEstado); });
             if (manual) avisar('Resumen actualizado');
             actualizarInsignias();
         }
@@ -1131,7 +1134,28 @@
             if (errJuegos) document.getElementById('int-juegos').innerHTML = '<p style="color:var(--texto-tenue);">No se pudo cargar los juegos.</p>';
             else pintarJuegosIntegracion();
             pintarRegistroIntegracion(logs, errLogs);
-            if (manual) avisar('Actualizado');
+            const act = await refrescarSaldo(manual);
+            if (act.hecho) { pintarConexion(); pintarJuegosIntegracion(); }
+            if (manual) avisar(act.error ? 'No se pudo actualizar el saldo: ' + act.error : 'Actualizado', act.error ? 'error' : undefined);
+        }
+
+        // Pone al día el saldo, el vencimiento y el cupo preguntándole al proveedor (la función "integracion" solo lo guarda si sale bien:
+        // una falla pasajera no apaga nada). Sin forzar, solo si lo guardado tiene más de 3 minutos, para no molestar al proveedor.
+        let refrescandoSaldo = false;
+        async function refrescarSaldo(forzar) {
+            const e = integracionEstado;
+            if (refrescandoSaldo || !e || e.modo !== 'real' || !e.listo) return { hecho: false, error: null };
+            if (!forzar && e.verificado_at && Date.now() - new Date(e.verificado_at).getTime() < 3 * 60 * 1000) return { hecho: false, error: null };
+            refrescandoSaldo = true;
+            try {
+                const r = await llamarIntegracion('actualizar_saldo', {}, 30000);
+                if (!r.ok) return { hecho: false, error: r.mensaje || (r.motivo === 'red' || r.motivo === 'tiempo' ? 'no se pudo contactar la función de integración' : null) };
+                const { data } = await supabaseClient.rpc('admin_integracion_estado');
+                if (data && data[0]) integracionEstado = data[0];
+                return { hecho: true, error: null };
+            } finally {
+                refrescandoSaldo = false;
+            }
         }
 
         const DIA_MS = 24 * 60 * 60 * 1000;
@@ -1196,7 +1220,7 @@
                     ${saldo}
                     ${datoVencimiento(e)}
                     ${datoCupo(e)}
-                    <div class="adm-dato"><b>Última prueba</b><span>${e.verificado_at ? escHtml(tiempoRelativo(e.verificado_at)) : 'Nunca'}</span></div>
+                    <div class="adm-dato"><b>Última comprobación</b><span>${e.verificado_at ? escHtml(tiempoRelativo(e.verificado_at)) : 'Nunca'}</span></div>
                 </div>
                 <div class="adm-conexion-acciones">
                     <button class="btn-primary" id="btn-probar-conexion" type="button" onclick="probarConexion()">Probar conexión</button>
