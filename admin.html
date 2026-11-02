@@ -392,18 +392,25 @@
 
     <!-- Modal: catálogo del proveedor -->
     <div class="modal-overlay" id="modal-catalogo-proveedor">
-        <div class="modal-box" style="max-width: 540px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-box adm-prov-modal" role="dialog" aria-labelledby="cat-prov-titulo">
             <span class="material-icons close-btn" onclick="cerrarCatalogoProveedor()">close</span>
-            <div class="modal-header">
-                <h2>Catálogo del proveedor</h2>
-                <p id="cat-prov-sub">Copia el código de cada producto tal cual en <strong>Paquetes → Editar → Código en el proveedor</strong>.</p>
-            </div>
-            <div class="adm-cat-acciones" id="cat-prov-acciones" style="display:none;">
-                <button class="btn-primary btn-sm" id="btn-asignar-codigos" type="button" onclick="asignarCodigosPorNombre()">Asignar los que coinciden por nombre</button>
-                <span class="adm-nota">Pone el código solo a los paquetes de tu tienda que se llaman exactamente igual que en el proveedor y todavía no tienen código.</span>
+            <div class="adm-prov-cab">
+                <div class="adm-prov-titulo">
+                    <h2 id="cat-prov-titulo">Catálogo del proveedor</h2>
+                    <span class="adm-prov-saldo" id="cat-prov-saldo" style="display:none;"></span>
+                </div>
+                <p id="cat-prov-sub">Lo que vende tu proveedor y lo que te cuesta cada paquete. El código de cada uno es su nombre exacto.</p>
             </div>
             <div id="cat-prov-msg" class="msg-box error"></div>
-            <div class="adm-lista-codigos" id="cat-prov-body"></div>
+            <div class="adm-prov-herramientas" id="cat-prov-herramientas" style="display:none;">
+                <div class="adm-prov-tabs" id="cat-prov-tabs" role="tablist" aria-label="Juegos del proveedor"></div>
+                <label class="adm-prov-buscar">
+                    <span class="material-icons">search</span>
+                    <input type="search" id="cat-prov-buscar" placeholder="Buscar un paquete…" autocomplete="off" aria-label="Buscar un paquete del proveedor">
+                </label>
+                <div class="adm-prov-asignar" id="cat-prov-acciones"></div>
+            </div>
+            <div class="adm-prov-lista" id="cat-prov-body"></div>
         </div>
     </div>
 
@@ -1256,31 +1263,167 @@
             await pedirCatalogoProveedor();
         }
 
+        // Vista del catálogo: pestañas por juego, grupos por tipo de producto y un buscador. Cada producto dice si ya está
+        // vinculado a un paquete de tu tienda (tiene su código), si se llama igual que uno (se puede vincular con un clic) o si no está.
+        const vistaCatalogoProv = { juego: '', busqueda: '' };
+        const GRUPOS_CATALOGO_PROV = {
+            recargas: ['Recargas', 'diamond'],
+            tarjetas: ['Tarjetas semanales y mensual', 'event_repeat'],
+            nivel: ['Aumento de nivel', 'trending_up'],
+            pases: ['Pases y paquetes especiales', 'military_tech']
+        };
+        const ORDEN_GRUPOS_PROV = ['recargas', 'tarjetas', 'nivel', 'pases'];
+
+        const juegoDeProveedor = p => p.juego || 'Catálogo';
+        const nombreJuegoTienda = slug => (juegosAdmin.find(j => j.slug === slug) || {}).nombre || '';
+
+        function grupoDeProveedor(p) {
+            if (p.tipo === 'tarjeta') return 'tarjetas';
+            if (p.tipo === 'nivel') return 'nivel';
+            return /^\d/.test(p.codigo) ? 'recargas' : 'pases'; // "341 Diamantes", "51 Golds", "60 UC" son recargas; "Strike Pass Elite", "Pase Crepúsculo" son pases
+        }
+
+        // El título de las recargas toma la unidad del juego: Diamantes, Golds, UC...
+        function tituloGrupoProv(clave, items) {
+            if (clave === 'recargas') {
+                const unidades = [...new Set(items.map(p => (p.codigo.match(/^\d+\s+(.+)$/) || [])[1]).filter(Boolean))];
+                if (unidades.length === 1) return unidades[0];
+            }
+            return GRUPOS_CATALOGO_PROV[clave][0];
+        }
+
+        function vinculoCatalogoProv(p) {
+            const asignados = cacheePaquetes.filter(q => q.codigo_proveedor === p.codigo);
+            if (asignados.length) return { estado: 'vinculado', nombres: asignados.map(q => q.nombre) };
+            const igual = cacheePaquetes.find(q => !q.codigo_proveedor && q.nombre === p.codigo && (!p.juego || nombreJuegoTienda(q.juego) === p.juego));
+            return igual ? { estado: 'coincide', nombres: [igual.nombre] } : { estado: 'libre', nombres: [] };
+        }
+
+        // Paquetes de la tienda que todavía no tienen código y se llaman EXACTAMENTE igual que uno del proveedor (del mismo juego).
+        function coincidenciasPorNombre() {
+            if (!catalogoProveedor || !Array.isArray(catalogoProveedor.paquetes)) return [];
+            const existe = (juego, nombre) => catalogoProveedor.paquetes.some(p => p.codigo === nombre && (!p.juego || p.juego === juego));
+            return cacheePaquetes.filter(q => !q.codigo_proveedor && existe(nombreJuegoTienda(q.juego), q.nombre));
+        }
+
+        function filaCatalogoProv(p, tuTiendaVende) {
+            const v = vinculoCatalogoProv(p);
+            const comillas = n => '«' + escHtml(n) + '»';
+            let marca = '';
+            if (v.estado === 'vinculado') marca = `<span class="adm-prov-tag ok"><span class="material-icons">check_circle</span>Ya tiene código: ${v.nombres.map(comillas).join(', ')}</span>`;
+            else if (v.estado === 'coincide') marca = `<span class="adm-prov-tag coincide"><span class="material-icons">link</span>Se llama igual que ${comillas(v.nombres[0])} de tu tienda</span>`;
+            else if (tuTiendaVende) marca = '<span class="adm-prov-tag"><span class="material-icons">remove_circle_outline</span>Aún no está en tu tienda</span>';
+            const zona = p.requiere_zona ? '<span class="adm-prov-tag zona"><span class="material-icons">public</span>Pide la zona del jugador (aún no soportado)</span>' : '';
+            return `<div class="adm-prov-item ${v.estado}">
+                <div class="adm-prov-info"><strong>${escHtml(p.codigo)}</strong><div class="adm-prov-meta">${marca}${zona}</div></div>
+                <div class="adm-prov-precio">${Number(p.precio).toFixed(2)}<small>${escHtml(catalogoProveedor.moneda || 'USDT')}</small></div>
+                <button class="adm-prov-copiar" type="button" data-copiar="${escAttr(p.codigo)}" data-aviso="Código copiado" aria-label="Copiar el código de ${escAttr(p.codigo)}" title="Copiar código"><span class="material-icons">content_copy</span></button>
+            </div>`;
+        }
+
+        function pintarCatalogoProveedor() {
+            if (!catalogoProveedor || !Array.isArray(catalogoProveedor.paquetes)) return;
+            const todos = catalogoProveedor.paquetes;
+            const q = normalizar(vistaCatalogoProv.busqueda.trim());
+            const coincide = p => !q || normalizar(p.codigo).includes(q);
+            const vendidos = new Set(cacheePaquetes.map(p => nombreJuegoTienda(p.juego)).filter(Boolean));
+            const juegos = [...new Set(todos.map(juegoDeProveedor))].sort((a, b) => (vendidos.has(b) - vendidos.has(a)) || a.localeCompare(b, 'es'));
+            if (!juegos.includes(vistaCatalogoProv.juego)) vistaCatalogoProv.juego = juegos[0] || '';
+            const cuantos = j => todos.filter(p => juegoDeProveedor(p) === j && coincide(p)).length;
+
+            // Al buscar, si en este juego no hay nada pero en otro sí, se salta a ese.
+            if (q && cuantos(vistaCatalogoProv.juego) === 0) {
+                const otro = juegos.find(j => cuantos(j) > 0);
+                if (otro) vistaCatalogoProv.juego = otro;
+            }
+
+            const tabs = document.getElementById('cat-prov-tabs');
+            tabs.style.display = juegos.length > 1 ? 'flex' : 'none';
+            tabs.innerHTML = juegos.map(j => {
+                const activo = j === vistaCatalogoProv.juego;
+                return `<button type="button" role="tab" aria-selected="${activo}" class="adm-prov-tab${activo ? ' activo' : ''}${vendidos.has(j) ? ' tuyo' : ''}" data-juego="${escAttr(j)}"${vendidos.has(j) ? ' title="Tu tienda vende este juego"' : ''}>${escHtml(j)}<span class="n">${cuantos(j)}</span></button>`;
+            }).join('');
+
+            // La barra de arriba: asignar de golpe lo que se llama igual
+            const pendientes = coincidenciasPorNombre();
+            const yaVinculados = todos.filter(p => vinculoCatalogoProv(p).estado === 'vinculado').length;
+            const barra = document.getElementById('cat-prov-acciones');
+            if (pendientes.length) {
+                barra.className = 'adm-prov-asignar hay';
+                barra.innerHTML = `<button class="btn-primary btn-sm" id="btn-asignar-codigos" type="button" onclick="asignarCodigosPorNombre()"><span class="material-icons">link</span>Asignar ${pendientes.length} que ${plural(pendientes.length, 'coincide', 'coinciden')}</button>
+                    <span class="adm-nota">${pendientes.length === 1 ? 'Un paquete de tu tienda se llama' : pendientes.length + ' paquetes de tu tienda se llaman'} igual que en el proveedor y todavía no ${plural(pendientes.length, 'tiene', 'tienen')} su código.</span>`;
+            } else if (yaVinculados) {
+                barra.className = 'adm-prov-asignar listo';
+                barra.innerHTML = `<span class="material-icons">check_circle</span><span>Todo lo que se llama igual ya tiene su código (${yaVinculados} ${plural(yaVinculados, 'paquete', 'paquetes')}).</span>`;
+            } else {
+                barra.className = 'adm-prov-asignar listo';
+                barra.innerHTML = '<span class="material-icons">info</span><span>Ningún paquete de tu tienda se llama igual que uno del proveedor: copia el código a mano en Paquetes → Editar.</span>';
+            }
+
+            // La lista del juego elegido, por grupos
+            const juego = vistaCatalogoProv.juego;
+            const delJuego = todos.filter(p => juegoDeProveedor(p) === juego && coincide(p));
+            const tuTiendaVende = vendidos.has(juego) || juego === 'Catálogo';
+            const porGrupo = {};
+            delJuego.forEach(p => { const g = grupoDeProveedor(p); (porGrupo[g] = porGrupo[g] || []).push(p); });
+            let html = tuTiendaVende ? '' : `<div class="adm-prov-aviso"><span class="material-icons">info</span><span>Tu tienda todavía no vende <strong>${escHtml(juego)}</strong>, así que estos códigos no se usan por ahora.</span></div>`;
+            ORDEN_GRUPOS_PROV.forEach(clave => {
+                const items = porGrupo[clave];
+                if (!items) return;
+                items.sort((a, b) => a.precio - b.precio || a.codigo.localeCompare(b.codigo, 'es'));
+                html += `<div class="adm-prov-grupo"><span class="material-icons">${GRUPOS_CATALOGO_PROV[clave][1]}</span>${escHtml(tituloGrupoProv(clave, items))}<span class="n">${items.length}</span></div>
+                    <div class="adm-prov-filas">${items.map(p => filaCatalogoProv(p, tuTiendaVende)).join('')}</div>`;
+            });
+            if (!delJuego.length) html += `<div class="adm-vacio" style="padding:30px 16px;">${q ? `Ningún paquete de ${escHtml(juego)} se llama «${escHtml(vistaCatalogoProv.busqueda.trim())}».` : 'El proveedor no devolvió paquetes de este juego.'}</div>`;
+            document.getElementById('cat-prov-body').innerHTML = html;
+        }
+
+        function prepararCatalogoProveedor() {
+            const tabs = document.getElementById('cat-prov-tabs');
+            if (tabs.dataset.listo) return;
+            tabs.dataset.listo = '1';
+            tabs.addEventListener('click', e => {
+                const b = e.target.closest('[data-juego]');
+                if (!b) return;
+                vistaCatalogoProv.juego = b.dataset.juego;
+                pintarCatalogoProveedor();
+                document.getElementById('cat-prov-body').scrollTop = 0;
+            });
+            document.getElementById('cat-prov-buscar').addEventListener('input', e => {
+                vistaCatalogoProv.busqueda = e.target.value;
+                pintarCatalogoProveedor();
+                document.getElementById('cat-prov-body').scrollTop = 0;
+            });
+        }
+
         async function abrirCatalogoProveedor() {
             const msg = document.getElementById('cat-prov-msg');
             const cuerpo = document.getElementById('cat-prov-body');
-            const acciones = document.getElementById('cat-prov-acciones');
+            const herramientas = document.getElementById('cat-prov-herramientas');
+            const buscar = document.getElementById('cat-prov-buscar');
+            prepararCatalogoProveedor();
             msg.style.display = 'none';
-            acciones.style.display = 'none';
-            cuerpo.innerHTML = '<div class="adm-vacio" style="padding:30px 16px;">Cargando…</div>';
+            herramientas.style.display = 'none';
+            document.getElementById('cat-prov-saldo').style.display = 'none';
+            buscar.value = ''; vistaCatalogoProv.busqueda = '';
+            cuerpo.innerHTML = '<div class="adm-vacio" style="padding:40px 16px;">Cargando…</div>';
             document.getElementById('modal-catalogo-proveedor').classList.add('abierto');
 
-            const r = await pedirCatalogoProveedor();
+            const [r] = await Promise.all([pedirCatalogoProveedor(), cacheePaquetes.length ? null : cargarPaquetes()]);
             if (!r.ok) {
                 cuerpo.innerHTML = '';
                 msg.style.display = 'block';
                 msg.textContent = r.mensaje || 'No se pudo leer el catálogo del proveedor. Intenta de nuevo.';
                 return;
             }
-            const saldo = r.saldo !== null && r.saldo !== undefined ? ` Tu saldo allí: ${numero2(r.saldo)} ${escHtml(r.moneda || '')}.` : '';
-            document.getElementById('cat-prov-sub').innerHTML = `Copia el código de cada producto tal cual en <strong>Paquetes → Editar → Código en el proveedor</strong>, o asigna de golpe los que se llaman igual.${saldo}`;
-            acciones.style.display = r.paquetes.length ? 'flex' : 'none';
-            cuerpo.innerHTML = r.paquetes.length === 0
-                ? '<div class="adm-vacio" style="padding:30px 16px;">El proveedor no devolvió paquetes.</div>'
-                : r.paquetes.map(p => `<div class="adm-fila-codigo">
-                    <div><strong>${escHtml(p.codigo)}</strong><span class="precio">${p.juego ? escHtml(p.juego) + ' · ' : ''}Te cuesta ${escHtml(r.moneda || '')} ${Number(p.precio).toFixed(2)}${p.requiere_zona ? ' · necesita la zona del jugador (la web aún no la pide)' : ''}</span></div>
-                    <button class="adm-copiar" type="button" data-copiar="${escAttr(p.codigo)}" data-aviso="Código copiado"><span class="material-icons">content_copy</span>Copiar</button>
-                </div>`).join('');
+            if (r.saldo !== null && r.saldo !== undefined) {
+                const chip = document.getElementById('cat-prov-saldo');
+                chip.innerHTML = `<span class="material-icons">account_balance_wallet</span>${numero2(r.saldo)} ${escHtml(r.moneda || '')}`;
+                chip.style.display = 'inline-flex';
+            }
+            herramientas.style.display = r.paquetes.length ? 'block' : 'none';
+            if (!r.paquetes.length) { cuerpo.innerHTML = '<div class="adm-vacio" style="padding:40px 16px;">El proveedor no devolvió paquetes.</div>'; return; }
+            pintarCatalogoProveedor();
         }
 
         // Pone el código a los paquetes de la tienda que se llaman EXACTAMENTE igual que en el catálogo del proveedor
@@ -1288,13 +1431,10 @@
         async function asignarCodigosPorNombre() {
             if (!catalogoProveedor || !Array.isArray(catalogoProveedor.paquetes)) return;
             const btn = document.getElementById('btn-asignar-codigos');
-            btn.disabled = true;
+            if (btn) btn.disabled = true;
             try {
                 if (!cacheePaquetes.length) await cargarPaquetes();
-                const nombreDeJuego = slug => (juegosAdmin.find(j => j.slug === slug) || {}).nombre || '';
-                const delProveedor = new Set(catalogoProveedor.paquetes.map(p => (p.juego || '') + '|' + p.codigo));
-                const existe = (juego, nombre) => delProveedor.has(juego + '|' + nombre) || delProveedor.has('|' + nombre);
-                const coinciden = cacheePaquetes.filter(p => !p.codigo_proveedor && existe(nombreDeJuego(p.juego), p.nombre));
+                const coinciden = coincidenciasPorNombre();
                 if (coinciden.length === 0) { avisar('No hay paquetes sin código que se llamen igual que en el proveedor.'); return; }
                 if (!confirm(`Se asignará el código a ${coinciden.length} ${plural(coinciden.length, 'paquete', 'paquetes')}:\n\n${coinciden.map(p => '• ' + p.nombre).join('\n')}\n\nLa entrega automática no se enciende sola: eso lo decides tú en cada juego.`)) return;
                 let bien = 0, mal = 0;
@@ -1306,7 +1446,8 @@
                 await cargarPaquetes();
                 await cargarIntegraciones();
             } finally {
-                btn.disabled = false;
+                if (btn) btn.disabled = false;
+                pintarCatalogoProveedor();
             }
         }
 
