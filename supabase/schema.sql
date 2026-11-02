@@ -1521,9 +1521,10 @@ grant execute on function public.admin_ventas_catalogos(integer) to authenticate
 -- ============================================================
 -- INTEGRACIÓN CON EL PROVEEDOR DE RECARGAS (27 de octubre de 2026)
 -- Nickname por ID y entrega automática. Ver el README, sección "Integración
--- con el proveedor de recargas". Son 4 migraciones, en este orden:
+-- con el proveedor de recargas". Son 5 migraciones, en este orden:
 --   integracion_proveedor_api_base, integracion_proveedor_api_ayudas_servicio,
---   integracion_proveedor_api_info_juego y entrega_pasar_a_manual.
+--   integracion_proveedor_api_info_juego, entrega_pasar_a_manual e
+--   integracion_proveedor_seguimiento_vigencia (2 de noviembre de 2026).
 -- Las funciones "entrega_*" e "integracion_*" las usa SOLO la Edge Function
 -- "integracion" (rol service_role): nadie más puede ejecutarlas.
 -- ============================================================
@@ -2202,3 +2203,267 @@ $$;
 
 revoke all on function public.entrega_pasar_a_manual(uuid, text) from public, anon, authenticated;
 grant execute on function public.entrega_pasar_a_manual(uuid, text) to service_role;
+
+-- >>> migración: integracion_proveedor_seguimiento_vigencia
+-- Seguimiento de entregas pendientes, vigencia de la API y cupo de consultas de ID.
+-- Todo es compatible con la función y la web que ya están publicadas (columnas y estados nuevos, parámetros con valor por defecto).
+
+-- 1) Estado de la conexión: cuándo vence la API y cuántas consultas de ID lleva gastadas
+alter table public.integracion_estado
+  add column vence_at timestamptz,
+  add column consultas_limite integer,
+  add column consultas_usadas integer;
+
+-- 2) Nuevo estado de entrega: el proveedor ya aceptó el pedido y lo está aplicando
+alter table public.pedidos drop constraint pedidos_entrega_check;
+alter table public.pedidos add constraint pedidos_entrega_check
+  check (entrega in ('manual', 'auto_pendiente', 'auto_en_proceso', 'auto_confirmando', 'auto_entregado', 'auto_fallo', 'auto_revisar'));
+
+-- 3) Los nombres del catálogo del proveedor llevan tildes y paréntesis ("Tarjeta Semanal Básica (Instantánea)")
+alter table public.paquetes_proveedor drop constraint paquetes_proveedor_codigo_check;
+alter table public.paquetes_proveedor add constraint paquetes_proveedor_codigo_check
+  check (codigo ~ '^[A-Za-z0-9._:/@+()ÁÉÍÓÚÜÑáéíóúüñ -]{1,80}$');
+
+create or replace function public.admin_guardar_proveedor_paquete(p_paquete_id integer, p_codigo text)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_codigo text := nullif(trim(coalesce(p_codigo, '')), '');
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if not exists (select 1 from public.paquetes_ff where id = p_paquete_id) then
+    raise exception 'Paquete no encontrado';
+  end if;
+  if v_codigo is null then
+    delete from public.paquetes_proveedor where paquete_id = p_paquete_id;
+    update public.paquetes_ff set entrega_auto = false where id = p_paquete_id;
+  else
+    if v_codigo !~ '^[A-Za-z0-9._:/@+()ÁÉÍÓÚÜÑáéíóúüñ -]{1,80}$' then
+      raise exception 'El código del proveedor solo puede llevar letras (con tildes), números, paréntesis y . _ : / @ + -';
+    end if;
+    insert into public.paquetes_proveedor (paquete_id, codigo) values (p_paquete_id, v_codigo)
+      on conflict (paquete_id) do update set codigo = excluded.codigo, updated_at = now();
+    update public.paquetes_ff set entrega_auto = true where id = p_paquete_id;
+  end if;
+end;
+$$;
+
+-- 4) Guardar el estado de la conexión con los datos nuevos (los tres últimos son opcionales: si no vienen, se conservan)
+drop function public.integracion_guardar_estado(text, boolean, numeric, text, text);
+create function public.integracion_guardar_estado(
+  p_modo text, p_listo boolean, p_saldo numeric, p_moneda text, p_mensaje text,
+  p_vence timestamptz default null, p_consultas_limite integer default null, p_consultas_usadas integer default null
+)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  update public.integracion_estado
+    set modo = p_modo, listo = p_listo, saldo = p_saldo, moneda = left(p_moneda, 10),
+        mensaje = left(p_mensaje, 300), verificado_at = now(),
+        vence_at = case when p_modo = 'simulado' then null else coalesce(p_vence, vence_at) end,
+        consultas_limite = case when p_modo = 'simulado' then null else coalesce(p_consultas_limite, consultas_limite) end,
+        consultas_usadas = case when p_modo = 'simulado' then null else coalesce(p_consultas_usadas, consultas_usadas) end
+    where id = 1;
+end;
+$$;
+
+-- Pone al día solo el saldo y el cupo de consultas con lo que dijo el proveedor en su última respuesta
+create function public.integracion_actualizar_uso(p_saldo numeric default null, p_consultas_restantes integer default null)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  update public.integracion_estado
+    set saldo = case when p_saldo is not null then round(p_saldo, 2) else saldo end,
+        consultas_usadas = case when p_consultas_restantes is not null and consultas_limite is not null
+                                then greatest(0, consultas_limite - p_consultas_restantes) else consultas_usadas end
+    where id = 1;
+end;
+$$;
+
+revoke execute on function public.integracion_guardar_estado(text, boolean, numeric, text, text, timestamptz, integer, integer) from public, anon, authenticated;
+revoke execute on function public.integracion_actualizar_uso(numeric, integer) from public, anon, authenticated;
+grant execute on function public.integracion_guardar_estado(text, boolean, numeric, text, text, timestamptz, integer, integer) to service_role;
+grant execute on function public.integracion_actualizar_uso(numeric, integer) to service_role;
+
+-- 5) La función necesita saber cuántos intentos lleva el pedido (cada intento usa su propia clave en el proveedor)
+drop function public.entrega_pedido_info(uuid);
+create function public.entrega_pedido_info(p_pedido uuid)
+returns table (id uuid, usuario_id uuid, tipo text, estado text, entrega text, entrega_at timestamptz, id_jugador text, paquete_id integer, juego text, intentos integer)
+language sql stable
+security definer set search_path = public
+as $$
+  select pe.id, pe.usuario_id, pe.tipo, pe.estado, pe.entrega, pe.entrega_at, pe.id_jugador_ff, pe.paquete_id,
+         coalesce(pa.juego, 'free-fire'), pe.entrega_intentos
+  from public.pedidos pe
+  left join public.paquetes_ff pa on pa.id = pe.paquete_id
+  where pe.id = p_pedido;
+$$;
+revoke execute on function public.entrega_pedido_info(uuid) from public, anon, authenticated;
+grant execute on function public.entrega_pedido_info(uuid) to service_role;
+
+-- 6) Cerrar una entrega: ahora también 'confirmando' (el proveedor la está aplicando) y se puede cerrar desde "sin confirmar" o
+--    "confirmando". Si otra llamada ya dejó el pedido en ese mismo estado, no es un error. Un pedido que ya no está
+--    "confirmado" (cancelado o entregado a mano) nunca se toca.
+create or replace function public.entrega_cerrar(p_pedido uuid, p_resultado text, p_ref text, p_detalle text, p_simulado boolean default false)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_destino text;
+begin
+  v_destino := case p_resultado
+    when 'entregado' then 'auto_entregado'
+    when 'fallo' then 'auto_fallo'
+    when 'revisar' then 'auto_revisar'
+    when 'confirmando' then 'auto_confirmando'
+  end;
+  if v_destino is null then
+    raise exception 'Resultado no válido';
+  end if;
+
+  if p_resultado = 'entregado' then
+    update public.pedidos
+      set entrega = 'auto_entregado',
+          entrega_ref = left(p_ref, 120),
+          entrega_detalle = case when p_simulado then 'SIMULADO: no se entregó nada de verdad' else null end,
+          entrega_at = now(),
+          estado = case when p_simulado then estado else 'completado' end
+      where id = p_pedido and estado = 'confirmado' and entrega in ('auto_en_proceso', 'auto_confirmando', 'auto_revisar');
+  elsif p_resultado = 'fallo' then
+    update public.pedidos
+      set entrega = 'auto_fallo', entrega_detalle = left(coalesce(p_detalle, 'El proveedor no pudo hacer la entrega'), 200), entrega_at = now()
+      where id = p_pedido and estado = 'confirmado' and entrega in ('auto_en_proceso', 'auto_confirmando', 'auto_revisar');
+  elsif p_resultado = 'revisar' then
+    update public.pedidos
+      set entrega = 'auto_revisar', entrega_detalle = left(coalesce(p_detalle, 'No sabemos si el proveedor entregó: revisa su panel'), 200), entrega_at = now()
+      where id = p_pedido and estado = 'confirmado' and entrega in ('auto_en_proceso', 'auto_confirmando');
+  else
+    update public.pedidos
+      set entrega = 'auto_confirmando', entrega_detalle = left(coalesce(p_detalle, 'El proveedor está aplicando la recarga'), 200), entrega_at = now()
+      where id = p_pedido and estado = 'confirmado' and entrega in ('auto_en_proceso', 'auto_revisar');
+  end if;
+
+  if not found then
+    if exists (select 1 from public.pedidos where id = p_pedido and entrega = v_destino) then
+      return;
+    end if;
+    raise exception 'El pedido no está en proceso de entrega';
+  end if;
+end;
+$$;
+
+-- 7) Panel admin: lo que devuelve el estado de la conexión (vencimiento y cupo), pedidos protegidos mientras el
+--    proveedor los aplica, y los contadores del Resumen
+drop function public.admin_integracion_estado();
+create function public.admin_integracion_estado()
+returns table (modo text, listo boolean, saldo numeric, moneda text, mensaje text, verificado_at timestamptz, vence_at timestamptz, consultas_limite integer, consultas_usadas integer)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  return query select ie.modo, ie.listo, ie.saldo, ie.moneda, ie.mensaje, ie.verificado_at, ie.vence_at, ie.consultas_limite, ie.consultas_usadas
+    from public.integracion_estado ie where ie.id = 1;
+end;
+$$;
+revoke execute on function public.admin_integracion_estado() from public;
+grant execute on function public.admin_integracion_estado() to authenticated;
+
+create or replace function public.admin_actualizar_pedido(p_id uuid, p_estado text, p_nota text default null)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_actual text;
+  v_entrega text;
+  v_entrega_at timestamptz;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if p_estado is null then
+    raise exception 'Falta el estado del pedido';
+  end if;
+
+  select estado, entrega, entrega_at into v_actual, v_entrega, v_entrega_at
+    from public.pedidos where id = p_id for update;
+  if not found then
+    raise exception 'Ese pedido no existe';
+  end if;
+
+  if p_estado <> v_actual and not (
+       (v_actual = 'pendiente'  and p_estado in ('confirmado', 'cancelado'))
+    or (v_actual = 'confirmado' and p_estado in ('completado', 'cancelado'))
+  ) then
+    raise exception 'No se puede pasar un pedido de "%" a "%"', v_actual, p_estado;
+  end if;
+
+  if p_estado <> v_actual and v_entrega = 'auto_en_proceso' and v_entrega_at > now() - interval '10 minutes' then
+    raise exception 'La entrega automática de este pedido está en proceso. Espera un momento y vuelve a intentar.';
+  end if;
+  if p_estado <> v_actual and v_entrega = 'auto_confirmando' and v_entrega_at > now() - interval '30 minutes' then
+    raise exception 'El proveedor está aplicando esta recarga. Consulta su estado antes de entregarla a mano o cancelarla.';
+  end if;
+
+  update public.pedidos
+    set estado = p_estado,
+        nota_admin = coalesce(p_nota, nota_admin)
+    where id = p_id;
+end;
+$$;
+
+create or replace function public.admin_resumen_tienda()
+returns table (
+  solicitudes_pendientes bigint, monto_solicitudes numeric, por_entregar bigint,
+  total_usuarios bigint, usuarios_hoy bigint, saldo_clientes numeric,
+  ventas_hoy numeric, ventas_mes numeric, n_ventas_hoy bigint,
+  recargado_hoy numeric, recargado_mes numeric,
+  cuentas_disponibles bigint, ultima_venta timestamptz,
+  entregas_problema bigint, entregas_auto_pendientes bigint
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+declare
+  v_hoy date := (now() at time zone 'America/Lima')::date;
+  v_mes date := date_trunc('month', now() at time zone 'America/Lima')::date;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select
+      (select count(*) from public.pedidos where tipo = 'recarga_saldo' and estado = 'pendiente'),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo = 'recarga_saldo' and estado = 'pendiente'),
+      (select count(*) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado = 'confirmado'),
+      (select count(*) from public.perfiles),
+      (select count(*) from public.perfiles where (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(saldo), 0) from public.perfiles),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date >= v_mes),
+      (select count(*) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo = 'recarga_saldo' and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date = v_hoy),
+      (select coalesce(sum(monto), 0) from public.pedidos where tipo = 'recarga_saldo' and estado in ('confirmado', 'completado') and (created_at at time zone 'America/Lima')::date >= v_mes),
+      (select count(*) from public.cuentas_ff where estado = 'disponible'),
+      (select max(created_at) from public.pedidos where tipo in ('compra_diamantes', 'compra_cuenta') and estado in ('confirmado', 'completado')),
+      (select count(*) from public.pedidos where tipo = 'compra_diamantes' and estado = 'confirmado'
+         and (entrega in ('auto_fallo', 'auto_revisar') or (entrega = 'auto_confirmando' and entrega_at < now() - interval '30 minutes'))),
+      (select count(*) from public.pedidos where tipo = 'compra_diamantes' and estado = 'confirmado'
+         and (entrega in ('auto_pendiente', 'auto_en_proceso') or (entrega = 'auto_confirmando' and entrega_at >= now() - interval '30 minutes')));
+end;
+$$;

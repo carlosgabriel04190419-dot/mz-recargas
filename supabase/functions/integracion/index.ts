@@ -5,6 +5,7 @@
 //
 //   accion: 'validar_jugador'  { juego, id_jugador, zona? }  → nickname del jugador
 //   accion: 'entregar_pedido'  { pedido_id, forzar? }        → entrega automática de un pedido pagado
+//   accion: 'revisar_pedido'   { pedido_id }                 → en qué quedó una entrega que no terminó (la consulta al proveedor)
 //   accion: 'probar'           { solo_config? }              → solo admin: prueba la conexión
 //   accion: 'catalogo'         {}                            → solo admin: productos del proveedor y su precio
 //
@@ -14,7 +15,7 @@
 //   PROVEEDOR_API_KEY   la llave de la API (solo modo real)
 // ============================================================================
 import { clienteServicio, cabecerasCors, repoSupabase, responder, usuarioDeLaPeticion } from './comun.ts';
-import { catalogoProveedor, entregarPedido, probarIntegracion, validarJugador } from './logica.ts';
+import { catalogoProveedor, entregarPedido, probarIntegracion, revisarPedido, validarJugador } from './logica.ts';
 import { crearProveedor } from './proveedor.ts';
 
 Deno.serve(async (req: Request) => {
@@ -44,6 +45,8 @@ Deno.serve(async (req: Request) => {
         return responder(req, await validarJugador(deps, usuario.id, cuerpo));
       case 'entregar_pedido':
         return responder(req, await entregarPedido(deps, usuario.id, cuerpo));
+      case 'revisar_pedido':
+        return responder(req, await revisarPedido(deps, usuario.id, cuerpo));
       case 'probar':
         return responder(req, await probarIntegracion(deps, usuario.id, cuerpo));
       case 'catalogo':

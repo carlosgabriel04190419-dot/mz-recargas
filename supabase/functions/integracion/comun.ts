@@ -124,7 +124,19 @@ export function repoSupabase(admin: SupabaseClient): Repo {
     async guardarEstado(e: EstadoGuardado) {
       const { error } = await admin.rpc('integracion_guardar_estado', {
         p_modo: e.modo, p_listo: e.listo, p_saldo: e.saldo, p_moneda: e.moneda, p_mensaje: e.mensaje,
+        p_vence: e.vence_at ?? null, p_consultas_limite: e.consultas_limite ?? null, p_consultas_usadas: e.consultas_usadas ?? null,
       });
+      if (error) throw error;
+    },
+
+    async conexionLista() {
+      const { data, error } = await admin.from('integracion_estado').select('listo').eq('id', 1).maybeSingle();
+      if (error) throw error;
+      return data?.listo === true;
+    },
+
+    async actualizarUso(saldo, consultasRestantes) {
+      const { error } = await admin.rpc('integracion_actualizar_uso', { p_saldo: saldo, p_consultas_restantes: consultasRestantes });
       if (error) throw error;
     },
   };

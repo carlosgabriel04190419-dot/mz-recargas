@@ -317,13 +317,16 @@
 
                     <div class="adm-seccion"><span class="material-icons">menu_book</span> Cómo conectarlo</div>
                     <ol class="adm-pasos">
-                        <li><strong>Pide a tu proveedor</strong> la dirección de su API (URL), tu llave (API key) y su documentación: cómo consultar un jugador por ID, cómo crear una recarga, cómo ver el saldo y los códigos de cada producto. Si te da acceso por tiempo limitado, anota cuándo vence.</li>
-                        <li><strong>Guarda la llave solo en Supabase</strong>: en <em>Edge Functions → Secrets</em> crea <span class="adm-codigo">PROVEEDOR_URL</span> y <span class="adm-codigo">PROVEEDOR_API_KEY</span>. Nunca la pegues en esta web, en el código ni en un chat.</li>
-                        <li><strong>Prueba primero en modo simulado</strong>: crea el secret <span class="adm-codigo">PROVEEDOR_MODO</span> con el valor <span class="adm-codigo">simulado</span> y pulsa <em>Probar conexión</em>. Con un ID que termine en <span class="adm-codigo">000</span> el jugador "no existe"; en <span class="adm-codigo">111</span> el proveedor "está caído"; en <span class="adm-codigo">999</span> la recarga "se rechaza"; en <span class="adm-codigo">888</span> "no responde". Cualquier otro ID funciona y no se entrega nada de verdad.</li>
-                        <li><strong>Completa el adaptador</strong> con la documentación de la API (archivo <span class="adm-codigo">supabase/functions/integracion/proveedor.ts</span>, las funciones marcadas "MODO REAL"). Es lo único que falta programar; pásale la documentación a quien mantiene la web.</li>
-                        <li>Cambia <span class="adm-codigo">PROVEEDOR_MODO</span> a <span class="adm-codigo">real</span> y pulsa <em>Probar conexión</em>: debe decir <strong>Conectada</strong>.</li>
-                        <li>En <strong>Paquetes → Editar</strong> escribe el código de cada producto en el proveedor (si el proveedor tiene catálogo, <em>Ver catálogo del proveedor</em> te lo muestra para copiarlo). Los paquetes sin código se siguen entregando a mano.</li>
-                        <li>Activa los interruptores de cada juego (primero el nickname, si tu proveedor lo ofrece, y cuando todo salga bien la entrega automática). Haz una compra pequeña de prueba antes de abrirlo a todos.</li>
+                        <li><strong>Consigue de tu proveedor</strong> la dirección de su API (URL) y tu llave (API key). El acceso suele ser por tiempo limitado (por ejemplo 15 días): al probar la conexión verás aquí cuándo vence. <strong>Renovarlo no cambia la llave</strong>, así que no tienes que tocar nada más.</li>
+                        <li><strong>Guarda la llave solo en Supabase</strong>: en <em>Edge Functions → Secrets</em> crea <span class="adm-codigo">PROVEEDOR_URL</span> (la dirección) y <span class="adm-codigo">PROVEEDOR_API_KEY</span> (la llave). Nunca la pegues en esta web, en el código ni en un chat.</li>
+                        <li><strong>Si quieres ensayar antes</strong>, crea el secret <span class="adm-codigo">PROVEEDOR_MODO</span> con el valor <span class="adm-codigo">simulado</span> y pulsa <em>Probar conexión</em>. Según en qué termine el ID: <span class="adm-codigo">000</span> el jugador "no existe"; <span class="adm-codigo">111</span> el proveedor "está caído"; <span class="adm-codigo">999</span> la recarga "se rechaza"; <span class="adm-codigo">888</span> "no responde"; <span class="adm-codigo">777</span> queda "en proceso" y a los 20 segundos se entrega; <span class="adm-codigo">666</span> queda "en proceso" y luego se rechaza; <span class="adm-codigo">555</span> se queda "en proceso". Cualquier otro ID funciona. En este modo no se entrega nada de verdad.</li>
+                        <li>Pon <span class="adm-codigo">PROVEEDOR_MODO</span> en <span class="adm-codigo">real</span> y pulsa <em>Probar conexión</em>: debe decir <strong>Conectada</strong> y mostrar tu saldo, cuándo vence la API y cuántas consultas de nickname te quedan. Esa prueba solo consulta datos; no compra nada.</li>
+                        <li><strong>Carga saldo en el proveedor</strong> (se paga en USDT): cada recarga automática se descuenta de ahí. Sin saldo, las entregas fallan. El saldo de arriba se actualiza con cada compra.</li>
+                        <li>Pulsa <em>Ver catálogo del proveedor</em> y luego <em>Asignar los que coinciden por nombre</em>: los paquetes que se llaman exactamente igual en tu tienda y en el proveedor (por ejemplo los diamantes de Free Fire) reciben su código solos. Para el resto, copia el código a mano en <strong>Paquetes → Editar → Código en el proveedor</strong>. Lo que el proveedor no vende por API (promo de primera recarga, cajas, fragmentos, Pase Booyah) se sigue entregando a mano.</li>
+                        <li>Activa <em>Entregar los pedidos automáticamente</em> y haz una compra pequeña con tu propio ID antes de abrirlo a todos.</li>
+                        <li>El <strong>nickname</strong> solo existe para Free Fire. Cada consulta nueva gasta una del cupo de la API (se reinicia al renovar) y los IDs ya consultados se recuerdan 24 horas. Si el cupo se acaba o el validador falla, la compra sigue normal, solo que sin nickname.</li>
+                        <li>Si el proveedor tarda en confirmar una recarga, el pedido queda en <em>El proveedor la está aplicando</em> y se resuelve solo: se consulta su estado cuando abres <em>Pedidos</em> y cuando el cliente abre <em>Mis pedidos</em>. También puedes pulsar <em>Consultar estado</em>. Mientras está así no se puede cancelar ni marcar a mano (así no se entrega dos veces).</li>
+                        <li>Si el proveedor rechaza la llave (venció el acceso, la pausaron o generaron otra), la conexión se apaga sola: las compras nuevas vuelven a entrega manual hasta que lo resuelvas y pulses <em>Probar conexión</em>.</li>
                     </ol>
                 </section>
 
@@ -394,6 +397,10 @@
             <div class="modal-header">
                 <h2>Catálogo del proveedor</h2>
                 <p id="cat-prov-sub">Copia el código de cada producto tal cual en <strong>Paquetes → Editar → Código en el proveedor</strong>.</p>
+            </div>
+            <div class="adm-cat-acciones" id="cat-prov-acciones" style="display:none;">
+                <button class="btn-primary btn-sm" id="btn-asignar-codigos" type="button" onclick="asignarCodigosPorNombre()">Asignar los que coinciden por nombre</button>
+                <span class="adm-nota">Pone el código solo a los paquetes de tu tienda que se llaman exactamente igual que en el proveedor y todavía no tienen código.</span>
             </div>
             <div id="cat-prov-msg" class="msg-box error"></div>
             <div class="adm-lista-codigos" id="cat-prov-body"></div>
@@ -672,8 +679,14 @@
             const chips = [];
             if (prob > 0) chips.push(chip('stock', `${prob} ${plural(prob, 'entrega con problema', 'entregas con problema')}`, 'revísalas en Pedidos', 'pedidos'));
             if (esp > 0) chips.push(chip('mant', `${esp} ${plural(esp, 'entrega automática en espera', 'entregas automáticas en espera')}`, 'míralas en Pedidos', 'pedidos'));
+            if (integ && integ.modo === 'real' && integ.vence_at) {
+                const dias = diasHasta(integ.vence_at);
+                if (dias <= 0) chips.push(chip('stock', 'La API venció según la última prueba', 'si ya la renovaron, pulsa Probar conexión', 'integraciones'));
+                else if (dias <= 3) chips.push(chip('mant', `La API vence en ${dias} ${plural(dias, 'día', 'días')}`, 'pide que la renueven', 'integraciones'));
+            }
             if (integ && integ.modo === 'simulado') chips.push(chip('mant', 'Integración en modo de prueba', 'nada se entrega de verdad', 'integraciones'));
             else if (integ && integ.verificado_at && !integ.listo) chips.push(chip('stock', 'La última prueba de conexión falló', 'revisa Integraciones', 'integraciones'));
+            else if (integ && integ.modo === 'real' && integ.listo && integ.saldo !== null && integ.saldo !== undefined && Number(integ.saldo) <= 0) chips.push(chip('mant', 'Sin saldo en el proveedor', 'las entregas automáticas fallarán', 'integraciones'));
             document.getElementById('res-entregas').innerHTML = chips.join('');
             document.getElementById('res-entregas-bloque').style.display = chips.length ? 'block' : 'none';
         }
@@ -721,12 +734,16 @@
                     <td style="white-space:nowrap;">${botonesAccion(p)}</td>
                 </tr>`;
             }).join('');
+            consultarEntregasEnCurso(filas);
         }
 
         function botonesAccion(p) {
             const btns = [];
             if (p.tipo === 'recarga_saldo' && p.estado === 'pendiente') {
                 btns.push(`<button class="btn-primary btn-sm" onclick="cambiarEstadoPedido('${p.id}','confirmado')">Confirmar pago</button>`);
+            }
+            if (p.tipo === 'compra_diamantes' && p.estado === 'confirmado' && puedeConsultarEntrega(p)) {
+                btns.push(`<button class="btn-outline btn-sm" onclick="consultarEntrega('${p.id}')">Consultar estado</button>`);
             }
             if (p.tipo === 'compra_diamantes' && p.estado === 'confirmado' && puedeReintentarEntrega(p)) {
                 btns.push(`<button class="btn-outline btn-sm" onclick="reintentarEntrega('${p.id}','${p.entrega}')">${p.entrega === 'auto_pendiente' ? 'Entregar ahora' : 'Reintentar entrega'}</button>`);
@@ -762,11 +779,12 @@
 
         // ---------- ENTREGA AUTOMÁTICA DE UN PEDIDO ----------
         const ENTREGA_ADMIN = {
-            auto_pendiente:  ['schedule',       'Entrega automática en espera', ''],
-            auto_en_proceso: ['autorenew',      'Entregando con la API…',        ''],
-            auto_entregado:  ['bolt',           'Entregado por la API',          'ok'],
-            auto_fallo:      ['error_outline',  'La API no pudo entregarlo',     'mal'],
-            auto_revisar:    ['help_outline',   'Sin confirmación: revisa en el panel del proveedor', 'aviso']
+            auto_pendiente:   ['schedule',      'Entrega automática en espera',      ''],
+            auto_en_proceso:  ['autorenew',     'Entregando con la API…',             ''],
+            auto_confirmando: ['hourglass_top', 'El proveedor la está aplicando',     'aviso'],
+            auto_entregado:   ['bolt',          'Entregado por la API',               'ok'],
+            auto_fallo:       ['error_outline', 'La API no pudo entregarlo',          'mal'],
+            auto_revisar:     ['help_outline',  'Sin confirmar: consulta su estado',  'aviso']
         };
 
         function notaEntregaAdmin(p) {
@@ -781,32 +799,65 @@
                 + (partes.length ? `<span class="adm-entrega-det">${partes.join(' · ')}</span>` : '');
         }
 
-        // En proceso solo se puede reintentar si lleva mucho rato (la función se habrá caído a medias).
+        // Solo se reintenta lo que todavía no se envió o lo que el proveedor dejó claro que no hizo (y no cobró).
+        // Lo que quedó a medias se consulta primero: repetirlo a ciegas podría entregarlo dos veces.
         function puedeReintentarEntrega(p) {
-            if (p.entrega === 'auto_pendiente' || p.entrega === 'auto_fallo' || p.entrega === 'auto_revisar') return true;
-            return p.entrega === 'auto_en_proceso' && !!p.entrega_at && Date.now() - new Date(p.entrega_at).getTime() > 10 * 60 * 1000;
+            return p.entrega === 'auto_pendiente' || p.entrega === 'auto_fallo';
+        }
+
+        // Se puede preguntar al proveedor por lo que quedó a medias. Una entrega "en proceso" reciente la está haciendo el servidor ahora mismo.
+        function puedeConsultarEntrega(p) {
+            if (p.entrega === 'auto_confirmando' || p.entrega === 'auto_revisar') return true;
+            return p.entrega === 'auto_en_proceso' && !!p.entrega_at && Date.now() - new Date(p.entrega_at).getTime() > 3 * 60 * 1000;
         }
 
         async function reintentarEntrega(id, entregaActual) {
-            let pregunta = '¿Entregar este pedido ahora con la API del proveedor?';
-            if (entregaActual === 'auto_revisar' || entregaActual === 'auto_en_proceso') {
-                pregunta = 'Antes de reintentar, revisa en el panel del proveedor que esta recarga NO se haya hecho ya: si se hizo, se entregaría dos veces.\n\n¿Reintentar de todos modos?';
-            } else if (entregaActual === 'auto_fallo') {
-                pregunta = '¿Reintentar la entrega con la API del proveedor?';
-            }
+            const pregunta = entregaActual === 'auto_fallo'
+                ? '¿Reintentar la entrega con la API del proveedor?\n\nSe envía como una orden nueva: la anterior no quedó cobrada.'
+                : '¿Entregar este pedido ahora con la API del proveedor?';
             if (!confirm(pregunta)) return;
 
             avisar('Entregando con la API…');
-            const r = await llamarIntegracion('entregar_pedido', { pedido_id: id, forzar: true }, 45000);
+            const r = await llamarIntegracion('entregar_pedido', { pedido_id: id, forzar: true }, 90000);
             if (r.entrega === 'auto_entregado') avisar(r.mensaje && r.mensaje.indexOf('Simulado') === 0 ? 'Simulado: no se entregó nada de verdad' : 'Entregado por la API ✓');
             else if (r.entrega === 'auto_fallo') avisar('La API no pudo entregarlo. Mira el detalle en el pedido.', 'error');
-            else if (r.entrega === 'auto_revisar') avisar('Sin confirmación del proveedor: revisa su panel antes de repetir.', 'error');
+            else if (r.entrega === 'auto_confirmando') avisar('El proveedor la está aplicando. Consulta su estado en un momento.');
+            else if (r.entrega === 'auto_revisar') avisar('Sin confirmación del proveedor: pulsa Consultar estado antes de repetir.', 'error');
             else if (r.motivo === 'no_configurado') avisar('La conexión con el proveedor no está lista (ver Integraciones).', 'error');
             else if (r.motivo === 'red' || r.motivo === 'tiempo') avisar('No se pudo contactar la función de integración.', 'error');
             else avisar(r.mensaje || 'No se pudo entregar: ' + (r.motivo || 'error'), 'error');
 
             if (CFG_LISTAS[seccionActual]) await cargarLista(seccionActual);
             actualizarInsignias();
+        }
+
+        // Pregunta al proveedor en qué quedó la entrega (no cobra nada) y actualiza el pedido según lo que diga.
+        async function consultarEntrega(id) {
+            avisar('Consultando al proveedor…');
+            const r = await llamarIntegracion('revisar_pedido', { pedido_id: id }, 30000);
+            if (r.entrega === 'auto_entregado') avisar(r.mensaje && r.mensaje.indexOf('Simulado') === 0 ? 'Simulado: no se entregó nada de verdad' : 'El proveedor confirmó la entrega ✓');
+            else if (r.entrega === 'auto_fallo') avisar('El proveedor no la hizo (ni la cobró). Puedes reintentarla o entregarla a mano.', 'error');
+            else if (r.entrega === 'auto_confirmando') avisar('Sigue en proceso en el proveedor. Vuelve a consultar en un momento.');
+            else if (r.motivo === 'proveedor_no_responde') avisar('No se pudo saber su estado ahora mismo. Mira el registro en Integraciones.', 'error');
+            else if (r.motivo === 'no_configurado') avisar('La conexión con el proveedor no está lista (ver Integraciones).', 'error');
+            else if (r.motivo === 'red' || r.motivo === 'tiempo') avisar('No se pudo contactar la función de integración.', 'error');
+            else avisar(r.mensaje || 'Sin cambios todavía.');
+
+            if (CFG_LISTAS[seccionActual]) await cargarLista(seccionActual);
+            actualizarInsignias();
+        }
+
+        // Al abrir la lista se consulta, una vez por pedido y sin hacer ruido, lo que quedó a medias.
+        const entregasConsultadas = new Set();
+        async function consultarEntregasEnCurso(filas) {
+            const lista = filas.filter(p => p.tipo === 'compra_diamantes' && p.estado === 'confirmado' && puedeConsultarEntrega(p) && !entregasConsultadas.has(p.id)).slice(0, 6);
+            if (!lista.length) return;
+            lista.forEach(p => entregasConsultadas.add(p.id));
+            const resultados = await Promise.all(lista.map(p => llamarIntegracion('revisar_pedido', { pedido_id: p.id }, 30000)));
+            if (resultados.some((r, i) => r.entrega && r.entrega !== lista[i].entrega) && CFG_LISTAS[seccionActual]) {
+                await cargarLista(seccionActual);
+                actualizarInsignias();
+            }
         }
 
         // ---------- USUARIOS ----------
@@ -1083,8 +1134,45 @@
             if (manual) avisar('Actualizado');
         }
 
+        const DIA_MS = 24 * 60 * 60 * 1000;
+        function diasHasta(fecha) { return Math.ceil((new Date(fecha).getTime() - Date.now()) / DIA_MS); }
+        const numero2 = n => Number(n).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        // Lo que conviene vigilar de una conexión real: que no venza la API, que no se acabe el cupo de nickname y que haya saldo.
+        function avisosConexion(e) {
+            const avisos = [];
+            if (e.modo !== 'real' || !e.verificado_at) return avisos;
+            if (e.vence_at) {
+                const dias = diasHasta(e.vence_at);
+                if (dias <= 0) avisos.push('Según la última prueba, el acceso a la API ya venció. Si ya te lo renovaron, pulsa Probar conexión para actualizar la fecha; si no, pide que lo renueven (la llave no cambia).');
+                else if (dias <= 3) avisos.push(`El acceso a la API vence en ${dias} ${plural(dias, 'día', 'días')}: pide que lo renueven a tiempo (la llave no cambia).`);
+            }
+            if (e.listo && e.consultas_limite) {
+                const quedan = Math.max(0, Number(e.consultas_limite) - Number(e.consultas_usadas || 0));
+                if (quedan === 0) avisos.push('Se acabaron las consultas de nickname de esta vigencia: las compras siguen, pero sin mostrar el nickname.');
+                else if (quedan <= Math.ceil(Number(e.consultas_limite) * 0.1)) avisos.push(`Quedan pocas consultas de nickname (${quedan}). Al agotarse, las compras siguen pero sin mostrar el nickname.`);
+            }
+            if (e.listo && e.saldo !== null && e.saldo !== undefined && Number(e.saldo) <= 0) avisos.push('No tienes saldo en el proveedor: cárgalo antes de activar la entrega automática, o las entregas fallarán.');
+            return avisos;
+        }
+
+        function datoVencimiento(e) {
+            if (e.modo !== 'real' || !e.vence_at) return '';
+            const dias = diasHasta(e.vence_at);
+            const fecha = new Date(e.vence_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+            const resto = dias > 1 ? `quedan ${dias} días` : dias === 1 ? 'queda 1 día' : 'ya pasó';
+            return `<div class="adm-dato${dias <= 3 ? ' alerta' : ''}"><b>La API vence</b><span>${escHtml(fecha)}</span><small>${resto}</small></div>`;
+        }
+
+        function datoCupo(e) {
+            if (e.modo !== 'real' || !e.consultas_limite) return '';
+            const limite = Number(e.consultas_limite), usadas = Math.min(limite, Number(e.consultas_usadas || 0));
+            const quedan = limite - usadas;
+            return `<div class="adm-dato${quedan <= Math.ceil(limite * 0.1) ? ' alerta' : ''}"><b>Consultas de nickname</b><span>${usadas.toLocaleString('es-PE')} de ${limite.toLocaleString('es-PE')}</span><small>quedan ${quedan.toLocaleString('es-PE')}</small></div>`;
+        }
+
         function pintarConexion() {
-            const e = integracionEstado || { modo: 'apagado', listo: false, mensaje: null, verificado_at: null, saldo: null, moneda: null };
+            const e = integracionEstado || { modo: 'apagado', listo: false, mensaje: null, verificado_at: null, saldo: null, moneda: null, vence_at: null, consultas_limite: null, consultas_usadas: null };
             let clase = '', icono = 'power_settings_new', titulo = 'Sin probar';
             let texto = 'Todo funciona como siempre: el ID se acepta sin nickname y tú entregas a mano. Cuando tengas la API, sigue los pasos de abajo y pulsa Probar conexión.';
             if (e.verificado_at) {
@@ -1095,16 +1183,19 @@
             }
             const modoTxt = { apagado: 'Apagado', simulado: 'Simulado', real: 'Real' }[e.modo] || 'Apagado';
             const saldo = e.saldo !== null && e.saldo !== undefined
-                ? `<div class="adm-dato"><b>Saldo en el proveedor</b><span>${Number(e.saldo).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${escHtml(e.moneda || '')}</span></div>` : '';
+                ? `<div class="adm-dato${Number(e.saldo) <= 0 ? ' alerta' : ''}"><b>Saldo en el proveedor</b><span>${numero2(e.saldo)} ${escHtml(e.moneda || '')}</span></div>` : '';
+            const avisos = avisosConexion(e).map(a => `<p class="adm-conexion-aviso"><span class="material-icons">warning_amber</span><span>${escHtml(a)}</span></p>`).join('');
             const caja = document.getElementById('int-conexion');
             caja.className = 'adm-conexion ' + clase;
             caja.innerHTML = `<div class="adm-conexion-estado">
                     <span class="adm-conexion-ico"><span class="material-icons">${icono}</span></span>
-                    <div><h2>${titulo}</h2><p class="adm-conexion-msg">${escHtml(texto)}</p></div>
+                    <div><h2>${titulo}</h2><p class="adm-conexion-msg">${escHtml(texto)}</p>${avisos}</div>
                 </div>
                 <div class="adm-conexion-datos">
                     <div class="adm-dato"><b>Modo</b><span>${modoTxt}</span></div>
                     ${saldo}
+                    ${datoVencimiento(e)}
+                    ${datoCupo(e)}
                     <div class="adm-dato"><b>Última prueba</b><span>${e.verificado_at ? escHtml(tiempoRelativo(e.verificado_at)) : 'Nunca'}</span></div>
                 </div>
                 <div class="adm-conexion-acciones">
@@ -1144,7 +1235,9 @@
         async function abrirCatalogoProveedor() {
             const msg = document.getElementById('cat-prov-msg');
             const cuerpo = document.getElementById('cat-prov-body');
+            const acciones = document.getElementById('cat-prov-acciones');
             msg.style.display = 'none';
+            acciones.style.display = 'none';
             cuerpo.innerHTML = '<div class="adm-vacio" style="padding:30px 16px;">Cargando…</div>';
             document.getElementById('modal-catalogo-proveedor').classList.add('abierto');
 
@@ -1155,14 +1248,42 @@
                 msg.textContent = r.mensaje || 'No se pudo leer el catálogo del proveedor. Intenta de nuevo.';
                 return;
             }
-            const saldo = r.saldo !== null && r.saldo !== undefined ? ` Tu saldo allí: ${Number(r.saldo).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${escHtml(r.moneda || '')}.` : '';
-            document.getElementById('cat-prov-sub').innerHTML = `Copia el código de cada producto tal cual en <strong>Paquetes → Editar → Código en el proveedor</strong>.${saldo}`;
+            const saldo = r.saldo !== null && r.saldo !== undefined ? ` Tu saldo allí: ${numero2(r.saldo)} ${escHtml(r.moneda || '')}.` : '';
+            document.getElementById('cat-prov-sub').innerHTML = `Copia el código de cada producto tal cual en <strong>Paquetes → Editar → Código en el proveedor</strong>, o asigna de golpe los que se llaman igual.${saldo}`;
+            acciones.style.display = r.paquetes.length ? 'flex' : 'none';
             cuerpo.innerHTML = r.paquetes.length === 0
                 ? '<div class="adm-vacio" style="padding:30px 16px;">El proveedor no devolvió paquetes.</div>'
                 : r.paquetes.map(p => `<div class="adm-fila-codigo">
-                    <div><strong>${escHtml(p.codigo)}</strong><span class="precio">Te cuesta ${escHtml(r.moneda || '')} ${Number(p.precio).toFixed(2)}</span></div>
+                    <div><strong>${escHtml(p.codigo)}</strong><span class="precio">${p.juego ? escHtml(p.juego) + ' · ' : ''}Te cuesta ${escHtml(r.moneda || '')} ${Number(p.precio).toFixed(2)}${p.requiere_zona ? ' · necesita la zona del jugador (la web aún no la pide)' : ''}</span></div>
                     <button class="adm-copiar" type="button" data-copiar="${escAttr(p.codigo)}" data-aviso="Código copiado"><span class="material-icons">content_copy</span>Copiar</button>
                 </div>`).join('');
+        }
+
+        // Pone el código a los paquetes de la tienda que se llaman EXACTAMENTE igual que en el catálogo del proveedor
+        // (del mismo juego) y todavía no tienen código. Nada se activa solo: la entrega automática se enciende aparte.
+        async function asignarCodigosPorNombre() {
+            if (!catalogoProveedor || !Array.isArray(catalogoProveedor.paquetes)) return;
+            const btn = document.getElementById('btn-asignar-codigos');
+            btn.disabled = true;
+            try {
+                if (!cacheePaquetes.length) await cargarPaquetes();
+                const nombreDeJuego = slug => (juegosAdmin.find(j => j.slug === slug) || {}).nombre || '';
+                const delProveedor = new Set(catalogoProveedor.paquetes.map(p => (p.juego || '') + '|' + p.codigo));
+                const existe = (juego, nombre) => delProveedor.has(juego + '|' + nombre) || delProveedor.has('|' + nombre);
+                const coinciden = cacheePaquetes.filter(p => !p.codigo_proveedor && existe(nombreDeJuego(p.juego), p.nombre));
+                if (coinciden.length === 0) { avisar('No hay paquetes sin código que se llamen igual que en el proveedor.'); return; }
+                if (!confirm(`Se asignará el código a ${coinciden.length} ${plural(coinciden.length, 'paquete', 'paquetes')}:\n\n${coinciden.map(p => '• ' + p.nombre).join('\n')}\n\nLa entrega automática no se enciende sola: eso lo decides tú en cada juego.`)) return;
+                let bien = 0, mal = 0;
+                for (const p of coinciden) {
+                    const { error } = await supabaseClient.rpc('admin_guardar_proveedor_paquete', { p_paquete_id: p.id, p_codigo: p.nombre });
+                    if (error) mal++; else bien++;
+                }
+                avisar(mal ? `${bien} con código, ${mal} no se pudieron guardar` : `${bien} ${plural(bien, 'paquete tiene', 'paquetes tienen')} su código ✓`, mal ? 'error' : undefined);
+                await cargarPaquetes();
+                await cargarIntegraciones();
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         function cerrarCatalogoProveedor() {

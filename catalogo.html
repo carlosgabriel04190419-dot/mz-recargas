@@ -1065,7 +1065,7 @@
                 return mostrarJugadorHallado(r.nickname);
             }
             if (r.motivo === 'no_encontrado') {
-                return mostrarMsgId('error', `No encontramos ese ID en ${juego.nombre}. Revisa que esté bien escrito (lo ves en tu perfil dentro del juego).`);
+                return mostrarMsgId('error', `No encontramos ese ID en ${juego.nombre}. Revisa que esté bien escrito (lo ves en tu perfil dentro del juego). Si juegas en otro servidor, escríbenos por WhatsApp.`);
             }
             if (r.motivo === 'id_invalido') {
                 return mostrarMsgId('error', 'El ID no tiene un formato válido. Revísalo e inténtalo de nuevo.');
@@ -1240,7 +1240,7 @@
             // Entrega automática: el servidor la hace; aquí solo se espera el resultado.
             document.getElementById('comprar-cerrar').style.display = 'none';
             mostrarResultadoCompra('proceso', 'autorenew', 'Entregando tus diamantes...', `Estamos enviando <strong>${nombre}</strong> ${quien}. No cierres esta ventana: tarda solo unos segundos.`, '', true);
-            const r = await llamarIntegracion('entregar_pedido', { pedido_id: creado.id }, 45000);
+            const r = await llamarIntegracion('entregar_pedido', { pedido_id: creado.id }, 60000);
             document.getElementById('comprar-cerrar').style.display = '';
 
             const e = r.entrega || '';
@@ -1256,6 +1256,9 @@
                 return mostrarResultadoCompra('aviso', 'support_agent', 'No pudimos entregarla automáticamente', 'Tu compra quedó registrada y tu saldo ya fue descontado. La resolvemos a mano en unos minutos; si quieres, escríbenos para agilizarla.', btnWsp + btnPedidos + btnSeguir);
             }
             textoWhatsappCompra = baseWsp + '. Quiero confirmar el estado de mi recarga, gracias.';
+            if (e === 'auto_confirmando') {
+                return mostrarResultadoCompra('proceso', 'hourglass_top', 'Tu recarga está en camino', 'El proveedor ya recibió tu pedido y lo está aplicando. Suele llegar en unos minutos: no hace falta que hagas nada ni que compres otra vez. Mira cómo va en Mis pedidos.', btnPedidos + btnWsp + btnSeguir);
+            }
             if (e === 'auto_revisar' || e === 'auto_en_proceso') {
                 return mostrarResultadoCompra('aviso', 'hourglass_top', 'Estamos confirmando tu recarga', 'No recibimos la confirmación al instante. Revisaremos tu pedido y te avisamos: no hace falta que compres otra vez. Mira su estado en Mis pedidos.', btnPedidos + btnWsp + btnSeguir);
             }

@@ -150,11 +150,16 @@
         const TEXTOS_ENTREGA = {
             auto_pendiente: ['schedule', 'Preparando la entrega automática'],
             auto_en_proceso: ['autorenew', 'Entregando tu recarga...'],
+            auto_confirmando: ['hourglass_top', 'En camino: el proveedor la está aplicando'],
             auto_entregado: ['bolt', 'Entregado automáticamente'],
             auto_fallo: ['support_agent', 'No se pudo entregar sola: la resolvemos a mano'],
             auto_revisar: ['hourglass_top', 'Confirmando la entrega con el proveedor']
         };
         const entregasReintentadas = new Set();
+        const revisionesPorPedido = {};
+        const ultimaRevision = {};
+        let temporizadorRevision = null;
+        let recargasAutomaticas = 0;
 
         let usuarioIdActual = null;
         let paginaActual = 0;
@@ -227,9 +232,10 @@
             document.getElementById('btn-pag-siguiente').disabled = paginaActual + 1 >= totalPaginas;
         }
 
-        async function cargarPedidos() {
+        // silencioso = repintar sin mostrar "Cargando..." (cuando la página se actualiza sola)
+        async function cargarPedidos(silencioso) {
             const cuerpo = document.getElementById('tabla-pedidos-body');
-            cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>`;
+            if (!silencioso) cuerpo.innerHTML = `<tr><td colspan="5" class="tabla-vacia">Cargando...</td></tr>`;
 
             let query = supabaseClient
                 .from('pedidos')
@@ -293,6 +299,8 @@
             }).join('');
 
             reintentarEntregasPendientes(data);
+            revisarEntregasEnCurso(data);
+            vigilarEntregas(data);
         }
 
         function notaEntrega(p) {
@@ -312,8 +320,31 @@
                 && ahora - new Date(p.created_at).getTime() > 45000 && !entregasReintentadas.has(p.id)).slice(0, 5);
             if (!pendientes.length) return;
             pendientes.forEach(p => entregasReintentadas.add(p.id));
-            await Promise.all(pendientes.map(p => llamarIntegracion('entregar_pedido', { pedido_id: p.id }, 45000)));
+            await Promise.all(pendientes.map(p => llamarIntegracion('entregar_pedido', { pedido_id: p.id }, 60000)));
             cargarPedidos();
+        }
+
+        // Las entregas que el proveedor está aplicando (o que quedaron sin confirmar) se consultan solas: hasta 6 veces por pedido.
+        // El servidor solo PREGUNTA al proveedor por ese pedido; nunca vuelve a enviar nada.
+        async function revisarEntregasEnCurso(pedidos) {
+            const ahora = Date.now();
+            const enCurso = pedidos.filter(p => p.tipo === 'compra_diamantes' && p.estado === 'confirmado'
+                && (p.entrega === 'auto_confirmando' || p.entrega === 'auto_revisar'
+                    || (p.entrega === 'auto_en_proceso' && p.entrega_at && ahora - new Date(p.entrega_at).getTime() > 3 * 60 * 1000))
+                && (revisionesPorPedido[p.id] || 0) < 6 && ahora - (ultimaRevision[p.id] || 0) > 15000).slice(0, 5);
+            if (!enCurso.length) return;
+            enCurso.forEach(p => { revisionesPorPedido[p.id] = (revisionesPorPedido[p.id] || 0) + 1; ultimaRevision[p.id] = ahora; });
+            const resultados = await Promise.all(enCurso.map(p => llamarIntegracion('revisar_pedido', { pedido_id: p.id }, 30000)));
+            if (resultados.some((r, i) => r.entrega && r.entrega !== enCurso[i].entrega)) cargarPedidos(true);
+        }
+
+        // Mientras haya una entrega en marcha, la página se repinta sola cada 20 segundos (hasta unas 3 minutos) para mostrar cómo va.
+        function vigilarEntregas(pedidos) {
+            clearTimeout(temporizadorRevision);
+            const enMarcha = pedidos.some(p => p.tipo === 'compra_diamantes' && p.estado === 'confirmado'
+                && ['auto_pendiente', 'auto_en_proceso', 'auto_confirmando', 'auto_revisar'].includes(p.entrega));
+            if (!enMarcha || recargasAutomaticas >= 9) return;
+            temporizadorRevision = setTimeout(() => { recargasAutomaticas++; cargarPedidos(true); }, 20000);
         }
 
     </script>

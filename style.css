@@ -533,7 +533,7 @@ body.fondo-catalogo-activo #cuentas-titulo { color: #f5f7ff; }
 .entrega-nota { display: flex; align-items: center; gap: 4px; margin-top: 7px; font-size: 12px; font-weight: 600; color: var(--texto-tenue); max-width: 220px; line-height: 1.3; }
 .entrega-nota .material-icons { font-size: 15px; flex-shrink: 0; }
 .entrega-nota.entrega-auto_entregado { color: var(--exito); }
-.entrega-nota.entrega-auto_fallo, .entrega-nota.entrega-auto_revisar { color: #f5a623; }
+.entrega-nota.entrega-auto_fallo, .entrega-nota.entrega-auto_revisar, .entrega-nota.entrega-auto_confirmando { color: #f5a623; }
 
 /* ========================================== */
 /* FOOTER                                     */
