@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MZ'Recargas | Panel Admin</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261102b">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261102c">
     <meta name="theme-color" content="#0c0f18">
     <meta name="robots" content="noindex, nofollow">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-    <link rel="stylesheet" href="style.css?v=20261102b">
-    <link rel="stylesheet" href="admin.css?v=20261102b">
+    <link rel="stylesheet" href="style.css?v=20261102c">
+    <link rel="stylesheet" href="admin.css?v=20261102c">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body class="admin-body">
@@ -21,7 +21,7 @@
         <!-- ===== BARRA LATERAL ===== -->
         <aside class="adm-side" id="adm-side">
             <a href="./" class="adm-marca" aria-label="MZ'Recargas">
-                <img src="logo.svg?v=20261102b" alt="">
+                <img src="logo.svg?v=20261102c" alt="">
                 <div class="adm-marca-texto"><span class="m">MZ'</span>Recargas</div>
             </a>
             <div class="adm-rol">Administrador</div>
@@ -138,12 +138,7 @@
                         <button class="btn-outline btn-sm" type="button" onclick="cargarLista('solicitudes')"><span class="material-icons" style="font-size:17px; vertical-align:-4px;">refresh</span> Actualizar</button>
                     </div>
                     <p class="adm-sub">Recargas de saldo que los clientes pagaron por Yape o Plin y esperan que confirmes. Revisa el comprobante en WhatsApp y toca <strong>Confirmar pago</strong>: el saldo se acredita al instante.</p>
-                    <div class="adm-tarjeta">
-                        <table class="adm-tabla" id="tabla-solicitudes">
-                            <thead><tr><th>Fecha</th><th>Usuario</th><th>Tipo</th><th>Detalle</th><th>Monto</th><th>Pago</th><th>Estado</th><th>Nota</th><th>Acciones</th></tr></thead>
-                            <tbody id="tabla-solicitudes-body"><tr><td colspan="9" class="adm-vacio">Cargando...</td></tr></tbody>
-                        </table>
-                    </div>
+                    <div class="adm-pedidos" id="lista-solicitudes" aria-live="polite"><div class="adm-vacio">Cargando...</div></div>
                 </section>
 
                 <!-- ===== PEDIDOS ===== -->
@@ -153,12 +148,7 @@
                         <button class="btn-outline btn-sm" type="button" onclick="cargarLista('pedidos')"><span class="material-icons" style="font-size:17px; vertical-align:-4px;">refresh</span> Actualizar</button>
                     </div>
                     <p class="adm-sub">Compras ya pagadas con saldo (diamantes, tokens y cuentas). Entrégalas al ID del jugador o por WhatsApp y toca <strong>Marcar entregado</strong>. Si algo sale mal, <strong>Cancelar</strong> le devuelve el saldo al cliente.</p>
-                    <div class="adm-tarjeta">
-                        <table class="adm-tabla" id="tabla-pedidos">
-                            <thead><tr><th>Fecha</th><th>Usuario</th><th>Tipo</th><th>Detalle</th><th>Monto</th><th>Pago</th><th>Estado</th><th>Nota</th><th>Acciones</th></tr></thead>
-                            <tbody id="tabla-pedidos-body"><tr><td colspan="9" class="adm-vacio">Cargando...</td></tr></tbody>
-                        </table>
-                    </div>
+                    <div class="adm-pedidos" id="lista-pedidos" aria-live="polite"><div class="adm-vacio">Cargando...</div></div>
                 </section>
 
                 <!-- ===== HISTORIAL ===== -->
@@ -175,12 +165,7 @@
                         <button class="adm-chip" data-estado="completado">Completados</button>
                         <button class="adm-chip" data-estado="cancelado">Cancelados</button>
                     </div>
-                    <div class="adm-tarjeta">
-                        <table class="adm-tabla" id="tabla-historial">
-                            <thead><tr><th>Fecha</th><th>Usuario</th><th>Tipo</th><th>Detalle</th><th>Monto</th><th>Pago</th><th>Estado</th><th>Nota</th><th>Acciones</th></tr></thead>
-                            <tbody id="tabla-historial-body"><tr><td colspan="9" class="adm-vacio">Cargando...</td></tr></tbody>
-                        </table>
-                    </div>
+                    <div class="adm-pedidos" id="lista-historial" aria-live="polite"><div class="adm-vacio">Cargando...</div></div>
                 </section>
 
                 <!-- ===== USUARIOS ===== -->
@@ -450,7 +435,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="sesion.js?v=20261102b"></script>
+    <script src="sesion.js?v=20261102c"></script>
     <script>
         const ETIQUETAS_ESTADO = { pendiente: 'Pendiente', confirmado: 'Confirmado', completado: 'Completado', cancelado: 'Cancelado' };
         const ETIQUETAS_CATEGORIA = { ilimitada: 'Recargas Ilimitadas', promo: 'Promo Primera Vez', cajas_tokens: 'Cajas de Tokens', tokens_evolutivos: 'Tokens Evolutivos' };
@@ -475,9 +460,9 @@
             integraciones: { titulo: 'Integraciones', buscar: 'integraciones api proveedor nickname entrega automatica llave simulado conexion', cargar: () => cargarIntegraciones() }
         };
         const CFG_LISTAS = {
-            solicitudes: { estado: 'pendiente',  tipos: ['recarga_saldo'],                       cuerpo: 'tabla-solicitudes-body', vacio: 'No hay solicitudes de saldo pendientes. ¡Todo al día! 🎉' },
-            pedidos:     { estado: 'confirmado', tipos: ['compra_diamantes', 'compra_cuenta'],   cuerpo: 'tabla-pedidos-body',     vacio: 'No hay pedidos por entregar. ¡Todo entregado! 🎉' },
-            historial:   { estado: null,         tipos: null,                                    cuerpo: 'tabla-historial-body',   vacio: 'No hay pedidos en este filtro.' }
+            solicitudes: { estado: 'pendiente',  tipos: ['recarga_saldo'],                       cuerpo: 'lista-solicitudes', vacio: 'No hay solicitudes de saldo pendientes. ¡Todo al día! 🎉' },
+            pedidos:     { estado: 'confirmado', tipos: ['compra_diamantes', 'compra_cuenta'],   cuerpo: 'lista-pedidos',     vacio: 'No hay pedidos por entregar. ¡Todo entregado! 🎉' },
+            historial:   { estado: null,         tipos: null,                                    cuerpo: 'lista-historial',   vacio: 'No hay pedidos en este filtro.' }
         };
 
         let seccionActual = 'resumen';
@@ -702,48 +687,64 @@
         }
 
         // ---------- SOLICITUDES / PEDIDOS / HISTORIAL ----------
+        const ICONOS_PEDIDO = { compra_diamantes: ['diamond', 'azul'], compra_cuenta: ['badge', 'ambar'], recarga_saldo: ['account_balance_wallet', 'verde'] };
+        const CABECERA_PEDIDOS = '<div class="adm-pedidos-cab" aria-hidden="true"><span></span><span>Pedido</span><span>Cliente</span><span>Monto</span><span>Estado</span><span>Acciones</span></div>';
+
+        // Una compra o una recarga hecha tarjeta: qué es, de quién, cuánto pagó, cómo va y qué se puede hacer con ella.
+        function tarjetaPedido(p) {
+            const [icono, tono] = ICONOS_PEDIDO[p.tipo] || ['receipt_long', 'azul'];
+            const dato = (ico, html) => `<span class="adm-pedido-dato"><span class="material-icons">${ico}</span>${html}</span>`;
+            let titulo, meta = '';
+            if (p.tipo === 'recarga_saldo') {
+                titulo = 'Recarga de saldo';
+                meta = dato('savings', 'Saldo para su billetera');
+            } else if (p.tipo === 'compra_cuenta') {
+                titulo = (p.nota_admin || 'Cuenta Free Fire').replace(/^Cuenta: /, '');
+                meta = dato('sell', 'Cuenta de Free Fire');
+            } else {
+                titulo = p.paquete_nombre || (p.nota_admin ? p.nota_admin.replace('Cantidad personalizada: ', '') : 'Paquete');
+                if (p.nickname_jugador) meta += dato('sports_esports', `<strong>${escHtml(p.nickname_jugador)}</strong>`);
+                if (p.id_jugador_ff) {
+                    meta += `<span class="adm-pedido-dato">ID <b>${escHtml(p.id_jugador_ff)}</b><button class="adm-copiar-mini" type="button" data-copiar="${escAttr(p.id_jugador_ff)}" title="Copiar ID" aria-label="Copiar el ID ${escAttr(p.id_jugador_ff)}"><span class="material-icons">content_copy</span></button></span>`;
+                }
+            }
+            const f = new Date(p.created_at);
+            const fecha = f.toLocaleString('es-PE', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).replace(/\./g, '').replace(/ ([ap]) m$/i, ' $1m');
+            const nota = (p.tipo === 'compra_cuenta' || !p.nota_admin || /^Cantidad personalizada/.test(p.nota_admin)) ? ''
+                : `<div class="adm-pedido-nota"><span class="material-icons">sticky_note_2</span><span>${escHtml(p.nota_admin)}</span></div>`;
+            const acciones = botonesAccion(p);
+            return `<article class="adm-pedido est-${escAttr(p.estado)}">
+                <div class="adm-pedido-ico ${tono}"><span class="material-icons">${icono}</span></div>
+                <div class="adm-pedido-main">
+                    <div class="adm-pedido-titulo">${escHtml(titulo)}</div>
+                    ${meta ? `<div class="adm-pedido-meta">${meta}</div>` : ''}
+                    <div class="adm-pedido-fecha" title="${escAttr(f.toLocaleString('es-PE'))}"><span class="material-icons">schedule</span><span class="adm-fecha-exacta"><span>${escHtml(tiempoRelativo(p.created_at))}</span> · <span>${escHtml(fecha)}</span></span></div>
+                </div>
+                <div class="adm-pedido-cliente"><strong title="${escAttr(p.nickname)}">${escHtml(p.nickname)}</strong><span title="${escAttr(p.correo)}">${escHtml(p.correo)}</span></div>
+                <div class="adm-pedido-pago"><b>${formatearSoles(p.monto)}</b><span class="adm-pago-chip">${escHtml(p.metodo_pago)}</span></div>
+                <div class="adm-pedido-estado"><span class="estado-pill estado-${escAttr(p.estado)}">${escHtml(ETIQUETAS_ESTADO[p.estado] || p.estado)}</span>${notaEntregaAdmin(p)}${nota}</div>
+                ${acciones === '—' ? '' : `<div class="adm-pedido-acciones">${acciones}</div>`}
+            </article>`;
+        }
+
         async function cargarLista(vista) {
             const cfg = CFG_LISTAS[vista];
             const cuerpo = document.getElementById(cfg.cuerpo);
-            cuerpo.innerHTML = `<tr><td colspan="9" class="adm-vacio">Cargando...</td></tr>`;
+            cuerpo.innerHTML = '<div class="adm-vacio">Cargando...</div>';
 
             const estado = vista === 'historial' ? (filtroHistorial || null) : cfg.estado;
             const { data, error } = await supabaseClient.rpc('admin_listar_pedidos', { p_estado: estado });
             if (error) {
-                cuerpo.innerHTML = `<tr><td colspan="9" class="adm-vacio">No se pudo cargar. Intenta de nuevo.</td></tr>`;
+                cuerpo.innerHTML = '<div class="adm-vacio">No se pudo cargar. Intenta de nuevo.</div>';
                 return;
             }
             const filas = (data || []).filter(p => !cfg.tipos || cfg.tipos.includes(p.tipo));
             if (filas.length === 0) {
-                cuerpo.innerHTML = `<tr><td colspan="9" class="adm-vacio">${cfg.vacio}</td></tr>`;
+                cuerpo.innerHTML = `<div class="adm-vacio">${cfg.vacio}</div>`;
                 return;
             }
 
-            cuerpo.innerHTML = filas.map(p => {
-                const fecha = new Date(p.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                const tipoTxt = p.tipo === 'recarga_saldo' ? 'Recarga' : p.tipo === 'compra_cuenta' ? 'Cuenta' : 'Compra';
-                let detalle = '—';
-                if (p.tipo === 'compra_cuenta') {
-                    detalle = escHtml((p.nota_admin || 'Cuenta Free Fire').replace(/^Cuenta: /, ''));
-                } else if (p.tipo === 'compra_diamantes') {
-                    const nombrePaquete = p.paquete_nombre || (p.nota_admin ? p.nota_admin.replace('Cantidad personalizada: ', '') : 'Paquete');
-                    detalle = escHtml(nombrePaquete) + (p.id_jugador_ff
-                        ? `<br><span style="color:var(--texto-tenue); font-size:12px;">ID: ${escHtml(p.id_jugador_ff)}</span><button class="adm-copiar" type="button" data-copiar="${escHtml(p.id_jugador_ff)}"><span class="material-icons">content_copy</span>Copiar</button>`
-                        : '')
-                        + (p.nickname_jugador ? `<br><span style="color:var(--texto-secundario); font-size:12px; font-weight:600;">Jugador: ${escHtml(p.nickname_jugador)}</span>` : '');
-                }
-                return `<tr>
-                    <td>${fecha}</td>
-                    <td>${escHtml(p.nickname)}<br><span style="color:var(--texto-tenue); font-size:12px;">${escHtml(p.correo)}</span></td>
-                    <td>${tipoTxt}</td>
-                    <td>${detalle}</td>
-                    <td style="font-weight:700;">${formatearSoles(p.monto)}</td>
-                    <td style="text-transform:capitalize;">${escHtml(p.metodo_pago)}</td>
-                    <td><span class="estado-pill estado-${p.estado}">${ETIQUETAS_ESTADO[p.estado] || p.estado}</span>${notaEntregaAdmin(p)}</td>
-                    <td style="max-width:160px; font-size:12.5px; color:var(--texto-secundario);">${escHtml(p.tipo === 'compra_cuenta' ? '—' : (p.nota_admin || '—'))}</td>
-                    <td style="white-space:nowrap;">${botonesAccion(p)}</td>
-                </tr>`;
-            }).join('');
+            cuerpo.innerHTML = CABECERA_PEDIDOS + filas.map(tarjetaPedido).join('');
             consultarEntregasEnCurso(filas);
         }
 

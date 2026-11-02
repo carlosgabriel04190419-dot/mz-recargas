@@ -176,6 +176,75 @@ body.admin-body { background: var(--bg); color: var(--texto); }
 .adm-tabla tr:last-child td { border-bottom: none; }
 .adm-tabla tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
 .adm-vacio, .tabla-vacia { padding: 44px 16px !important; text-align: center; color: var(--texto-tenue); }
+/* ---------- listas de pedidos (Solicitudes, Pedidos e Historial): una tarjeta por pedido ---------- */
+.adm-pedidos { container-type: inline-size; display: flex; flex-direction: column; gap: 10px; }
+.adm-pedidos > .adm-vacio { border-radius: 16px; background: var(--bg-elevada); border: 1px solid var(--borde); }
+.adm-pedidos-cab { display: none; }
+.adm-pedido { --tono: 59, 125, 255; position: relative; overflow: hidden; display: grid; gap: 10px 16px; padding: 16px 18px 16px 22px; border-radius: 16px; background: var(--bg-elevada); border: 1px solid var(--borde); transition: border-color 0.15s; }
+.adm-pedido:hover { border-color: var(--borde-suave); }
+.adm-pedido::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--borde-suave); }
+.adm-pedido.est-pendiente::before { background: var(--acento-1); }
+.adm-pedido.est-confirmado::before { background: var(--exito); opacity: 0.55; }
+.adm-pedido.est-completado::before { background: var(--exito); }
+.adm-pedido.est-cancelado::before { background: var(--error); opacity: 0.7; }
+.adm-pedido-ico { grid-area: ico; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 13px; background: rgba(var(--tono), 0.15); color: rgb(var(--tono)); }
+.adm-pedido-ico.ambar { --tono: 255, 176, 32; }
+.adm-pedido-ico.verde { --tono: 46, 230, 166; }
+.adm-pedido-ico .material-icons { font-size: 24px; }
+.adm-pedido-main { grid-area: main; min-width: 0; }
+.adm-pedido-titulo { font-size: 15.5px; font-weight: 800; line-height: 1.3; word-break: break-word; }
+.adm-pedido-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 4px; font-size: 12.5px; color: var(--texto-secundario); }
+.adm-pedido-dato { display: inline-flex; align-items: center; gap: 4px; }
+.adm-pedido-dato .material-icons { font-size: 15px; color: var(--texto-tenue); }
+.adm-pedido-dato strong { color: var(--texto); font-weight: 700; }
+.adm-pedido-dato b { color: var(--texto); font: 700 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.3px; }
+.adm-copiar-mini { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-left: 2px; border-radius: 7px; border: 1px solid var(--borde-suave); background: none; color: var(--texto-secundario); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.adm-copiar-mini:hover { border-color: var(--acento-1); color: var(--acento-1); }
+.adm-copiar-mini .material-icons { font-size: 13px; color: inherit; }
+.adm-pedido-fecha { display: flex; align-items: flex-start; gap: 4px; margin-top: 6px; font-size: 12px; color: var(--texto-tenue); }
+.adm-fecha-exacta span { white-space: nowrap; }
+.adm-pedido-fecha .material-icons { flex: none; margin-top: 1px; font-size: 14px; }
+.adm-pedido-cliente { grid-area: cliente; min-width: 0; }
+.adm-pedido-cliente strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; font-weight: 700; }
+.adm-pedido-cliente span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--texto-tenue); }
+.adm-pedido-pago { grid-area: pago; text-align: right; }
+.adm-pedido-pago b { display: block; font-size: 17px; font-weight: 800; line-height: 1.2; }
+.adm-pago-chip { display: inline-block; margin-top: 5px; padding: 2px 10px; border-radius: 20px; background: var(--bg-elevada-2); border: 1px solid var(--borde-suave); font-size: 11.5px; font-weight: 700; color: var(--texto-secundario); text-transform: capitalize; }
+.adm-pedido-estado { grid-area: estado; min-width: 0; }
+.adm-pedido-estado .adm-entrega { margin-top: 9px; }
+.adm-pedido-estado .adm-entrega-det { max-width: none; }
+.adm-pedido-nota { display: flex; align-items: flex-start; gap: 4px; margin-top: 8px; font-size: 12px; line-height: 1.4; color: var(--texto-secundario); }
+.adm-pedido-nota .material-icons { flex: none; font-size: 14px; color: var(--texto-tenue); }
+.adm-pedido-acciones { grid-area: acciones; display: flex; flex-wrap: wrap; gap: 8px; }
+.adm-pedido-acciones .btn-sm { white-space: nowrap; }
+
+/* En celular (lista angosta): todo apilado */
+.adm-pedido { grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: "ico main pago" "estado estado estado" "cliente cliente cliente" "acciones acciones acciones"; }
+.adm-pedido-cliente { display: flex; align-items: baseline; gap: 6px; padding-top: 10px; border-top: 1px dashed var(--borde); }
+.adm-pedido-cliente strong { flex: none; max-width: 45%; }
+.adm-pedido-cliente span { flex: 1; min-width: 0; }
+.adm-pedido-cliente span::before { content: '· '; }
+
+/* Lista mediana: dos filas por pedido, y a la derecha el monto con los botones debajo */
+@container (min-width: 620px) {
+    .adm-pedido { grid-template-columns: 44px minmax(0, 1.5fr) minmax(0, 1fr) minmax(132px, max-content); grid-template-areas: "ico main cliente pago" "ico estado estado acciones"; align-items: start; }
+    .adm-pedido-cliente { display: block; padding-top: 0; border-top: none; }
+    .adm-pedido-cliente strong { max-width: none; }
+    .adm-pedido-cliente strong, .adm-pedido-cliente span { display: block; }
+    .adm-pedido-cliente span::before { content: none; }
+    .adm-pedido-acciones { flex-direction: column; align-items: stretch; }
+    .adm-pedido-estado { padding-top: 2px; }
+}
+
+/* Lista ancha: todo el pedido en una sola fila, con títulos arriba */
+@container (min-width: 1000px) {
+    .adm-pedidos-cab, .adm-pedido { display: grid; grid-template-columns: 44px minmax(0, 1.6fr) minmax(0, 1fr) 104px minmax(0, 1.3fr) minmax(132px, max-content); column-gap: 18px; }
+    .adm-pedidos-cab { padding: 0 18px 0 22px; font-size: 11.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--texto-tenue); }
+    .adm-pedido { grid-template-areas: "ico main cliente pago estado acciones"; align-items: center; }
+    .adm-pedido-estado { padding-top: 0; }
+    .adm-pedido-pago { text-align: left; }
+}
+
 .adm-copiar { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 2px 8px; border-radius: 8px; border: 1px solid var(--borde-suave); background: none; color: var(--texto-secundario); font: 600 11.5px 'Poppins', sans-serif; cursor: pointer; vertical-align: middle; }
 .adm-copiar:hover { border-color: var(--acento-1); color: var(--acento-1); }
 .adm-copiar .material-icons { font-size: 13px; }
