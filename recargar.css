@@ -61,6 +61,7 @@
 .rec-metodo span { font-size: 13px; line-height: 1.45; color: var(--texto-secundario); }
 .rec-metodo.yape { --tono-metodo: #7b1fa2; }
 .rec-metodo.plin { --tono-metodo: #00b8d4; }
+.rec-sin-medios { padding: 16px 18px; border-radius: 14px; border: 1px solid #f5a623; background: rgba(245, 166, 35, 0.1); font-size: 14px; line-height: 1.55; color: var(--texto); }
 
 /* ---------- paso 3: pagar ---------- */
 .rec-total {
@@ -70,6 +71,7 @@
 .rec-total-etq { font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--texto-tenue); }
 .rec-total-num { font-size: 28px; font-weight: 800; line-height: 1.2; }
 .rec-pago { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: center; margin-bottom: 22px; }
+.rec-pago.sin-qr { grid-template-columns: minmax(0, 1fr); }
 .rec-qr { padding: 14px; border-radius: 20px; background: #fff; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28); }
 .rec-qr img { display: block; width: 100%; height: auto; border-radius: 10px; }
 .rec-datos { display: flex; flex-direction: column; gap: 14px; }

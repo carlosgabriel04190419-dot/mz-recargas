@@ -396,6 +396,31 @@ body.admin-body { background: var(--bg); color: var(--texto); }
 .adm-toast.visible { opacity: 1; transform: translate(-50%, 0); }
 .adm-toast.error { border-color: var(--error); color: var(--error); }
 
+/* ---------- medios de pago ---------- */
+.adm-pagos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); gap: 20px; align-items: start; max-width: 980px; }
+.adm-pago { display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; background: var(--bg-elevada); border: 1px solid var(--borde); transition: border-color 0.2s, box-shadow 0.2s; }
+.adm-pago.sucio { border-color: var(--acento-1); box-shadow: 0 0 0 3px rgba(59, 125, 255, 0.14); }
+.adm-pago [hidden] { display: none !important; }
+.adm-pago-cab { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; padding: 16px 20px; border-bottom: 1px solid var(--borde); background: linear-gradient(135deg, rgba(59, 125, 255, 0.08), rgba(139, 63, 251, 0.06)); }
+.adm-pago-logo { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 14px; background: var(--c); color: #fff; font-size: 20px; font-weight: 800; }
+.adm-pago-nombre { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-right: auto; }
+.adm-pago-nombre h3 { font-size: 18px; font-weight: 800; line-height: 1.2; }
+.adm-pago-cuerpo { display: flex; flex-direction: column; gap: 16px; padding: 20px; }
+.adm-pago-campo { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; color: var(--texto-secundario); }
+.adm-pago-campo em { font-style: normal; font-weight: 500; color: var(--texto-tenue); }
+.adm-pago-qr { display: flex; align-items: center; gap: 16px; }
+.adm-pago-qr-caja { flex: none; display: flex; align-items: center; justify-content: center; width: 132px; height: 132px; overflow: hidden; border-radius: 14px; background: #fff; border: 1px solid var(--borde-suave); }
+.adm-pago-qr-caja img { display: block; width: 100%; height: 100%; padding: 6px; object-fit: contain; }
+.adm-pago-qr-vacio { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 100%; height: 100%; border-radius: 14px; background: var(--bg-input); color: var(--texto-tenue); font-size: 12.5px; font-weight: 700; }
+.adm-pago-qr-vacio .material-icons { font-size: 38px; }
+.adm-pago-qr-acciones { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.adm-pago-qr-acciones .btn-outline { display: inline-flex; align-items: center; gap: 6px; }
+.adm-pago-qr-acciones .btn-outline .material-icons { font-size: 17px; }
+.adm-pago-qr-acciones .adm-nota { margin-top: 2px; }
+.adm-pago-pie { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 14px; padding: 14px 20px; border-top: 1px solid var(--borde); background: var(--bg-elevada-2); }
+.adm-pago-pie .adm-nota { flex: 1; min-width: 150px; }
+.adm-pago.sucio .adm-pago-pie .adm-nota { color: var(--acento-1); font-weight: 700; }
+
 /* ---------- celular y tablet ---------- */
 .adm-velo { display: none; }
 @media (max-width: 960px) {
@@ -413,6 +438,7 @@ body.admin-body { background: var(--bg); color: var(--texto); }
     .adm-hero-cifras .adm-mini-num { margin: 0; font-size: 26px; }
 }
 @media (max-width: 560px) {
+    .adm-pago-qr { flex-direction: column; align-items: flex-start; }
     .adm-cat { flex-direction: column; }
     .adm-cat-img { width: 100%; height: 150px; }
     .adm-hfila { grid-template-columns: 1fr auto; }

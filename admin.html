@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MZ'Recargas | Panel Admin</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261102d">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261103a">
     <meta name="theme-color" content="#0c0f18">
     <meta name="robots" content="noindex, nofollow">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-    <link rel="stylesheet" href="style.css?v=20261102d">
-    <link rel="stylesheet" href="admin.css?v=20261102d">
+    <link rel="stylesheet" href="style.css?v=20261103a">
+    <link rel="stylesheet" href="admin.css?v=20261103a">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body class="admin-body">
@@ -21,7 +21,7 @@
         <!-- ===== BARRA LATERAL ===== -->
         <aside class="adm-side" id="adm-side">
             <a href="./" class="adm-marca" aria-label="MZ'Recargas">
-                <img src="logo.svg?v=20261102d" alt="">
+                <img src="logo.svg?v=20261103a" alt="">
                 <div class="adm-marca-texto"><span class="m">MZ'</span>Recargas</div>
             </a>
             <div class="adm-rol">Administrador</div>
@@ -48,6 +48,9 @@
                 <button class="adm-item tono-catalogo" data-ir="cuentas"><span class="adm-ico"><span class="material-icons">badge</span></span>Cuentas</button>
                 <button class="adm-item tono-catalogo" data-ir="promo"><span class="adm-ico"><span class="material-icons">local_fire_department</span></span>Promo del día</button>
                 <button class="adm-item tono-catalogo" data-ir="ventas"><span class="adm-ico"><span class="material-icons">trending_up</span></span>Ventas</button>
+
+                <div class="adm-grupo tono-verde">Pagos</div>
+                <button class="adm-item tono-verde" data-ir="pagos"><span class="adm-ico"><span class="material-icons">account_balance_wallet</span></span>Medios de pago</button>
 
                 <div class="adm-grupo tono-azul">Automatización</div>
                 <button class="adm-item tono-azul" data-ir="integraciones"><span class="adm-ico"><span class="material-icons">hub</span></span>Integraciones</button>
@@ -279,6 +282,16 @@
                     <div class="adm-grafica-caja"><div class="adm-hbarras" id="ven-catalogos"></div></div>
                 </section>
 
+                <!-- ===== MEDIOS DE PAGO ===== -->
+                <section class="adm-vista" id="vista-pagos">
+                    <div class="adm-cabecera">
+                        <div class="adm-titulo"><span class="adm-ico tono-verde"><span class="material-icons">account_balance_wallet</span></span><h1>Medios de pago</h1></div>
+                        <a class="btn-outline btn-sm" href="recargar-saldo" target="_blank" rel="noopener"><span class="material-icons" style="font-size:17px; vertical-align:-4px;">open_in_new</span> Ver cómo lo ve el cliente</a>
+                    </div>
+                    <p class="adm-sub">Aquí pones los datos que ven tus clientes cuando recargan su saldo: el <strong>nombre</strong>, el <strong>número</strong> y la <strong>foto del QR</strong>. Si no quieres poner foto, deja solo el número y listo. Cuando guardas, el cambio se ve <strong>al instante</strong> en la web.</p>
+                    <div class="adm-pagos" id="adm-pagos"><p style="color: var(--texto-tenue);">Cargando…</p></div>
+                </section>
+
                 <!-- ===== INTEGRACIONES ===== -->
                 <section class="adm-vista" id="vista-integraciones">
                     <div class="adm-cabecera">
@@ -435,7 +448,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="sesion.js?v=20261102d"></script>
+    <script src="sesion.js?v=20261103a"></script>
     <script>
         const ETIQUETAS_ESTADO = { pendiente: 'Pendiente', confirmado: 'Confirmado', completado: 'Completado', cancelado: 'Cancelado' };
         const ETIQUETAS_CATEGORIA = { ilimitada: 'Recargas Ilimitadas', promo: 'Promo Primera Vez', cajas_tokens: 'Cajas de Tokens', tokens_evolutivos: 'Tokens Evolutivos' };
@@ -457,6 +470,7 @@
             cuentas:     { titulo: 'Cuentas',        buscar: 'cuentas free fire fotos', cargar: () => cargarCuentasAdmin() },
             promo:       { titulo: 'Promo del día',  buscar: 'promo oferta del dia descuento', cargar: () => cargarPromo() },
             ventas:      { titulo: 'Ventas',         buscar: 'ventas ganancias grafica ingresos', cargar: () => cargarVentas() },
+            pagos:       { titulo: 'Medios de pago', buscar: 'medios de pago yape plin qr numero nombre cuenta cobrar datos de pago', cargar: () => cargarMediosPago() },
             integraciones: { titulo: 'Integraciones', buscar: 'integraciones api proveedor nickname entrega automatica llave simulado conexion', cargar: () => cargarIntegraciones() }
         };
         const CFG_LISTAS = {
@@ -1710,20 +1724,19 @@
             cont.innerHTML = items + agregar;
         }
 
-        async function comprimirImagen(archivo) {
+        async function comprimirImagen(archivo, { max = 1600, calidad = 0.85, fondo = '#0c0f18' } = {}) {
             const bmp = await createImageBitmap(archivo);
-            const MAX = 1600;
-            const k = Math.min(1, MAX / Math.max(bmp.width, bmp.height));
+            const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
             const w = Math.max(1, Math.round(bmp.width * k));
             const h = Math.max(1, Math.round(bmp.height * k));
             const canvas = document.createElement('canvas');
             canvas.width = w; canvas.height = h;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#0c0f18'; ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = fondo; ctx.fillRect(0, 0, w, h);
             ctx.drawImage(bmp, 0, 0, w, h);
             if (bmp.close) bmp.close();
-            let blob = await new Promise(r => canvas.toBlob(r, 'image/webp', 0.85));
-            if (!blob || blob.type !== 'image/webp') blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.87));
+            let blob = await new Promise(r => canvas.toBlob(r, 'image/webp', calidad));
+            if (!blob || blob.type !== 'image/webp') blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', Math.min(0.97, calidad + 0.02)));
             if (!blob) throw new Error('no se pudo convertir');
             return blob;
         }
@@ -1872,6 +1885,252 @@
             if (error) { alert(error.message); return; }
             await borrarFotosStorage(cuenta.fotos || []);
             await cargarCuentasAdmin();
+        }
+
+        // ---------- MEDIOS DE PAGO ----------
+        // Los datos que ven los clientes al recargar saldo (tabla medios_pago). Cada método se edita en su
+        // tarjeta y se guarda con su botón: nada se guarda solo, y antes de guardar se muestra qué va a cambiar.
+        // La foto del QR se reduce aquí mismo (como las de las cuentas) y se sube recién al guardar.
+        const MEDIOS_PAGO = {
+            yape: { nombre: 'Yape', color: '#b44fe0', letra: 'Y' },
+            plin: { nombre: 'Plin', color: '#00b8d4', letra: 'P' }
+        };
+        let pagosGuardados = {};   // lo que hay en la base, por método
+        let pagosEdicion = {};     // lo que se está editando: { activo, titular, numero, qr, qrBlob, qrPreview, procesando, guardando }
+
+        function limpiarTexto(v) { return String(v || '').trim().replace(/\s+/g, ' '); }
+
+        // "901150296" -> "901 150 296" (celulares de 9 dígitos); cualquier otro formato se deja como lo escribió.
+        function formatearNumeroPago(valor) {
+            const v = limpiarTexto(valor);
+            const solo = v.replace(/[\s-]/g, '');
+            return /^\d{9}$/.test(solo) ? solo.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3') : v;
+        }
+
+        function filaPago(f) {
+            return { activo: !!f.activo, titular: f.titular || '', numero: f.numero || '', qr: f.qr || '', cuando: f.actualizado_at, quien: f.actualizado_por_nick || '' };
+        }
+        function edicionDe(g) {
+            return { activo: g.activo, titular: g.titular, numero: g.numero, qr: g.qr, qrBlob: null, qrPreview: '', procesando: false, guardando: false };
+        }
+        function soltarVistaQr(clave) {
+            const ed = pagosEdicion[clave];
+            if (ed && ed.qrPreview) URL.revokeObjectURL(ed.qrPreview);
+            if (ed) { ed.qrBlob = null; ed.qrPreview = ''; }
+        }
+
+        async function cargarMediosPago() {
+            const cont = document.getElementById('adm-pagos');
+            const { data, error } = await supabaseClient.rpc('admin_listar_medios_pago');
+            if (error || !data) {
+                cont.innerHTML = '<p style="color:var(--texto-tenue);">No se pudieron cargar los medios de pago. Recarga la página e inténtalo otra vez.</p>';
+                return;
+            }
+            Object.keys(pagosEdicion).forEach(soltarVistaQr);
+            pagosGuardados = {}; pagosEdicion = {};
+            data.forEach(f => { pagosGuardados[f.metodo] = filaPago(f); pagosEdicion[f.metodo] = edicionDe(pagosGuardados[f.metodo]); });
+            pintarMediosPago();
+        }
+
+        function tarjetaPago(clave) {
+            const info = MEDIOS_PAGO[clave], ed = pagosEdicion[clave];
+            return `<article class="adm-pago" data-metodo="${clave}">
+                <header class="adm-pago-cab">
+                    <span class="adm-pago-logo" style="--c:${info.color};">${info.letra}</span>
+                    <div class="adm-pago-nombre"><h3>${info.nombre}</h3><span class="adm-etiqueta" data-estado></span></div>
+                    <label class="sw chico"><input type="checkbox" data-campo="activo" ${ed.activo ? 'checked' : ''}><span class="sw-pista"></span>Mostrar en la web</label>
+                </header>
+                <div class="adm-pago-cuerpo">
+                    <label class="adm-pago-campo"><span>A nombre de</span><input class="adm-input" type="text" data-campo="titular" maxlength="80" value="${escHtml(ed.titular)}" placeholder="Ej: Raul Mu*" autocomplete="off"></label>
+                    <label class="adm-pago-campo"><span>Número de ${info.nombre}</span><input class="adm-input" type="text" data-campo="numero" maxlength="40" inputmode="tel" value="${escHtml(ed.numero)}" placeholder="Ej: 901 150 296" autocomplete="off"></label>
+                    <div class="adm-pago-campo">
+                        <span>Foto del QR <em>(opcional)</em></span>
+                        <div class="adm-pago-qr">
+                            <div class="adm-pago-qr-caja" data-qr></div>
+                            <div class="adm-pago-qr-acciones">
+                                <button type="button" class="btn-outline btn-sm" data-accion="subir"><span class="material-icons">upload</span><span data-txt-subir>Subir foto</span></button>
+                                <button type="button" class="btn-outline btn-sm" data-accion="quitar"><span class="material-icons">delete_outline</span>Quitar QR</button>
+                                <input type="file" accept="image/*" hidden data-archivo>
+                                <p class="adm-nota" data-nota-qr></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="adm-pago-pie">
+                    <span class="adm-nota" data-ultimo></span>
+                    <button type="button" class="btn-primary btn-sm" data-accion="guardar" disabled>Guardar cambios</button>
+                </div>
+            </article>`;
+        }
+
+        function textoUltimoCambio(g) {
+            if (!g.quien || !g.cuando) return 'Sin cambios hechos desde el panel.';
+            const cuando = new Date(g.cuando).toLocaleString('es-PE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                .replace(/\./g, '').replace(/ ([ap]) m$/i, ' $1m');
+            return `Último cambio: ${cuando} · por ${g.quien}`;
+        }
+
+        function hayCambiosPago(clave) {
+            const ed = pagosEdicion[clave], g = pagosGuardados[clave];
+            return ed.activo !== g.activo || limpiarTexto(ed.titular) !== g.titular || formatearNumeroPago(ed.numero) !== g.numero
+                || !!ed.qrBlob || ed.qr !== g.qr;
+        }
+
+        // Repinta solo lo que cambia (estado, foto del QR, nota y botón), sin tocar los campos que se están escribiendo.
+        function refrescarTarjetaPago(clave) {
+            const t = document.querySelector(`.adm-pago[data-metodo="${clave}"]`);
+            if (!t) return;
+            const info = MEDIOS_PAGO[clave], ed = pagosEdicion[clave], g = pagosGuardados[clave];
+            const hayQr = !!(ed.qrBlob || ed.qr);
+            const sucio = hayCambiosPago(clave);
+
+            const estado = t.querySelector('[data-estado]');
+            estado.className = 'adm-etiqueta ' + (g.activo ? 'visible' : 'oculto');
+            estado.innerHTML = g.activo ? '<span class="material-icons">visibility</span>Se muestra en la web' : '<span class="material-icons">visibility_off</span>Oculto en la web';
+
+            const src = ed.qrBlob ? ed.qrPreview : (ed.qr ? urlQrPago(ed.qr) : '');
+            t.querySelector('[data-qr]').innerHTML = src
+                ? `<img src="${escHtml(src)}" alt="QR de ${info.nombre}">`
+                : '<div class="adm-pago-qr-vacio"><span class="material-icons">qr_code_2</span>Sin QR</div>';
+            t.querySelector('[data-accion="quitar"]').hidden = !hayQr;
+            t.querySelector('[data-txt-subir]').textContent = hayQr ? 'Cambiar foto' : 'Subir foto';
+            t.querySelector('[data-nota-qr]').textContent = ed.procesando ? 'Preparando la foto…'
+                : ed.qrBlob ? 'Foto nueva: se sube cuando guardes.'
+                : hayQr ? 'Esta es la foto que ven tus clientes.'
+                : 'Sin foto, tus clientes solo verán el número.';
+
+            t.classList.toggle('sucio', sucio);
+            t.querySelector('[data-ultimo]').textContent = sucio ? 'Tienes cambios sin guardar.' : textoUltimoCambio(g);
+            const boton = t.querySelector('[data-accion="guardar"]');
+            boton.disabled = !sucio || ed.procesando || ed.guardando;
+            boton.textContent = ed.guardando ? 'Guardando…' : 'Guardar cambios';
+        }
+
+        function pintarMediosPago() {
+            const cont = document.getElementById('adm-pagos');
+            const claves = Object.keys(MEDIOS_PAGO).filter(c => pagosEdicion[c]);
+            cont.innerHTML = claves.map(tarjetaPago).join('');
+            claves.forEach(refrescarTarjetaPago);
+            if (cont.dataset.listo) return;
+            cont.dataset.listo = '1';
+
+            const claveDe = el => { const t = el.closest('.adm-pago'); return t ? t.dataset.metodo : null; };
+            cont.addEventListener('input', e => {
+                const campo = e.target.closest('input[data-campo]'), clave = claveDe(e.target);
+                if (!campo || !clave || campo.type === 'checkbox') return;
+                pagosEdicion[clave][campo.dataset.campo] = campo.value;
+                refrescarTarjetaPago(clave);
+            });
+            cont.addEventListener('change', e => {
+                const clave = claveDe(e.target);
+                if (!clave) return;
+                if (e.target.matches('input[data-campo="activo"]')) {
+                    pagosEdicion[clave].activo = e.target.checked;
+                    refrescarTarjetaPago(clave);
+                } else if (e.target.matches('input[data-campo="numero"]')) {
+                    e.target.value = formatearNumeroPago(e.target.value);   // al salir del campo se ordena: 901 150 296
+                    pagosEdicion[clave].numero = e.target.value;
+                    refrescarTarjetaPago(clave);
+                } else if (e.target.matches('input[data-archivo]')) {
+                    const archivo = e.target.files && e.target.files[0];
+                    e.target.value = '';
+                    elegirQrPago(clave, archivo);
+                }
+            });
+            cont.addEventListener('click', e => {
+                const b = e.target.closest('[data-accion]'), clave = b && claveDe(b);
+                if (!b || !clave) return;
+                if (b.dataset.accion === 'subir') b.closest('.adm-pago').querySelector('input[data-archivo]').click();
+                else if (b.dataset.accion === 'quitar') quitarQrPago(clave);
+                else if (b.dataset.accion === 'guardar') guardarMedioPago(clave);
+            });
+        }
+
+        async function elegirQrPago(clave, archivo) {
+            if (!archivo) return;
+            if (!archivo.type.startsWith('image/')) { avisar('Ese archivo no es una imagen. Sube una foto JPG, PNG o WEBP.', 'error'); return; }
+            const ed = pagosEdicion[clave];
+            ed.procesando = true; refrescarTarjetaPago(clave);
+            try {
+                const blob = await comprimirImagen(archivo, { max: 1600, calidad: 0.92, fondo: '#ffffff' });
+                if (blob.size > 2 * 1024 * 1024) throw new Error('pesa demasiado');
+                soltarVistaQr(clave);
+                ed.qrBlob = blob; ed.qrPreview = URL.createObjectURL(blob);
+            } catch (err) {
+                avisar('No se pudo usar esa foto. Prueba con otra (JPG, PNG o WEBP).', 'error');
+            }
+            ed.procesando = false;
+            refrescarTarjetaPago(clave);
+        }
+
+        function quitarQrPago(clave) {
+            soltarVistaQr(clave);
+            pagosEdicion[clave].qr = '';
+            refrescarTarjetaPago(clave);
+        }
+
+        async function subirQrPago(clave, blob) {
+            const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+            const nombre = `${clave}-${crypto.randomUUID().replace(/-/g, '').slice(0, 20)}.${ext}`;
+            const { error } = await supabaseClient.storage.from('pagos')
+                .upload(nombre, blob, { contentType: blob.type, cacheControl: '31536000', upsert: false });
+            if (error) throw error;
+            return 'pagos/' + nombre;
+        }
+
+        // Los QR que vienen con el sitio (qr-yape.jpeg...) no están en Storage: no hay nada que borrar.
+        // Borrar algo de Storage no es crítico: si falla, solo queda un archivo suelto.
+        async function borrarQrPagoStorage(ruta) {
+            if (!ruta || ruta.indexOf('pagos/') !== 0) return;
+            try { await supabaseClient.storage.from('pagos').remove([ruta.slice(6)]); } catch (e) { /* ignorar */ }
+        }
+
+        async function guardarMedioPago(clave) {
+            const info = MEDIOS_PAGO[clave], ed = pagosEdicion[clave], g = pagosGuardados[clave];
+            if (ed.procesando || ed.guardando) return;
+            const titular = limpiarTexto(ed.titular);
+            const numero = formatearNumeroPago(ed.numero);
+            if (ed.activo && !numero && !(ed.qrBlob || ed.qr)) {
+                avisar(`Para mostrar ${info.nombre} pon el número o sube la foto del QR.`, 'error');
+                return;
+            }
+
+            const cambios = [];
+            if (ed.activo !== g.activo) cambios.push(ed.activo ? '• Se mostrará en la web' : '• Se ocultará de la web');
+            if (titular !== g.titular) cambios.push(`• Nombre: ${g.titular || '(vacío)'} → ${titular || '(vacío)'}`);
+            if (numero !== g.numero) cambios.push(`• Número: ${g.numero || '(vacío)'} → ${numero || '(vacío)'}`);
+            if (ed.qrBlob) cambios.push('• QR: foto nueva');
+            else if (!ed.qr && g.qr) cambios.push('• QR: se quita (solo se verá el número)');
+            if (!cambios.length) return;
+            if (!confirm(`Vas a guardar estos cambios en ${info.nombre}. Tus clientes los verán al instante:\n\n${cambios.join('\n')}\n\n¿Guardar?`)) return;
+
+            ed.guardando = true; refrescarTarjetaPago(clave);
+            let rutaNueva = '';
+            try {
+                if (ed.qrBlob) rutaNueva = await subirQrPago(clave, ed.qrBlob);
+                const { error } = await supabaseClient.rpc('admin_guardar_medio_pago', {
+                    p_metodo: clave, p_activo: ed.activo, p_titular: titular, p_numero: numero, p_qr: rutaNueva || ed.qr || null
+                });
+                if (error) throw error;
+            } catch (err) {
+                if (rutaNueva) await borrarQrPagoStorage(rutaNueva);   // no quedó guardado: la foto subida sobra
+                ed.guardando = false; refrescarTarjetaPago(clave);
+                avisar('No se pudo guardar: ' + ((err && err.message) || 'error desconocido'), 'error');
+                return;
+            }
+
+            const rutaFinal = rutaNueva || ed.qr || '';
+            if (g.qr && g.qr !== rutaFinal) await borrarQrPagoStorage(g.qr);   // la foto anterior ya no se usa
+
+            // Se vuelve a leer solo este método (así no se pierde lo que se esté editando en el otro).
+            soltarVistaQr(clave);
+            const { data } = await supabaseClient.rpc('admin_listar_medios_pago');
+            const fila = (data || []).find(x => x.metodo === clave);
+            pagosGuardados[clave] = fila ? filaPago(fila) : { activo: ed.activo, titular, numero, qr: rutaFinal, cuando: new Date().toISOString(), quien: '' };
+            pagosEdicion[clave] = edicionDe(pagosGuardados[clave]);
+            document.querySelector(`.adm-pago[data-metodo="${clave}"]`).outerHTML = tarjetaPago(clave);
+            refrescarTarjetaPago(clave);
+            avisar(`Guardado: ${info.nombre}. Ya se ve en la web.`);
         }
 
         // ---------- PROMO DEL DÍA ----------

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MZ'Recargas | Recargar Saldo</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261102d">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261103a">
     <meta name="theme-color" content="#0c0f18">
     <meta name="description" content="Recarga tu saldo por Yape o Plin en MZ'Recargas.">
     <meta name="robots" content="noindex, nofollow">
@@ -20,15 +20,15 @@
     <meta property="og:url" content="https://mzrecargas.com/recargar-saldo">
     <meta name="twitter:card" content="summary">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-    <link rel="stylesheet" href="style.css?v=20261102d">
-    <link rel="stylesheet" href="recargar.css?v=20261102d">
+    <link rel="stylesheet" href="style.css?v=20261103a">
+    <link rel="stylesheet" href="recargar.css?v=20261103a">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
 
     <nav class="navbar">
         <a href="./" class="nav-logo-premium">
-            <img src="logo.svg?v=20261102d" alt="MZ'Recargas" class="logo-img">
+            <img src="logo.svg?v=20261103a" alt="MZ'Recargas" class="logo-img">
             <div class="logo-text"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></div>
         </a>
         <div class="nav-links">
@@ -61,7 +61,7 @@
         <div class="rec-cabecera">
             <a href="catalogo" class="back-link-catalogo" style="margin-top:0;"><span class="material-icons">arrow_back</span> Volver al catálogo</a>
             <h1 class="rec-titulo">Recarga tu <span>saldo</span></h1>
-            <p class="rec-sub">Elige el monto, paga con Yape o Plin y avísanos por WhatsApp. En cuanto verificamos tu pago, tu saldo queda listo para comprar diamantes.</p>
+            <p class="rec-sub">Elige el monto, paga con <span id="rec-nombres-metodos">Yape o Plin</span> y avísanos por WhatsApp. En cuanto verificamos tu pago, tu saldo queda listo para comprar diamantes.</p>
         </div>
 
         <div class="rec-grid">
@@ -96,11 +96,9 @@
                 <!-- Paso 2 -->
                 <section class="rec-vista" id="rec-v2">
                     <h2>¿Cómo vas a pagar?</h2>
-                    <p class="rec-ayuda">Los dos métodos son transferencias desde tu celular y las verificamos a mano.</p>
-                    <div class="rec-metodos" id="rec-metodos">
-                        <button type="button" class="rec-metodo yape activo" data-metodo="yape"><strong>Yape</strong><span>Escanea el QR o yapea al número que verás en el siguiente paso.</span></button>
-                        <button type="button" class="rec-metodo plin" data-metodo="plin"><strong>Plin</strong><span>Escanea el QR de Plin desde tu app del banco.</span></button>
-                    </div>
+                    <p class="rec-ayuda">Pagas desde tu celular y verificamos cada pago a mano.</p>
+                    <div class="rec-metodos" id="rec-metodos"></div>
+                    <p class="rec-sin-medios" id="rec-sin-medios" style="display:none;">Por ahora no estamos recibiendo recargas por la web. Escríbenos por WhatsApp y te ayudamos.</p>
                     <div class="rec-acciones">
                         <button type="button" class="btn-outline" id="rec-atras-2">Atrás</button>
                         <button type="button" class="btn-primary" id="rec-sig-2">Continuar</button>
@@ -120,12 +118,12 @@
                         <button type="button" class="rec-btn-mini" id="rec-copiar-monto"><span class="material-icons">content_copy</span>Copiar monto</button>
                     </div>
 
-                    <div class="rec-pago">
-                        <div class="rec-qr"><img id="rec-qr-img" src="qr-yape.jpeg" alt="Código QR para pagar"></div>
+                    <div class="rec-pago" id="rec-pago">
+                        <div class="rec-qr" id="rec-qr"><img id="rec-qr-img" alt="Código QR para pagar"></div>
                         <div class="rec-datos">
-                            <div class="rec-dato" id="rec-dato-titular"><div><small>A nombre de</small><strong id="rec-titular">Raul Mu*</strong></div></div>
-                            <div class="rec-dato" id="rec-dato-numero"><div><small>Número de Yape</small><strong id="rec-numero">901 150 296</strong></div><button type="button" class="rec-btn-mini" id="rec-copiar-numero"><span class="material-icons">content_copy</span>Copiar</button></div>
-                            <a class="rec-btn-mini" id="rec-descargar-qr" href="qr-yape.jpeg" download="qr-yape-mzrecargas.jpeg" style="justify-content:center; padding:11px 12px;"><span class="material-icons">download</span>Descargar QR</a>
+                            <div class="rec-dato" id="rec-dato-titular"><div><small>A nombre de</small><strong id="rec-titular"></strong></div></div>
+                            <div class="rec-dato" id="rec-dato-numero"><div><small id="rec-numero-etq">Número</small><strong id="rec-numero"></strong></div><button type="button" class="rec-btn-mini" id="rec-copiar-numero"><span class="material-icons">content_copy</span>Copiar</button></div>
+                            <a class="rec-btn-mini" id="rec-descargar-qr" href="#" download style="justify-content:center; padding:11px 12px;"><span class="material-icons">download</span>Descargar QR</a>
                         </div>
                     </div>
 
@@ -199,7 +197,7 @@
         <div class="footer-grid">
             <div class="footer-col">
                 <div class="footer-logo">
-                    <img src="logo.svg?v=20261102d" alt="MZ'Recargas" style="width:30px; height:30px;">
+                    <img src="logo.svg?v=20261103a" alt="MZ'Recargas" style="width:30px; height:30px;">
                     <span style="font-size:18px; font-weight:800;"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></span>
                 </div>
                 <p>Tu tienda de confianza para recargas de diamantes de Free Fire. Pagos verificados a mano y entrega rápida.</p>
@@ -245,19 +243,20 @@
     <!-- FOOTER:FIN -->
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="sesion.js?v=20261102d"></script>
+    <script src="sesion.js?v=20261103a"></script>
     <script>
         const WHATSAPP_NUMERO = '51901150296';
-        const METODOS = {
-            yape: { nombre: 'Yape', qr: 'qr-yape.jpeg', descarga: 'qr-yape-mzrecargas.jpeg', titular: 'Raul Mu*', numero: '901 150 296' },
-            plin: { nombre: 'Plin', qr: 'qr-plin.jpeg', descarga: 'qr-plin-mzrecargas.jpeg', titular: null, numero: null }
-        };
+        // Cómo se llama cada método y qué verbo se usa para pagar con él. Lo que cambia (nombre, número y QR)
+        // lo pone el dueño en el panel (Medios de pago) y se lee de la tabla medios_pago.
+        const NOMBRES_METODO = { yape: 'Yape', plin: 'Plin' };
+        const VERBOS_METODO = { yape: 'yapea', plin: 'plinea' };
+        let METODOS = {};   // los métodos que se pueden usar ahora: { yape: { nombre, titular, numero, qr } }
         const ETIQUETA_ESTADO = { pendiente: 'En revisión', confirmado: 'Acreditada', completado: 'Acreditada', cancelado: 'Cancelada' };
 
         let usuarioActual = null;
         let paso = 1;
         let monto = 0;
-        let metodo = 'yape';
+        let metodo = '';
         let textoWhatsApp = '';
 
         const $ = id => document.getElementById(id);
@@ -265,10 +264,45 @@
         window.onload = async function () {
             usuarioActual = await verificarSesion();
             if (!usuarioActual) return;
+            await cargarMedios();
+            pintarMetodos();
             prepararEventos();
             pintarResumen();
             cargarHistorial();
         };
+
+        // ---------- datos de pago (los cambia el dueño desde el panel) ----------
+        // Trae lo vigente. Un método solo se ofrece si está activo y tiene número o QR. Si no se puede leer,
+        // se queda con lo último que se cargó (nunca se inventan datos de pago).
+        async function cargarMedios() {
+            const { data, error } = await supabaseClient.from('medios_pago').select('metodo, activo, titular, numero, qr');
+            if (error || !data) return false;
+            const vigentes = {};
+            Object.keys(NOMBRES_METODO).forEach(clave => {
+                const f = data.find(x => x.metodo === clave);
+                if (!f || !f.activo || !(f.numero || f.qr)) return;
+                vigentes[clave] = { nombre: NOMBRES_METODO[clave], titular: f.titular || '', numero: f.numero || '', qr: f.qr ? urlQrPago(f.qr) : '' };
+            });
+            METODOS = vigentes;
+            return true;
+        }
+
+        // Dibuja los métodos del paso 2 y deja elegido uno que exista.
+        function pintarMetodos() {
+            const claves = Object.keys(METODOS);
+            if (!METODOS[metodo]) metodo = claves[0] || '';
+            $('rec-metodos').innerHTML = claves.map(clave => {
+                const m = METODOS[clave];
+                const como = m.qr && m.numero ? `Escanea el QR o ${VERBOS_METODO[clave]} al número que verás en el siguiente paso.`
+                    : m.qr ? `Escanea el QR de ${m.nombre} desde tu app.`
+                    : `${VERBOS_METODO[clave].charAt(0).toUpperCase() + VERBOS_METODO[clave].slice(1)} al número que verás en el siguiente paso.`;
+                return `<button type="button" class="rec-metodo ${clave}${clave === metodo ? ' activo' : ''}" data-metodo="${clave}"><strong>${escHtml(m.nombre)}</strong><span>${como}</span></button>`;
+            }).join('');
+            $('rec-sin-medios').style.display = claves.length ? 'none' : '';
+            $('rec-nombres-metodos').textContent = claves.length ? claves.map(c => METODOS[c].nombre).join(' o ') : 'Yape o Plin';
+            $('rec-sig-2').disabled = !claves.length;
+            if (!claves.length) mostrarError('Por ahora no estamos recibiendo recargas por la web. Escríbenos por WhatsApp y te ayudamos.');
+        }
 
         function prepararEventos() {
             $('rec-montos').addEventListener('click', e => {
@@ -295,7 +329,11 @@
             $('rec-atras-3').addEventListener('click', () => irAPaso(2));
             $('btn-recargar').addEventListener('click', confirmarRecarga);
             $('rec-copiar-monto').addEventListener('click', () => copiar(monto.toFixed(2), 'Monto copiado'));
-            $('rec-copiar-numero').addEventListener('click', () => copiar(METODOS.yape.numero.replace(/\s/g, ''), 'Número copiado'));
+            $('rec-copiar-numero').addEventListener('click', () => {
+                const m = METODOS[metodo];
+                if (m && m.numero) copiar(m.numero.replace(/\s/g, ''), 'Número copiado');
+            });
+            $('rec-descargar-qr').addEventListener('click', descargarQr);
             $('rec-abrir-wa').addEventListener('click', () => abrirWhatsapp(textoWhatsApp));
             $('rec-otra').addEventListener('click', reiniciar);
             $('rec-codigo').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 3); });
@@ -338,9 +376,15 @@
             pintarResumen();
         }
 
-        function irAPaso(n) {
+        async function irAPaso(n) {
             $('recargar-msg').style.display = 'none';
             if (n >= 2 && !(monto > 0)) { mostrarError('Elige o escribe un monto para continuar.'); n = 1; }
+            if (n === 3) {
+                const elegido = metodo;
+                await cargarMedios();
+                pintarMetodos();
+                if (!METODOS[elegido]) { mostrarError('Ese método de pago ya no está disponible. Elige otro para continuar.'); n = 2; }
+            }
             paso = n;
             ['rec-v1', 'rec-v2', 'rec-v3'].forEach((id, i) => $(id).classList.toggle('activa', i + 1 === n));
             $('rec-exito').classList.remove('activa');
@@ -363,35 +407,64 @@
             const saldo = Number(usuarioActual ? usuarioActual.saldo : 0);
             $('rec-ticket-monto').textContent = formatearSoles(monto);
             $('rec-ticket-mas').textContent = '+ ' + formatearSoles(monto);
-            $('rec-ticket-metodo').textContent = paso >= 2 ? METODOS[metodo].nombre : '—';
+            $('rec-ticket-metodo').textContent = paso >= 2 ? (NOMBRES_METODO[metodo] || '—') : '—';
             $('rec-ticket-despues').textContent = formatearSoles(saldo + monto);
-            $('rec-sig-1').disabled = !(monto > 0);
+            $('rec-sig-1').disabled = !(monto > 0) || !Object.keys(METODOS).length;
         }
 
         // ---------- paso 3: QR y datos del método elegido ----------
         function pintarPago() {
             const m = METODOS[metodo];
+            const verbo = VERBOS_METODO[metodo];
             $('rec-pago-total').textContent = formatearSoles(monto) + ' · ' + m.nombre;
-            $('rec-pago-ayuda').textContent = metodo === 'yape'
-                ? 'Escanea el QR con Yape (o yapea al número) y paga el monto exacto.'
-                : 'Escanea el QR con Plin desde tu app y paga el monto exacto.';
-            $('rec-qr-img').src = m.qr;
-            $('rec-qr-img').alt = 'Código QR de ' + m.nombre;
-            $('rec-descargar-qr').href = m.qr;
-            $('rec-descargar-qr').setAttribute('download', m.descarga);
+            $('rec-pago-ayuda').textContent = m.qr && m.numero ? `Escanea el QR con ${m.nombre} (o ${verbo} al número) y paga el monto exacto.`
+                : m.qr ? `Escanea el QR con ${m.nombre} desde tu app y paga el monto exacto.`
+                : `${verbo.charAt(0).toUpperCase() + verbo.slice(1)} al número de abajo y paga el monto exacto.`;
+            $('rec-pago').classList.toggle('sin-qr', !m.qr);
+            $('rec-qr').style.display = m.qr ? '' : 'none';
+            $('rec-descargar-qr').style.display = m.qr ? '' : 'none';
+            if (m.qr) {
+                $('rec-qr-img').src = m.qr;
+                $('rec-qr-img').alt = 'Código QR de ' + m.nombre;
+                $('rec-descargar-qr').href = m.qr;
+            }
             $('rec-dato-titular').style.display = m.titular ? '' : 'none';
-            $('rec-titular').textContent = m.titular || '';
+            $('rec-titular').textContent = m.titular;
             $('rec-dato-numero').style.display = m.numero ? '' : 'none';
-            $('rec-numero').textContent = m.numero || '';
-            $('rec-paso-pago-1').textContent = `Abre ${m.nombre} y escanea el código${m.numero ? ' (o yapea al número)' : ''}.`;
+            $('rec-numero-etq').textContent = 'Número de ' + m.nombre;
+            $('rec-numero').textContent = m.numero;
+            $('rec-paso-pago-1').textContent = m.qr ? `Abre ${m.nombre} y escanea el código${m.numero ? ` (o ${verbo} al número)` : ''}.`
+                : `Abre ${m.nombre} y ${verbo} al número de arriba.`;
             $('rec-paso-pago-2').textContent = `Paga exactamente ${formatearSoles(monto)}, ni más ni menos.`;
             $('rec-codigo-caja').style.display = metodo === 'yape' ? '' : 'none';
+        }
+
+        // El QR puede estar en otro dominio (Storage), donde el atributo "download" no funciona:
+        // se baja la imagen y se guarda desde aquí. Si algo falla, se abre en otra pestaña.
+        async function descargarQr(e) {
+            e.preventDefault();
+            const m = METODOS[metodo];
+            if (!m || !m.qr) return;
+            try {
+                const r = await fetch(m.qr);
+                if (!r.ok) throw new Error('http ' + r.status);
+                const blob = await r.blob();
+                const ext = { 'image/webp': 'webp', 'image/png': 'png', 'image/jpeg': 'jpeg' }[blob.type] || 'png';
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `qr-${metodo}-mzrecargas.${ext}`;
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            } catch (err) {
+                window.open(m.qr, '_blank');
+            }
         }
 
         // ---------- registrar la recarga ----------
         async function confirmarRecarga() {
             const btn = $('btn-recargar');
             if (!(monto > 0)) { irAPaso(1); return; }
+            if (!METODOS[metodo]) { mostrarError('Ese método de pago ya no está disponible. Vuelve atrás y elige otro.'); return; }
 
             btn.disabled = true; btn.innerText = 'Registrando...';
             const { error } = await supabaseClient.from('pedidos').insert([{
@@ -405,7 +478,7 @@
             if (error) { mostrarError('No se pudo registrar: ' + error.message); return; }
 
             const codigo = $('rec-codigo').value.trim();
-            textoWhatsApp = `¡Hola! Vengo de MZ'Recargas 💎. Acabo de pagar ${formatearSoles(monto)} por ${METODOS[metodo].nombre} para recargar mi saldo (usuario: ${usuarioActual.nickname}).`
+            textoWhatsApp = `¡Hola! Vengo de MZ'Recargas 💎. Acabo de pagar ${formatearSoles(monto)} por ${NOMBRES_METODO[metodo]} para recargar mi saldo (usuario: ${usuarioActual.nickname}).`
                 + (metodo === 'yape' && codigo.length === 3 ? ` Código de seguridad de Yape: ${codigo}.` : '')
                 + ' Aquí va mi captura de pago 👇';
 
@@ -413,19 +486,20 @@
             ['rec-v1', 'rec-v2', 'rec-v3'].forEach(id => $(id).classList.remove('activa'));
             $('rec-pasos').style.display = 'none';
             $('rec-exito').classList.add('activa');
-            $('rec-exito-txt').textContent = `Registramos tu recarga de ${formatearSoles(monto)} por ${METODOS[metodo].nombre}. Envíanos la captura por WhatsApp y acreditamos tu saldo apenas verifiquemos el pago.`;
+            $('rec-exito-txt').textContent = `Registramos tu recarga de ${formatearSoles(monto)} por ${NOMBRES_METODO[metodo]}. Envíanos la captura por WhatsApp y acreditamos tu saldo apenas verifiquemos el pago.`;
             $('rec-principal').scrollIntoView({ behavior: 'smooth', block: 'start' });
             cargarHistorial();
             abrirWhatsapp(textoWhatsApp);
         }
 
         function reiniciar() {
-            monto = 0; metodo = 'yape'; textoWhatsApp = '';
+            monto = 0; metodo = Object.keys(METODOS)[0] || ''; textoWhatsApp = '';
             $('monto-personalizado').value = '';
             $('rec-otro').classList.remove('activo');
             $('rec-codigo').value = '';
             document.querySelectorAll('.rec-monto').forEach(b => b.classList.remove('activo'));
-            elegirMetodo('yape');
+            pintarMetodos();
+            elegirMetodo(metodo);
             irAPaso(1);
         }
 
@@ -442,7 +516,7 @@
             if (!data || data.length === 0) { cont.innerHTML = '<p class="rec-vacio">Todavía no has recargado. ¡Tu primera recarga aparecerá aquí!</p>'; return; }
             cont.innerHTML = data.map(p => {
                 const fecha = new Date(p.created_at).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                const nombre = (METODOS[p.metodo_pago] || { nombre: p.metodo_pago }).nombre;
+                const nombre = NOMBRES_METODO[p.metodo_pago] || p.metodo_pago;
                 return `<div class="rec-hist-item">
                     <span class="rec-hist-punto ${escHtml(p.metodo_pago)}"></span>
                     <div class="rec-hist-info"><strong>${escHtml(nombre)}</strong><small>${fecha}</small></div>

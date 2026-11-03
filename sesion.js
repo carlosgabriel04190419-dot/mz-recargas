@@ -120,6 +120,15 @@ function urlFotoCuenta(ruta) {
     return supabaseUrl + '/storage/v1/object/public/cuentas/' + encodeURIComponent(ruta);
 }
 
+// Dirección de la imagen del QR de un medio de pago (tabla medios_pago). "pagos/<archivo>" es una foto
+// que el dueño subió desde el panel (bucket público "pagos"); cualquier otro valor es un archivo que viene
+// con el sitio (los QR de siempre, como qr-yape.jpeg).
+function urlQrPago(ruta) {
+    return String(ruta).indexOf('pagos/') === 0
+        ? supabaseUrl + '/storage/v1/object/public/pagos/' + encodeURIComponent(String(ruta).slice(6))
+        : ruta;
+}
+
 /**
  * Verifica la sesión REAL de Supabase Auth (no localStorage) y trae el
  * perfil actual del usuario directo de la base de datos.

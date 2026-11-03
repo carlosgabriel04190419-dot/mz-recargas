@@ -2467,3 +2467,120 @@ begin
          and (entrega in ('auto_pendiente', 'auto_en_proceso') or (entrega = 'auto_confirmando' and entrega_at >= now() - interval '30 minutes')));
 end;
 $$;
+
+
+-- ---------- MEDIOS DE PAGO (YAPE / PLIN) EDITABLES DESDE EL PANEL ----------
+-- Los datos que ve el cliente al recargar saldo (nombre, número y foto del QR) ya no están escritos
+-- en la página: el dueño los cambia desde el panel (Medios de pago). Solo los clientes con sesión
+-- pueden leer la tabla (y solo estas columnas); escribirla, solo el admin y solo con
+-- admin_guardar_medio_pago(). Un método se muestra si está activo y tiene número o QR.
+-- "qr" puede ser: NULL (solo se muestra el número), un archivo que viene con el sitio (los QR de
+-- siempre) o "pagos/<archivo>" = una foto que el dueño subió al bucket público "pagos".
+create table public.medios_pago (
+  metodo text primary key check (metodo in ('yape', 'plin')),
+  activo boolean not null default true,
+  titular text not null default '' check (char_length(titular) <= 80),
+  numero text not null default '' check (char_length(numero) <= 40),
+  qr text check (qr is null or qr in ('qr-yape.jpeg', 'qr-plin.jpeg') or qr ~ '^pagos/[A-Za-z0-9][A-Za-z0-9._-]{0,79}$'),
+  actualizado_at timestamptz not null default now(),
+  actualizado_por uuid references auth.users(id) on delete set null,
+  constraint medio_pago_con_datos check (not activo or numero <> '' or qr is not null)
+);
+
+alter table public.medios_pago enable row level security;
+create policy "ver_medios_pago" on public.medios_pago for select to authenticated using (true);
+revoke all on public.medios_pago from anon, authenticated;
+grant select (metodo, activo, titular, numero, qr) on public.medios_pago to authenticated;
+
+-- Los datos de siempre (los mismos que estaban escritos en recargar-saldo.html).
+insert into public.medios_pago (metodo, activo, titular, numero, qr) values
+  ('yape', true, 'Raul Mu*', '901 150 296', 'qr-yape.jpeg'),
+  ('plin', true, '', '', 'qr-plin.jpeg');
+
+-- Fotos de los QR: bucket público (cualquiera puede VER la foto por su URL), pero solo el admin
+-- puede subir, reemplazar o borrar.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('pagos', 'pagos', true, 2097152, array['image/webp', 'image/jpeg', 'image/png'])
+on conflict (id) do nothing;
+
+create policy "pagos_qr_admin_insert" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'pagos' and exists (select 1 from public.perfiles p where p.id = auth.uid() and p.es_admin));
+create policy "pagos_qr_admin_select" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'pagos' and exists (select 1 from public.perfiles p where p.id = auth.uid() and p.es_admin));
+create policy "pagos_qr_admin_update" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'pagos' and exists (select 1 from public.perfiles p where p.id = auth.uid() and p.es_admin))
+  with check (bucket_id = 'pagos' and exists (select 1 from public.perfiles p where p.id = auth.uid() and p.es_admin));
+create policy "pagos_qr_admin_delete" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'pagos' and exists (select 1 from public.perfiles p where p.id = auth.uid() and p.es_admin));
+
+create function public.admin_listar_medios_pago()
+returns table (
+  metodo text, activo boolean, titular text, numero text, qr text,
+  actualizado_at timestamptz, actualizado_por_nick text
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select m.metodo, m.activo, m.titular, m.numero, m.qr, m.actualizado_at, p.nickname
+    from public.medios_pago m
+    left join public.perfiles p on p.id = m.actualizado_por
+    order by array_position(array['yape', 'plin'], m.metodo);
+end;
+$$;
+
+create function public.admin_guardar_medio_pago(
+  p_metodo text, p_activo boolean, p_titular text, p_numero text, p_qr text
+)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_titular text := regexp_replace(trim(coalesce(p_titular, '')), '\s+', ' ', 'g');
+  v_numero text := regexp_replace(trim(coalesce(p_numero, '')), '\s+', ' ', 'g');
+  v_qr text := nullif(trim(coalesce(p_qr, '')), '');
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if p_metodo is null or p_metodo not in ('yape', 'plin') then
+    raise exception 'Método de pago no válido';
+  end if;
+  if p_activo is null then
+    raise exception 'Falta indicar si el método se muestra o no';
+  end if;
+  if char_length(v_titular) > 80 then
+    raise exception 'El nombre puede tener máximo 80 caracteres';
+  end if;
+  if char_length(v_numero) > 40 then
+    raise exception 'El número puede tener máximo 40 caracteres';
+  end if;
+  if v_qr is not null and not (v_qr in ('qr-yape.jpeg', 'qr-plin.jpeg') or v_qr ~ '^pagos/[A-Za-z0-9][A-Za-z0-9._-]{0,79}$') then
+    raise exception 'La foto del QR no es válida';
+  end if;
+  if p_activo and v_numero = '' and v_qr is null then
+    raise exception 'Para mostrar este método pon el número o sube la foto del QR';
+  end if;
+
+  update public.medios_pago
+    set activo = p_activo, titular = v_titular, numero = v_numero, qr = v_qr,
+        actualizado_at = now(), actualizado_por = auth.uid()
+    where metodo = p_metodo;
+end;
+$$;
+
+revoke execute on function public.admin_listar_medios_pago() from public, anon;
+revoke execute on function public.admin_guardar_medio_pago(text, boolean, text, text, text) from public, anon;
+grant execute on function public.admin_listar_medios_pago() to authenticated;
+grant execute on function public.admin_guardar_medio_pago(text, boolean, text, text, text) to authenticated;
