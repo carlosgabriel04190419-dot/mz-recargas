@@ -120,6 +120,77 @@ function urlFotoCuenta(ruta) {
     return supabaseUrl + '/storage/v1/object/public/cuentas/' + encodeURIComponent(ruta);
 }
 
+// ---------- WHATSAPP DEL CLIENTE (obligatorio) ----------
+// Con el número se le avisa cuando su recarga se acredita o su pedido está listo. Es de Perú: 9 dígitos que
+// empiezan con 9. Se aceptan espacios, guiones, paréntesis y el prefijo 51 o +51. Es la misma regla que
+// normalizar_celular() en la base. Devuelve los 9 dígitos, o '' si no sirve.
+function normalizarCelular(valor) {
+    const s = String(valor || '').replace(/[\s().-]/g, '').replace(/^(\+?51|0051)/, '');
+    return /^9\d{8}$/.test(s) ? s : '';
+}
+
+// "987654321" -> "987 654 321"
+function formatearCelular(celular) {
+    const s = String(celular || '');
+    return /^\d{9}$/.test(s) ? s.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3') : s;
+}
+
+// Si la persona todavía no dejó su WhatsApp, abre una ventana para pedírselo y no la deja seguir hasta que lo
+// ponga (o hasta que elija "Ahora no", cuando se puede cancelar). Devuelve una promesa: true si ya hay número
+// (queda en usuario.celular) y false si canceló. Los administradores no lo necesitan.
+let ventanaWhatsapp = null;
+function exigirWhatsapp(usuario, { cancelable = false } = {}) {
+    if (!usuario || usuario.es_admin || usuario.celular) return Promise.resolve(true);
+    if (ventanaWhatsapp) return ventanaWhatsapp;
+
+    ventanaWhatsapp = new Promise(resolver => {
+        const velo = document.createElement('div');
+        velo.id = 'modal-whatsapp-requerido';
+        velo.className = 'modal-overlay abierto';
+        velo.setAttribute('role', 'dialog');
+        velo.setAttribute('aria-modal', 'true');
+        velo.setAttribute('aria-labelledby', 'wsp-req-titulo');
+        velo.innerHTML = `<div class="modal-box">
+            <div class="modal-header">
+                <h2 id="wsp-req-titulo">Agrega tu WhatsApp</h2>
+                <p>Lo necesitamos para avisarte cuando tu recarga se acredite o tu pedido esté listo. Solo lo usamos para eso.</p>
+            </div>
+            <div class="msg-box error" id="wsp-req-msg"></div>
+            <label for="wsp-req-numero" style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Tu número de WhatsApp</label>
+            <input type="tel" id="wsp-req-numero" class="input-form" placeholder="987 654 321" inputmode="numeric" autocomplete="tel-national" maxlength="20">
+            <button type="button" id="wsp-req-guardar" class="btn-primary" style="width:100%;">Guardar y continuar</button>
+            <button type="button" id="wsp-req-salir" class="btn-outline" style="width:100%; margin-top:10px;">${cancelable ? 'Ahora no' : 'Cerrar sesión'}</button>
+        </div>`;
+        document.body.appendChild(velo);
+
+        const entrada = velo.querySelector('#wsp-req-numero');
+        const msg = velo.querySelector('#wsp-req-msg');
+        const boton = velo.querySelector('#wsp-req-guardar');
+        const cerrar = ok => { velo.remove(); ventanaWhatsapp = null; resolver(ok); };
+        const error = texto => { msg.style.display = 'block'; msg.textContent = texto; };
+
+        async function guardar() {
+            msg.style.display = 'none';
+            const celular = normalizarCelular(entrada.value);
+            if (!celular) return error('Escribe tu número de WhatsApp: 9 dígitos y empieza con 9 (por ejemplo 987 654 321).');
+            boton.disabled = true; boton.textContent = 'Guardando...';
+            const { error: fallo } = await supabaseClient.rpc('actualizar_mi_perfil', { nuevo_nickname: usuario.nickname, nuevo_celular: celular });
+            if (fallo) {
+                boton.disabled = false; boton.textContent = 'Guardar y continuar';
+                return error('No se pudo guardar: ' + fallo.message);
+            }
+            usuario.celular = celular;
+            cerrar(true);
+        }
+
+        boton.addEventListener('click', guardar);
+        entrada.addEventListener('keydown', e => { if (e.key === 'Enter') guardar(); });
+        velo.querySelector('#wsp-req-salir').addEventListener('click', () => { if (cancelable) cerrar(false); else cerrarSesionSegura(); });
+        entrada.focus();
+    });
+    return ventanaWhatsapp;
+}
+
 // Dirección de la imagen del QR de un medio de pago (tabla medios_pago). "pagos/<archivo>" es una foto
 // que el dueño subió desde el panel (bucket público "pagos"); cualquier otro valor es un archivo que viene
 // con el sitio (los QR de siempre, como qr-yape.jpeg).

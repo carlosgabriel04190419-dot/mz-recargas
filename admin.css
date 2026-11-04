@@ -220,14 +220,15 @@ body.admin-body { background: var(--bg); color: var(--texto); }
 
 /* En celular (lista angosta): todo apilado */
 .adm-pedido { grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: "ico main pago" "estado estado estado" "cliente cliente cliente" "acciones acciones acciones"; }
-.adm-pedido-cliente { display: flex; align-items: baseline; gap: 6px; padding-top: 10px; border-top: 1px dashed var(--borde); }
+.adm-pedido-cliente { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; padding-top: 10px; border-top: 1px dashed var(--borde); }
+.adm-pedido-cliente .adm-wsp-link, .adm-pedido-cliente .adm-sin-wsp { flex: 0 0 100%; }
 .adm-pedido-cliente strong { flex: none; max-width: 45%; }
 .adm-pedido-cliente span { flex: 1; min-width: 0; }
 .adm-pedido-cliente span::before { content: '· '; }
 
 /* Lista mediana: dos filas por pedido, y a la derecha el monto con los botones debajo */
 @container (min-width: 620px) {
-    .adm-pedido { grid-template-columns: 44px minmax(0, 1.5fr) minmax(0, 1fr) minmax(132px, max-content); grid-template-areas: "ico main cliente pago" "ico estado estado acciones"; align-items: start; }
+    .adm-pedido { grid-template-columns: 44px minmax(0, 1.5fr) minmax(0, 1fr) 176px; grid-template-areas: "ico main cliente pago" "ico estado estado acciones"; align-items: start; }
     .adm-pedido-cliente { display: block; padding-top: 0; border-top: none; }
     .adm-pedido-cliente strong { max-width: none; }
     .adm-pedido-cliente strong, .adm-pedido-cliente span { display: block; }
@@ -238,7 +239,7 @@ body.admin-body { background: var(--bg); color: var(--texto); }
 
 /* Lista ancha: todo el pedido en una sola fila, con títulos arriba */
 @container (min-width: 1000px) {
-    .adm-pedidos-cab, .adm-pedido { display: grid; grid-template-columns: 44px minmax(0, 1.6fr) minmax(0, 1fr) 104px minmax(0, 1.3fr) minmax(132px, max-content); column-gap: 18px; }
+    .adm-pedidos-cab, .adm-pedido { display: grid; grid-template-columns: 44px minmax(0, 1.6fr) minmax(0, 1fr) 104px minmax(0, 1.3fr) 176px; column-gap: 18px; }
     .adm-pedidos-cab { padding: 0 18px 0 22px; font-size: 11.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--texto-tenue); }
     .adm-pedido { grid-template-areas: "ico main cliente pago estado acciones"; align-items: center; }
     .adm-pedido-estado { padding-top: 0; }
@@ -421,6 +422,59 @@ body.admin-body { background: var(--bg); color: var(--texto); }
 .adm-pago-pie .adm-nota { flex: 1; min-width: 150px; }
 .adm-pago.sucio .adm-pago-pie .adm-nota { color: var(--acento-1); font-weight: 700; }
 
+/* ---------- WhatsApp del cliente y ajuste de saldo ---------- */
+.adm-wsp-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; color: #3ddc84; white-space: nowrap; }
+.adm-wsp-link:hover { text-decoration: underline; }
+.adm-wsp-link .material-icons { font-size: 15px; }
+:root[data-theme="light"] .adm-wsp-link { color: #0b8f4a; }
+.adm-sin-wsp { font-style: normal; font-size: 12.5px; color: var(--texto-tenue); }
+.adm-pedido-cliente .adm-wsp-link, .adm-pedido-cliente .adm-sin-wsp { margin-top: 2px; }
+.adm-btn-saldo { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.adm-btn-saldo .material-icons { font-size: 17px; }
+
+.aj-saldo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding: 12px 16px; border-radius: 12px; background: var(--bg-input); border: 1px solid var(--borde); font-size: 13.5px; color: var(--texto-secundario); }
+.aj-saldo strong { font-size: 22px; font-weight: 800; color: var(--texto); }
+.aj-tipo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.aj-op { position: relative; cursor: pointer; }
+.aj-op input { position: absolute; opacity: 0; pointer-events: none; }
+.aj-op > span { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 10px; border-radius: 12px; border: 1.5px solid var(--borde-suave); background: var(--bg-input); font-size: 14px; font-weight: 700; color: var(--texto-secundario); transition: border-color 0.15s, background 0.15s, color 0.15s; }
+.aj-op > span .material-icons { font-size: 20px; }
+.aj-op input:checked + span { border-color: var(--exito); background: rgba(46, 230, 166, 0.12); color: var(--exito); }
+.aj-op.quitar input:checked + span { border-color: var(--error); background: rgba(255, 71, 87, 0.12); color: var(--error); }
+.aj-op input:focus-visible + span { outline: 2px solid var(--acento-1); outline-offset: 2px; }
+.aj-etq { display: block; margin-bottom: 7px; font-size: 13.5px; font-weight: 600; color: var(--texto-secundario); }
+.aj-etq span { font-weight: 400; color: var(--texto-tenue); }
+.aj-motivos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.aj-motivos button { padding: 5px 11px; border-radius: 20px; border: 1px solid var(--borde-suave); background: none; color: var(--texto-secundario); font: 600 12px 'Poppins', sans-serif; cursor: pointer; }
+.aj-motivos button:hover { border-color: var(--acento-1); color: var(--acento-1); }
+.aj-check { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; font-size: 13.5px; color: var(--texto-secundario); cursor: pointer; }
+.aj-check input { flex: none; width: 16px; height: 16px; margin-top: 3px; }
+.aj-check small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.4; color: var(--texto-tenue); }
+.aj-resultado { margin-bottom: 14px; padding: 12px 14px; border-radius: 12px; background: var(--bg-input); border: 1px solid var(--borde); font-size: 13.5px; line-height: 1.5; text-align: center; color: var(--texto-secundario); }
+.aj-resultado strong { font-size: 18px; color: var(--texto); }
+.aj-resultado.mas { border-color: rgba(46, 230, 166, 0.55); }
+.aj-resultado.mas strong { color: var(--exito); }
+.aj-resultado.menos { border-color: rgba(255, 176, 32, 0.55); }
+.aj-resultado.menos strong { color: #ffb020; }
+.aj-resultado.mal { border-color: var(--error); color: var(--error); }
+#btn-aj-guardar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.aj-historial { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--borde); }
+.aj-historial h3 { margin-bottom: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--texto-tenue); }
+.aj-fila { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; padding: 9px 0; border-bottom: 1px solid var(--borde); font-size: 13px; }
+.aj-fila:last-child { border-bottom: none; }
+.aj-monto { font-weight: 800; white-space: nowrap; }
+.aj-monto.mas { color: var(--exito); }
+.aj-monto.menos { color: var(--error); }
+.aj-motivo { min-width: 0; overflow-wrap: anywhere; }
+.aj-fecha { grid-column: 1 / -1; font-size: 12px; color: var(--texto-tenue); }
+
+.aviso-wsp-icono { display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 50%; background: rgba(46, 230, 166, 0.14); color: var(--exito); }
+.aviso-wsp-icono .material-icons { font-size: 36px; }
+.aviso-wsp-texto { margin-bottom: 14px; font-size: 14px; line-height: 1.55; color: var(--texto-secundario); }
+.aviso-wsp-mensaje { margin-bottom: 16px; padding: 12px 14px; border-radius: 12px; border: 1px dashed var(--borde-suave); background: var(--bg-input); font-size: 13px; line-height: 1.55; text-align: left; color: var(--texto-secundario); }
+.btn-primary.aviso-wsp-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-decoration: none; background: #25D366; color: #06361b; box-shadow: 0 8px 20px rgba(37, 211, 102, 0.28); }
+.btn-primary.aviso-wsp-btn:hover { box-shadow: 0 12px 26px rgba(37, 211, 102, 0.4); }
+
 /* ---------- celular y tablet ---------- */
 .adm-velo { display: none; }
 @media (max-width: 960px) {
@@ -438,6 +492,8 @@ body.admin-body { background: var(--bg); color: var(--texto); }
     .adm-hero-cifras .adm-mini-num { margin: 0; font-size: 26px; }
 }
 @media (max-width: 560px) {
+    .aj-op > span { gap: 4px; padding: 12px 6px; font-size: 13px; }
+    .aj-op > span .material-icons { font-size: 18px; }
     .adm-pago-qr { flex-direction: column; align-items: flex-start; }
     .adm-cat { flex-direction: column; }
     .adm-cat-img { width: 100%; height: 150px; }

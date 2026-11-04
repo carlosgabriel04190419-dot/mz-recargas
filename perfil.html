@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MZ'Recargas | Mi Perfil</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261103a">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261104a">
     <meta name="theme-color" content="#0c0f18">
     <meta name="robots" content="noindex, nofollow">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-    <link rel="stylesheet" href="style.css?v=20261103a">
+    <link rel="stylesheet" href="style.css?v=20261104a">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
 
     <nav class="navbar">
         <a href="./" class="nav-logo-premium">
-            <img src="logo.svg?v=20261103a" alt="MZ'Recargas" class="logo-img">
+            <img src="logo.svg?v=20261104a" alt="MZ'Recargas" class="logo-img">
             <div class="logo-text"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></div>
         </a>
         <div class="nav-links">
@@ -85,8 +85,9 @@
             <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">Nickname</label>
             <input type="text" id="perfil-nickname" class="input-form">
 
-            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">WhatsApp (opcional)</label>
-            <input type="text" id="perfil-celular" class="input-form" placeholder="Ej: 987654321">
+            <label style="display:block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; color: var(--texto-secundario);">WhatsApp <span style="font-weight:400; color:var(--texto-tenue);">(obligatorio)</span></label>
+            <input type="tel" id="perfil-celular" class="input-form" placeholder="Ej: 987 654 321" inputmode="numeric" autocomplete="tel-national" maxlength="20" style="margin-bottom: 7px;">
+            <p style="font-size: 12.5px; color: var(--texto-tenue); line-height: 1.5; margin-bottom: 18px;">Lo usamos para avisarte cuando tu recarga se acredite o tu pedido esté listo.</p>
 
             <button type="button" id="btn-guardar" class="btn-primary" style="width:100%; margin-top: 6px;" onclick="guardarPerfil()">Guardar cambios</button>
         </div>
@@ -117,7 +118,7 @@
         <div class="footer-grid">
             <div class="footer-col">
                 <div class="footer-logo">
-                    <img src="logo.svg?v=20261103a" alt="MZ'Recargas" style="width:30px; height:30px;">
+                    <img src="logo.svg?v=20261104a" alt="MZ'Recargas" style="width:30px; height:30px;">
                     <span style="font-size:18px; font-weight:800;"><span class="text-mz">MZ'</span><span class="text-recargas">Recargas</span></span>
                 </div>
                 <p>Tu tienda de confianza para recargas de diamantes de Free Fire. Pagos verificados a mano y entrega rápida.</p>
@@ -163,21 +164,21 @@
     <!-- FOOTER:FIN -->
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="sesion.js?v=20261103a"></script>
+    <script src="sesion.js?v=20261104a"></script>
     <script>
         window.onload = async function () {
             const usuario = await verificarSesion();
             if (!usuario) return;
             document.getElementById('perfil-correo').value = usuario.correo;
             document.getElementById('perfil-nickname').value = usuario.nickname;
-            document.getElementById('perfil-celular').value = usuario.celular || '';
+            document.getElementById('perfil-celular').value = formatearCelular(usuario.celular);
             document.getElementById('perfil-puntos').innerText = (usuario.puntos || 0).toLocaleString('es-PE');
             pintarLinkReferido(usuario);
         };
 
         async function guardarPerfil() {
             const nickname = document.getElementById('perfil-nickname').value.trim();
-            const celular = document.getElementById('perfil-celular').value.trim();
+            const celular = normalizarCelular(document.getElementById('perfil-celular').value);
             const btn = document.getElementById('btn-guardar');
             const errBox = document.getElementById('msg-box');
             const okBox = document.getElementById('exito-box');
@@ -189,10 +190,16 @@
                 return;
             }
 
+            if (!celular) {
+                errBox.style.display = 'block';
+                errBox.innerText = 'Escribe tu número de WhatsApp: 9 dígitos y empieza con 9 (por ejemplo 987 654 321).';
+                return;
+            }
+
             btn.disabled = true; btn.innerText = 'Guardando...';
             const { error } = await supabaseClient.rpc('actualizar_mi_perfil', {
                 nuevo_nickname: nickname,
-                nuevo_celular: celular || null
+                nuevo_celular: celular
             });
             btn.disabled = false; btn.innerText = 'Guardar cambios';
 
@@ -201,6 +208,7 @@
                 errBox.innerText = 'No se pudo guardar: ' + error.message;
                 return;
             }
+            document.getElementById('perfil-celular').value = formatearCelular(celular);
             okBox.style.display = 'block';
             okBox.innerText = 'Datos actualizados.';
         }

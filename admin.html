@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MZ'Recargas | Panel Admin</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261103a">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261104a">
     <meta name="theme-color" content="#0c0f18">
     <meta name="robots" content="noindex, nofollow">
     <script>try{var t=localStorage.getItem('mzrecargas_tema_v2');if(t==="light"||t==="dark")document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-    <link rel="stylesheet" href="style.css?v=20261103a">
-    <link rel="stylesheet" href="admin.css?v=20261103a">
+    <link rel="stylesheet" href="style.css?v=20261104a">
+    <link rel="stylesheet" href="admin.css?v=20261104a">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body class="admin-body">
@@ -21,7 +21,7 @@
         <!-- ===== BARRA LATERAL ===== -->
         <aside class="adm-side" id="adm-side">
             <a href="./" class="adm-marca" aria-label="MZ'Recargas">
-                <img src="logo.svg?v=20261103a" alt="">
+                <img src="logo.svg?v=20261104a" alt="">
                 <div class="adm-marca-texto"><span class="m">MZ'</span>Recargas</div>
             </a>
             <div class="adm-rol">Administrador</div>
@@ -174,15 +174,15 @@
                 <!-- ===== USUARIOS ===== -->
                 <section class="adm-vista" id="vista-usuarios">
                     <div class="adm-titulo"><span class="adm-ico tono-clientes" style="--tono: 34, 184, 207;"><span class="material-icons">group</span></span><h1>Usuarios</h1></div>
-                    <p class="adm-sub">Los clientes registrados, con su saldo y su WhatsApp si lo dejaron en su perfil.</p>
+                    <p class="adm-sub">Los clientes registrados, con su saldo y su WhatsApp (es obligatorio al registrarse). Si pusiste o aceptaste un saldo por error, con <strong>Ajustar saldo</strong> lo corriges: pones o quitas lo que haga falta y queda anotado quién, cuándo y por qué.</p>
                     <div class="adm-filtros">
                         <span id="usuarios-conteo" style="font-size:13.5px; color: var(--texto-secundario);"></span>
                         <input type="search" class="adm-input" id="usuarios-buscar" placeholder="Buscar por nickname o correo…" aria-label="Buscar usuarios">
                     </div>
                     <div class="adm-tarjeta">
                         <table class="adm-tabla" id="tabla-admin-usuarios">
-                            <thead><tr><th>Nickname</th><th>Correo</th><th>WhatsApp</th><th>Saldo</th><th>Registrado</th></tr></thead>
-                            <tbody id="tabla-admin-usuarios-body"><tr><td colspan="5" class="adm-vacio">Cargando...</td></tr></tbody>
+                            <thead><tr><th>Nickname</th><th>Correo</th><th>WhatsApp</th><th>Saldo</th><th>Registrado</th><th>Acciones</th></tr></thead>
+                            <tbody id="tabla-admin-usuarios-body"><tr><td colspan="6" class="adm-vacio">Cargando...</td></tr></tbody>
                         </table>
                     </div>
                 </section>
@@ -447,8 +447,55 @@
         </div>
     </div>
 
+    <!-- Modal: ajustar el saldo de un cliente -->
+    <div class="modal-overlay" id="modal-ajuste-saldo">
+        <div class="modal-box" style="max-width: 480px; max-height: 92vh; overflow-y: auto;">
+            <span class="material-icons close-btn" onclick="cerrarAjusteSaldo()">close</span>
+            <div class="modal-header">
+                <h2>Ajustar saldo</h2>
+                <p id="aj-cliente">&nbsp;</p>
+            </div>
+            <div class="aj-saldo"><span>Saldo actual</span><strong id="aj-saldo-actual">S/ 0.00</strong></div>
+            <div id="aj-msg" class="msg-box error"></div>
+            <div class="aj-tipo" role="radiogroup" aria-label="Tipo de ajuste">
+                <label class="aj-op"><input type="radio" name="aj-tipo" value="sumar" checked onchange="actualizarVistaAjuste()"><span><span class="material-icons">add_circle</span>Poner saldo</span></label>
+                <label class="aj-op quitar"><input type="radio" name="aj-tipo" value="restar" onchange="actualizarVistaAjuste()"><span><span class="material-icons">remove_circle</span>Quitar saldo</span></label>
+            </div>
+            <label class="aj-etq" for="aj-monto">Monto (S/)</label>
+            <input type="number" id="aj-monto" class="input-form" min="0.01" step="0.01" inputmode="decimal" placeholder="Ej: 10.00" oninput="actualizarVistaAjuste()">
+            <label class="aj-etq" for="aj-motivo">Motivo <span>(obligatorio, queda anotado)</span></label>
+            <input type="text" id="aj-motivo" class="input-form" maxlength="200" placeholder="Ej: Acepté la recarga por error" autocomplete="off" style="margin-bottom: 8px;">
+            <div class="aj-motivos" id="aj-motivos">
+                <button type="button" onclick="ponerMotivoAjuste(0)">Recarga aceptada por error</button>
+                <button type="button" onclick="ponerMotivoAjuste(1)">Pago recibido fuera de la web</button>
+                <button type="button" onclick="ponerMotivoAjuste(2)">Saldo de regalo</button>
+                <button type="button" onclick="ponerMotivoAjuste(3)">Corrección de saldo</button>
+            </div>
+            <label class="aj-check" for="aj-puntos"><input type="checkbox" id="aj-puntos"><span>También ajustar sus puntos del ranking <small>1 punto por cada S/ 1. Márcalo si estás deshaciendo una recarga aceptada por error: esa recarga también le dio puntos.</small></span></label>
+            <div class="aj-resultado" id="aj-resultado">Escribe el monto para ver cómo quedará su saldo.</div>
+            <button type="button" class="btn-primary" id="btn-aj-guardar" style="width:100%;" onclick="guardarAjusteSaldo()" disabled>Guardar ajuste</button>
+            <div class="aj-historial">
+                <h3>Últimos ajustes de este cliente</h3>
+                <div id="aj-historial"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: avisarle al cliente por WhatsApp -->
+    <div class="modal-overlay" id="modal-aviso-wsp">
+        <div class="modal-box" style="max-width: 460px; text-align: center;">
+            <span class="material-icons close-btn" onclick="cerrarAvisoWsp()">close</span>
+            <div class="aviso-wsp-icono"><span class="material-icons">task_alt</span></div>
+            <h2 id="aviso-wsp-titulo" style="font-size: 21px; font-weight: 800; margin-bottom: 8px;"></h2>
+            <p id="aviso-wsp-texto" class="aviso-wsp-texto"></p>
+            <div id="aviso-wsp-mensaje" class="aviso-wsp-mensaje"></div>
+            <a id="aviso-wsp-boton" class="btn-primary aviso-wsp-btn" href="#" target="_blank" rel="noopener" onclick="cerrarAvisoWsp()"><span class="material-icons">chat</span> Avisar por WhatsApp</a>
+            <button type="button" class="btn-outline" style="width:100%; margin-top:10px;" onclick="cerrarAvisoWsp()">Ahora no</button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="sesion.js?v=20261103a"></script>
+    <script src="sesion.js?v=20261104a"></script>
     <script>
         const ETIQUETAS_ESTADO = { pendiente: 'Pendiente', confirmado: 'Confirmado', completado: 'Completado', cancelado: 'Cancelado' };
         const ETIQUETAS_CATEGORIA = { ilimitada: 'Recargas Ilimitadas', promo: 'Promo Primera Vez', cajas_tokens: 'Cajas de Tokens', tokens_evolutivos: 'Tokens Evolutivos' };
@@ -734,7 +781,7 @@
                     ${meta ? `<div class="adm-pedido-meta">${meta}</div>` : ''}
                     <div class="adm-pedido-fecha" title="${escAttr(f.toLocaleString('es-PE'))}"><span class="material-icons">schedule</span><span class="adm-fecha-exacta"><span>${escHtml(tiempoRelativo(p.created_at))}</span> · <span>${escHtml(fecha)}</span></span></div>
                 </div>
-                <div class="adm-pedido-cliente"><strong title="${escAttr(p.nickname)}">${escHtml(p.nickname)}</strong><span title="${escAttr(p.correo)}">${escHtml(p.correo)}</span></div>
+                <div class="adm-pedido-cliente"><strong title="${escAttr(p.nickname)}">${escHtml(p.nickname)}</strong><span title="${escAttr(p.correo)}">${escHtml(p.correo)}</span>${enlaceWhatsapp(p.celular, mensajeCliente(p), 'Sin WhatsApp')}</div>
                 <div class="adm-pedido-pago"><b>${formatearSoles(p.monto)}</b><span class="adm-pago-chip">${escHtml(p.metodo_pago)}</span></div>
                 <div class="adm-pedido-estado"><span class="estado-pill estado-${escAttr(p.estado)}">${escHtml(ETIQUETAS_ESTADO[p.estado] || p.estado)}</span>${notaEntregaAdmin(p)}${nota}</div>
                 ${acciones === '—' ? '' : `<div class="adm-pedido-acciones">${acciones}</div>`}
@@ -758,14 +805,40 @@
                 return;
             }
 
+            filas.forEach(f => { pedidosPorId[f.id] = f; });
             cuerpo.innerHTML = CABECERA_PEDIDOS + filas.map(tarjetaPedido).join('');
             consultarEntregasEnCurso(filas);
+        }
+
+        // Lo último que se cargó de cada pedido (para poder avisarle al cliente después de una acción).
+        const pedidosPorId = {};
+
+        function mensajeCliente(p) {
+            const sobre = p.tipo === 'recarga_saldo' ? `tu recarga de ${formatearSoles(p.monto)}` : 'tu pedido';
+            return `¡Hola ${p.nickname}! 👋 Te escribimos de MZ'Recargas sobre ${sobre}.`;
+        }
+
+        // "Tu recarga ya fue acreditada": se abre el chat con el cliente y el mensaje ya escrito.
+        function avisarRecarga(id) {
+            const p = pedidosPorId[id];
+            if (!p) return;
+            mostrarAvisoWsp({
+                titulo: '¡Recarga acreditada!',
+                texto: p.celular
+                    ? `Se sumaron ${formatearSoles(p.monto)} al saldo de ${p.nickname}. Avísale por WhatsApp para que sepa que ya puede comprar.`
+                    : `Se sumaron ${formatearSoles(p.monto)} al saldo de ${p.nickname}, pero no tiene WhatsApp registrado: pídele que lo agregue en su perfil.`,
+                celular: p.celular,
+                mensaje: `¡Hola ${p.nickname}! 👋 Tu recarga de ${formatearSoles(p.monto)} ya fue acreditada con éxito ✅. Ya puedes usar tu saldo para comprar tus diamantes en mzrecargas.com 💎. ¡Gracias por confiar en MZ'Recargas!`
+            });
         }
 
         function botonesAccion(p) {
             const btns = [];
             if (p.tipo === 'recarga_saldo' && p.estado === 'pendiente') {
                 btns.push(`<button class="btn-primary btn-sm" onclick="cambiarEstadoPedido('${p.id}','confirmado')">Confirmar pago</button>`);
+            }
+            if (p.tipo === 'recarga_saldo' && (p.estado === 'confirmado' || p.estado === 'completado')) {
+                btns.push(`<button class="btn-outline btn-sm" onclick="avisarRecarga('${p.id}')">Avisar por WhatsApp</button>`);
             }
             if (p.tipo === 'compra_diamantes' && p.estado === 'confirmado' && puedeConsultarEntrega(p)) {
                 btns.push(`<button class="btn-outline btn-sm" onclick="consultarEntrega('${p.id}')">Consultar estado</button>`);
@@ -792,6 +865,7 @@
             }
             if (!confirm(pregunta)) return;
 
+            const pedido = pedidosPorId[id];
             const { error } = await supabaseClient.rpc('admin_actualizar_pedido', { p_id: id, p_estado: nuevoEstado, p_nota: null });
             if (error) {
                 avisar('No se pudo actualizar: ' + error.message, 'error');
@@ -800,6 +874,8 @@
             avisar(nuevoEstado === 'confirmado' ? 'Pago confirmado: saldo acreditado' : nuevoEstado === 'completado' ? 'Pedido marcado como entregado' : 'Pedido cancelado');
             if (CFG_LISTAS[seccionActual]) await cargarLista(seccionActual);
             actualizarInsignias();
+            // Al acreditar una recarga se ofrece avisarle al cliente por WhatsApp.
+            if (nuevoEstado === 'confirmado' && pedido && pedido.tipo === 'recarga_saldo') avisarRecarga(id);
         }
 
         // ---------- ENTREGA AUTOMÁTICA DE UN PEDIDO ----------
@@ -888,10 +964,10 @@
         // ---------- USUARIOS ----------
         async function cargarUsuarios() {
             const cuerpo = document.getElementById('tabla-admin-usuarios-body');
-            cuerpo.innerHTML = `<tr><td colspan="5" class="adm-vacio">Cargando...</td></tr>`;
+            cuerpo.innerHTML = `<tr><td colspan="6" class="adm-vacio">Cargando...</td></tr>`;
             const { data, error } = await supabaseClient.rpc('admin_listar_usuarios');
             if (error) {
-                cuerpo.innerHTML = `<tr><td colspan="5" class="adm-vacio">No se pudo cargar los usuarios.</td></tr>`;
+                cuerpo.innerHTML = `<tr><td colspan="6" class="adm-vacio">No se pudo cargar los usuarios.</td></tr>`;
                 return;
             }
             usuariosCache = data || [];
@@ -904,16 +980,148 @@
             const lista = usuariosCache.filter(u => !q || normalizar(u.nickname + ' ' + u.correo).includes(q));
             document.getElementById('usuarios-conteo').textContent = `${lista.length} de ${usuariosCache.length} ${plural(usuariosCache.length, 'usuario', 'usuarios')}`;
             if (lista.length === 0) {
-                cuerpo.innerHTML = `<tr><td colspan="5" class="adm-vacio">${usuariosCache.length ? 'Nadie coincide con esa búsqueda.' : 'Todavía no hay usuarios registrados.'}</td></tr>`;
+                cuerpo.innerHTML = `<tr><td colspan="6" class="adm-vacio">${usuariosCache.length ? 'Nadie coincide con esa búsqueda.' : 'Todavía no hay usuarios registrados.'}</td></tr>`;
                 return;
             }
             cuerpo.innerHTML = lista.map(u => `<tr>
                 <td style="font-weight:700;">${escHtml(u.nickname)}</td>
                 <td>${escHtml(u.correo)}</td>
-                <td>${escHtml(u.celular || '—')}</td>
-                <td style="font-weight:700;">${formatearSoles(u.saldo)}</td>
-                <td>${new Date(u.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                <td>${enlaceWhatsapp(u.celular, `¡Hola ${u.nickname}! 👋 Te escribimos de MZ'Recargas.`, 'Sin número')}</td>
+                <td style="font-weight:700; white-space:nowrap;">${formatearSoles(u.saldo)}</td>
+                <td style="white-space:nowrap;">${new Date(u.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                <td><button class="btn-outline btn-sm adm-btn-saldo" type="button" onclick="abrirAjusteSaldo('${escAttr(u.id)}')"><span class="material-icons">tune</span>Ajustar saldo</button></td>
             </tr>`).join('');
+        }
+
+        // ---------- WHATSAPP DEL CLIENTE ----------
+        // Enlace para escribirle a un cliente con el mensaje ya puesto (solo falta darle enviar en WhatsApp).
+        function urlWhatsapp(celular, texto) {
+            const d = String(celular || '').replace(/\D/g, '');
+            return `https://wa.me/${d.length === 9 ? '51' + d : d}?text=${encodeURIComponent(texto)}`;
+        }
+
+        // Su número como enlace de WhatsApp, o un aviso si no lo tiene. (Ojo: dentro de la tarjeta del cliente
+        // no se usan <span>, porque sus estilos los achicarían; por eso el ícono es una <i>.)
+        function enlaceWhatsapp(celular, mensaje, sinNumero) {
+            if (!celular) return `<em class="adm-sin-wsp">${escHtml(sinNumero)}</em>`;
+            return `<a class="adm-wsp-link" href="${escAttr(urlWhatsapp(celular, mensaje))}" target="_blank" rel="noopener" title="Escribirle por WhatsApp"><i class="material-icons">chat</i>${escHtml(formatearCelular(celular))}</a>`;
+        }
+
+        // Ventana "Avisar por WhatsApp": muestra el mensaje y un botón que abre el chat con el cliente.
+        function mostrarAvisoWsp({ titulo, texto, celular, mensaje }) {
+            document.getElementById('aviso-wsp-titulo').textContent = titulo;
+            document.getElementById('aviso-wsp-texto').textContent = texto;
+            document.getElementById('aviso-wsp-mensaje').textContent = mensaje;
+            document.getElementById('aviso-wsp-mensaje').style.display = celular ? '' : 'none';
+            const boton = document.getElementById('aviso-wsp-boton');
+            boton.style.display = celular ? '' : 'none';
+            if (celular) boton.href = urlWhatsapp(celular, mensaje);
+            document.getElementById('modal-aviso-wsp').classList.add('abierto');
+        }
+        function cerrarAvisoWsp() { document.getElementById('modal-aviso-wsp').classList.remove('abierto'); }
+
+        // ---------- AJUSTAR EL SALDO DE UN CLIENTE ----------
+        // Poner o quitar saldo a mano (por ejemplo si se aceptó una recarga por error). Siempre se pide un motivo
+        // y la base anota quién lo hizo, cuándo y cuánto. Nunca deja un saldo negativo.
+        let ajusteUsuario = null;
+        const MOTIVOS_AJUSTE = ['Recarga aceptada por error', 'Pago recibido fuera de la web', 'Saldo de regalo', 'Corrección de saldo'];
+
+        function montoAjuste() {
+            const v = parseFloat(document.getElementById('aj-monto').value);
+            const m = isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : 0;
+            return document.querySelector('input[name="aj-tipo"]:checked').value === 'restar' ? -m : m;
+        }
+
+        function actualizarVistaAjuste() {
+            const m = montoAjuste(), saldo = Number(ajusteUsuario.saldo);
+            const despues = Math.round((saldo + m) * 100) / 100;
+            const res = document.getElementById('aj-resultado');
+            if (!m) { res.className = 'aj-resultado'; res.textContent = 'Escribe el monto para ver cómo quedará su saldo.'; }
+            else if (despues < 0) { res.className = 'aj-resultado mal'; res.textContent = `Solo tiene ${formatearSoles(saldo)}: no se le puede quitar ${formatearSoles(-m)}.`; }
+            else {
+                res.className = 'aj-resultado ' + (m > 0 ? 'mas' : 'menos');
+                res.innerHTML = `Saldo después: <strong>${formatearSoles(despues)}</strong> <span>(${m > 0 ? '+' : '−'} ${formatearSoles(Math.abs(m))})</span>`;
+            }
+            document.getElementById('btn-aj-guardar').disabled = !m || despues < 0;
+        }
+
+        function abrirAjusteSaldo(id) {
+            const u = usuariosCache.find(x => x.id === id);
+            if (!u) return;
+            ajusteUsuario = u;
+            document.getElementById('aj-cliente').textContent = `${u.nickname} · ${u.correo}`;
+            document.getElementById('aj-saldo-actual').textContent = formatearSoles(u.saldo);
+            document.querySelector('input[name="aj-tipo"][value="sumar"]').checked = true;
+            document.getElementById('aj-monto').value = '';
+            document.getElementById('aj-motivo').value = '';
+            document.getElementById('aj-puntos').checked = false;
+            document.getElementById('aj-msg').style.display = 'none';
+            document.getElementById('btn-aj-guardar').textContent = 'Guardar ajuste';
+            actualizarVistaAjuste();
+            document.getElementById('modal-ajuste-saldo').classList.add('abierto');
+            document.getElementById('aj-monto').focus();
+            cargarHistorialAjustes(u.id);
+        }
+
+        function ponerMotivoAjuste(i) {
+            const campo = document.getElementById('aj-motivo');
+            campo.value = MOTIVOS_AJUSTE[i];
+            campo.focus();
+            // Si se le está quitando saldo por una recarga aceptada por error, lo normal es quitarle también esos puntos.
+            if (i === 0 && document.querySelector('input[name="aj-tipo"]:checked').value === 'restar') document.getElementById('aj-puntos').checked = true;
+        }
+
+        function cerrarAjusteSaldo() { document.getElementById('modal-ajuste-saldo').classList.remove('abierto'); }
+
+        async function cargarHistorialAjustes(id) {
+            const cont = document.getElementById('aj-historial');
+            cont.innerHTML = '<p class="adm-nota">Cargando…</p>';
+            const { data, error } = await supabaseClient.rpc('admin_listar_ajustes_saldo', { p_usuario: id, p_limite: 5 });
+            if (!ajusteUsuario || ajusteUsuario.id !== id) return;
+            if (error) { cont.innerHTML = '<p class="adm-nota">No se pudo cargar el historial.</p>'; return; }
+            cont.innerHTML = (data || []).length ? data.map(a => {
+                const m = Number(a.monto), pts = Number(a.puntos);
+                const fecha = new Date(a.created_at).toLocaleString('es-PE', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).replace(/\./g, '').replace(/ ([ap]) m$/i, ' $1m');
+                return `<div class="aj-fila"><span class="aj-monto ${m > 0 ? 'mas' : 'menos'}">${m > 0 ? '+' : '−'} ${formatearSoles(Math.abs(m))}</span>
+                    <span class="aj-motivo">${escHtml(a.motivo)}${pts ? ` · ${pts > 0 ? '+' : '−'}${Math.abs(pts)} pts` : ''}</span>
+                    <span class="aj-fecha">${escHtml(fecha)} · ${escHtml(a.admin_nick || '—')}</span></div>`;
+            }).join('') : '<p class="adm-nota">Todavía no le hiciste ajustes.</p>';
+        }
+
+        async function guardarAjusteSaldo() {
+            const u = ajusteUsuario;
+            const msg = document.getElementById('aj-msg');
+            const boton = document.getElementById('btn-aj-guardar');
+            const m = montoAjuste();
+            const motivo = document.getElementById('aj-motivo').value.trim().replace(/\s+/g, ' ');
+            const puntos = document.getElementById('aj-puntos').checked;
+            msg.style.display = 'none';
+            if (!u || !m) return;
+            if (motivo.length < 3) { msg.style.display = 'block'; msg.textContent = 'Escribe el motivo del ajuste (por ejemplo: Acepté la recarga por error).'; document.getElementById('aj-motivo').focus(); return; }
+
+            const saldo = Number(u.saldo), despues = Math.round((saldo + m) * 100) / 100;
+            const verbo = m > 0 ? `Poner ${formatearSoles(m)} a` : `Quitar ${formatearSoles(-m)} a`;
+            if (!confirm(`${verbo} ${u.nickname}\n\nSu saldo pasa de ${formatearSoles(saldo)} a ${formatearSoles(despues)}.\nMotivo: ${motivo}${puntos ? '\nTambién se ajustan sus puntos del ranking.' : ''}\n\n¿Guardar?`)) return;
+
+            boton.disabled = true; boton.textContent = 'Guardando…';
+            const { data: nuevo, error } = await supabaseClient.rpc('admin_ajustar_saldo', { p_usuario: u.id, p_monto: m, p_motivo: motivo, p_ajustar_puntos: puntos });
+            if (error) {
+                boton.textContent = 'Guardar ajuste'; actualizarVistaAjuste();
+                msg.style.display = 'block'; msg.textContent = 'No se pudo guardar: ' + error.message;
+                return;
+            }
+            const saldoNuevo = Number(nuevo);
+            cerrarAjusteSaldo();
+            avisar(`Saldo de ${u.nickname}: ${formatearSoles(saldoNuevo)}`);
+            await cargarUsuarios();
+            mostrarAvisoWsp({
+                titulo: 'Saldo ajustado',
+                texto: u.celular
+                    ? `El saldo de ${u.nickname} pasó de ${formatearSoles(saldo)} a ${formatearSoles(saldoNuevo)}. Si quieres, avísale por WhatsApp.`
+                    : `El saldo de ${u.nickname} pasó de ${formatearSoles(saldo)} a ${formatearSoles(saldoNuevo)}. No tiene WhatsApp registrado.`,
+                celular: u.celular,
+                mensaje: `¡Hola ${u.nickname}! 👋 Hicimos un ajuste en tu saldo de MZ'Recargas: ${m > 0 ? '+' : '−'} ${formatearSoles(Math.abs(m))}. Tu saldo actual es ${formatearSoles(saldoNuevo)}. Si tienes alguna duda, escríbenos por aquí.`
+            });
         }
 
         // ---------- CATÁLOGO (visible / mantenimiento / sin stock) ----------

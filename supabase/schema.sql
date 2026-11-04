@@ -2584,3 +2584,238 @@ revoke execute on function public.admin_listar_medios_pago() from public, anon;
 revoke execute on function public.admin_guardar_medio_pago(text, boolean, text, text, text) from public, anon;
 grant execute on function public.admin_listar_medios_pago() to authenticated;
 grant execute on function public.admin_guardar_medio_pago(text, boolean, text, text, text) to authenticated;
+
+
+-- ---------- WHATSAPP DEL CLIENTE Y AJUSTE MANUAL DE SALDO ----------
+-- 1) El WhatsApp pasa a ser obligatorio: se pide al registrarse, no se puede dejar vacío en el perfil y
+--    el sitio lo exige antes de recargar o comprar. Es un número de Perú: 9 dígitos que empiezan con 9.
+--    normalizar_celular() acepta espacios, guiones, paréntesis y el prefijo 51 o +51, y devuelve solo los
+--    9 dígitos (o NULL si no sirve). Así el panel arma el enlace de WhatsApp siempre igual: 51 + número.
+create function public.normalizar_celular(p text)
+returns text
+language sql
+immutable
+set search_path = ''
+as $$
+  select case when s ~ '^9[0-9]{8}$' then s end
+  from (select regexp_replace(regexp_replace(coalesce(p, ''), '[[:space:]().-]', '', 'g'), '^(\+?51|0051)', '') as s) x;
+$$;
+revoke execute on function public.normalizar_celular(text) from public, anon, authenticated;
+
+-- Antes aceptaba cualquier cosa (incluso vacío). Ahora el número es obligatorio y se guarda ya ordenado.
+create or replace function public.actualizar_mi_perfil(nuevo_nickname text, nuevo_celular text default null)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_celular text := public.normalizar_celular(nuevo_celular);
+begin
+  if v_celular is null then
+    raise exception 'Escribe tu número de WhatsApp: 9 dígitos y empieza con 9 (por ejemplo 987 654 321)';
+  end if;
+  update public.perfiles
+    set nickname = coalesce(nullif(trim(nuevo_nickname), ''), nickname),
+        celular = v_celular
+    where id = auth.uid();
+end;
+$$;
+
+-- Al registrarse, el número viaja en los datos del registro (raw_user_meta_data.celular). Si no viene o no
+-- sirve, el perfil queda sin número y el sitio se lo pide antes de recargar o comprar.
+create or replace function public.manejar_nuevo_usuario()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_codigo text;
+  v_referido_por uuid;
+  v_version text;
+begin
+  loop
+    v_codigo := upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
+    exit when not exists (select 1 from public.perfiles where codigo_referido = v_codigo);
+  end loop;
+
+  select id into v_referido_por from public.perfiles
+    where codigo_referido = upper(coalesce(new.raw_user_meta_data->>'ref', ''))
+    limit 1;
+
+  -- La fecha la pone el servidor; del cliente solo viene la versión (se
+  -- recorta a 20 caracteres y solo se guarda si realmente la mandó).
+  v_version := nullif(left(trim(coalesce(new.raw_user_meta_data->>'version_terminos', '')), 20), '');
+
+  insert into public.perfiles (id, nickname, celular, codigo_referido, referido_por, acepto_terminos_at, version_terminos)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'nickname', split_part(new.email, '@', 1)),
+    public.normalizar_celular(new.raw_user_meta_data->>'celular'),
+    v_codigo,
+    v_referido_por,
+    case when v_version is not null then now() end,
+    v_version
+  );
+  return new;
+end;
+$$;
+
+-- 2) Ajuste manual de saldo (poner o quitar a mano, por ejemplo si se aceptó una recarga por error).
+--    Cada ajuste queda anotado: quién, cuándo, cuánto, el saldo antes y después y el motivo. Esa tabla no
+--    la lee nadie desde la web: solo las funciones de abajo, que son del admin.
+create table public.ajustes_saldo (
+  id bigint generated always as identity primary key,
+  usuario_id uuid not null references public.perfiles(id) on delete cascade,
+  admin_id uuid references auth.users(id) on delete set null,
+  monto numeric(10,2) not null check (monto <> 0),
+  saldo_antes numeric(10,2) not null,
+  saldo_despues numeric(10,2) not null check (saldo_despues >= 0),
+  puntos integer not null default 0,
+  motivo text not null check (char_length(motivo) between 3 and 200),
+  created_at timestamptz not null default now()
+);
+create index ajustes_saldo_usuario_idx on public.ajustes_saldo (usuario_id, created_at desc);
+alter table public.ajustes_saldo enable row level security;
+revoke all on public.ajustes_saldo from anon, authenticated;
+
+-- p_monto positivo suma y negativo resta (nunca deja el saldo por debajo de 0). Con p_ajustar_puntos también
+-- mueve los puntos del ranking (1 por cada S/ 1), útil para deshacer una recarga aceptada por error.
+-- Devuelve el saldo nuevo.
+create function public.admin_ajustar_saldo(p_usuario uuid, p_monto numeric, p_motivo text, p_ajustar_puntos boolean default false)
+returns numeric
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_motivo text := regexp_replace(trim(coalesce(p_motivo, '')), '\s+', ' ', 'g');
+  v_monto numeric(10,2);
+  v_antes numeric(10,2);
+  v_despues numeric(10,2);
+  v_puntos integer := 0;
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+  if p_monto is null or abs(p_monto) >= 100000000 then
+    raise exception 'Escribe un monto válido';
+  end if;
+  v_monto := round(p_monto, 2);
+  if v_monto = 0 then
+    raise exception 'El monto debe ser mayor a 0';
+  end if;
+  if char_length(v_motivo) < 3 then
+    raise exception 'Escribe el motivo del ajuste (mínimo 3 letras)';
+  end if;
+  if char_length(v_motivo) > 200 then
+    raise exception 'El motivo puede tener máximo 200 caracteres';
+  end if;
+
+  select saldo into v_antes from public.perfiles where id = p_usuario for update;
+  if not found then
+    raise exception 'Usuario no encontrado';
+  end if;
+
+  v_despues := v_antes + v_monto;
+  if v_despues < 0 then
+    raise exception 'No se puede quitar S/ %: el cliente solo tiene S/ %', to_char(abs(v_monto), 'FM99999990.00'), to_char(v_antes, 'FM99999990.00');
+  end if;
+  if coalesce(p_ajustar_puntos, false) then
+    v_puntos := (sign(v_monto) * floor(abs(v_monto)))::integer;
+  end if;
+
+  update public.perfiles
+    set saldo = v_despues, puntos = greatest(0, puntos + v_puntos)
+    where id = p_usuario;
+  insert into public.ajustes_saldo (usuario_id, admin_id, monto, saldo_antes, saldo_despues, puntos, motivo)
+    values (p_usuario, auth.uid(), v_monto, v_antes, v_despues, v_puntos, v_motivo);
+  return v_despues;
+end;
+$$;
+
+create function public.admin_listar_ajustes_saldo(p_usuario uuid, p_limite integer default 10)
+returns table (created_at timestamptz, monto numeric, saldo_despues numeric, puntos integer, motivo text, admin_nick text)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select a.created_at, a.monto, a.saldo_despues, a.puntos, a.motivo, p.nickname
+    from public.ajustes_saldo a
+    left join public.perfiles p on p.id = a.admin_id
+    where a.usuario_id = p_usuario
+    order by a.created_at desc, a.id desc
+    limit least(greatest(coalesce(p_limite, 10), 1), 50);
+end;
+$$;
+
+-- 3) La lista de pedidos del panel ahora trae el WhatsApp del cliente (para avisarle cuando se acredita su recarga).
+--    Cambia lo que devuelve, así que se recrea.
+drop function public.admin_listar_pedidos(text);
+create function public.admin_listar_pedidos(p_estado text default null)
+returns table (
+  id uuid, created_at timestamptz, tipo text, estado text, monto numeric, metodo_pago text,
+  id_jugador_ff text, nota_admin text, usuario_id uuid, nickname text, correo text, paquete_nombre text,
+  nickname_jugador text, entrega text, entrega_ref text, entrega_detalle text, entrega_intentos integer,
+  entrega_at timestamptz, celular text
+)
+language plpgsql
+security definer set search_path = public
+stable
+as $$
+begin
+  if not public.es_admin_actual() then
+    raise exception 'No autorizado';
+  end if;
+
+  return query
+    select pe.id, pe.created_at, pe.tipo, pe.estado, pe.monto, pe.metodo_pago,
+           pe.id_jugador_ff, pe.nota_admin, pe.usuario_id,
+           pf.nickname, u.email::text, pa.nombre,
+           pe.nickname_jugador, pe.entrega, pe.entrega_ref, pe.entrega_detalle, pe.entrega_intentos, pe.entrega_at,
+           pf.celular
+    from public.pedidos pe
+    join public.perfiles pf on pf.id = pe.usuario_id
+    join auth.users u on u.id = pe.usuario_id
+    left join public.paquetes_ff pa on pa.id = pe.paquete_id
+    where p_estado is null or pe.estado = p_estado
+    order by pe.created_at desc;
+end;
+$$;
+
+revoke execute on function public.admin_ajustar_saldo(uuid, numeric, text, boolean) from public, anon;
+revoke execute on function public.admin_listar_ajustes_saldo(uuid, integer) from public, anon;
+revoke execute on function public.admin_listar_pedidos(text) from public, anon;
+grant execute on function public.admin_ajustar_saldo(uuid, numeric, text, boolean) to authenticated;
+grant execute on function public.admin_listar_ajustes_saldo(uuid, integer) to authenticated;
+grant execute on function public.admin_listar_pedidos(text) to authenticated;
+
+
+-- ---------- SIN WHATSAPP NO HAY PEDIDOS ----------
+-- Aunque alguien se salte la pantalla del sitio, la base no deja crear una recarga ni una compra si el
+-- cliente no tiene su WhatsApp en el perfil (el admin queda fuera de esta regla). Así siempre se le puede
+-- avisar cuando su recarga se acredita o su pedido está listo.
+create function public.exigir_whatsapp_en_pedidos()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.perfiles p
+    where p.id = new.usuario_id and (p.es_admin or coalesce(p.celular, '') <> '')
+  ) then
+    raise exception 'Agrega tu número de WhatsApp en tu perfil para continuar con tu pedido';
+  end if;
+  return new;
+end;
+$$;
+revoke execute on function public.exigir_whatsapp_en_pedidos() from public, anon, authenticated;
+
+create trigger before_insert_pedido_whatsapp
+  before insert on public.pedidos
+  for each row execute function public.exigir_whatsapp_en_pedidos();
