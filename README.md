@@ -1,21 +1,155 @@
 # MZ'Recargas
 
-Tienda web de recargas de diamantes de Free Fire, con cuentas de usuario reales
-(login/registro), saldo precargado e historial de pedidos — inspirada en
-[skrecargasff.com](https://skrecargasff.com/), separada por completo del
-proyecto CarzaD'Cross (repositorio y proyecto de Supabase distintos, sin
-compartir usuarios ni datos).
+Tienda web de recargas de diamantes de Free Fire, con cuentas de usuario reales (login y registro), saldo precargado e historial de pedidos.
+
+> 👋 **¿Eres el dueño y no programas?** Empieza por la [**Guía para el dueño**](GUIA-DEL-DUENO.md): te explica, paso a paso y sin palabras raras, cómo ver el código, cómo ver la tienda en tu computadora y cómo cambiar algo y publicarlo.
+>
+> Esta página (el README) explica **cómo funciona todo** por dentro.
+
+## Contenido
+
+- [La tienda en 2 minutos](#la-tienda-en-2-minutos)
+- [Las piezas: qué es cada cosa y dónde vive](#las-piezas-qué-es-cada-cosa-y-dónde-vive)
+- [Qué se cambia desde el panel (sin tocar código)](#qué-se-cambia-desde-el-panel-sin-tocar-código)
+- [Qué se cambia en el código](#qué-se-cambia-en-el-código)
+- [Mapa de archivos](#mapa-de-archivos)
+- [Qué hay que renovar o vigilar](#qué-hay-que-renovar-o-vigilar)
+- [Reglas de oro](#reglas-de-oro)
+- [Referencia técnica (para quien programa)](#referencia-técnica-para-quien-programa)
+
+## La tienda en 2 minutos
+
+**Lo que hace un cliente:**
+1. **Crea su cuenta** con su correo y su WhatsApp (el WhatsApp es obligatorio).
+2. **Recarga saldo:** elige el monto, paga con Yape o Plin escaneando el QR y pulsa *Ya pagué*. Se abre WhatsApp con un mensaje listo para mandar la captura del pago.
+3. **Tú confirmas el pago** en el panel y el saldo aparece en su cuenta al instante. Con un clic le avisas por WhatsApp que ya está listo.
+4. **Compra diamantes con su saldo:** escribe su ID de Free Fire (la tienda le muestra su nickname para que confirme que es su cuenta), elige el paquete y compra. Si el paquete tiene **entrega automática**, los diamantes llegan solos en segundos. Si no, tú los entregas y marcas el pedido como *Entregado*.
+
+También se venden **cuentas de Free Fire**, y hay promo del día, puntos, ranking y programa de referidos.
+
+**Lo que haces tú:** entras a `mzrecargas.com/admin` con tu cuenta de administrador. Ahí confirmas pagos, entregas pedidos, corriges saldos, cambias precios y datos de pago, y ves cómo va el negocio. **Nada de eso requiere tocar código.**
+
+## Las piezas: qué es cada cosa y dónde vive
+
+```
+ Cliente (celular o computadora)
+      │  abre mzrecargas.com
+      ▼
+ GitHub Pages ─── publica las páginas (los archivos de este repositorio)
+      │  desde el navegador, la página habla con...
+      ▼
+ Supabase ─── usuarios y contraseñas · saldos · pedidos · precios · datos de pago
+      │
+      └── Función "integracion" ──► Proveedor de recargas ──► diamantes en Free Fire
+```
+
+| Pieza | Qué es | Dónde se maneja |
+|---|---|---|
+| **Las páginas de la web** | Los archivos de este repositorio (HTML, CSS y JavaScript). Es lo que ve el cliente. | GitHub. Lo que se guarda en la rama `main` se publica solo (GitHub Pages). |
+| **La base de datos y las cuentas** | Usuarios, contraseñas, saldos, pedidos, precios y medios de pago. **No están en el código.** | Supabase (supabase.com), proyecto de MZ'Recargas. |
+| **La función de entrega automática** | Un programa pequeño que corre en Supabase y habla con el proveedor sin mostrar la llave. | `supabase/functions/integracion/` (el código) y Supabase → Edge Functions (donde corre). |
+| **El proveedor de recargas** | Un servicio externo que entrega los diamantes. Se paga aparte (saldo en USDT) y su acceso vence cada cierto tiempo. | Panel → *Integraciones*. |
+| **El dominio** | `mzrecargas.com` | Donde se compró el dominio. Apunta a GitHub Pages (archivo `CNAME`). |
+| **WhatsApp** | Soporte y avisos a los clientes. Es manual: el panel deja el mensaje listo y tú le das enviar. | Número de contacto escrito en las páginas. |
+
+## Qué se cambia desde el panel (sin tocar código)
+
+Entra a `mzrecargas.com/admin`:
+
+| Quiero… | Panel → sección |
+|---|---|
+| Confirmar que un cliente pagó su recarga | **Solicitudes** |
+| Ver los pedidos por entregar, marcarlos como entregados o cancelarlos | **Pedidos** |
+| Ver todo lo que pasó en la tienda | **Historial** |
+| Poner o quitar saldo a un cliente (por ejemplo si se aceptó una recarga por error) | **Usuarios → Ajustar saldo** |
+| Ver el correo y el WhatsApp de un cliente | **Usuarios** (el WhatsApp también sale en cada pedido) |
+| Cambiar el precio o el nombre de un paquete, destacarlo, ocultarlo o marcarlo agotado | **Paquetes** |
+| Ocultar un catálogo, ponerlo en mantenimiento o sin stock | **Catálogo** |
+| Cambiar el nombre, el número o el QR de Yape o Plin | **Medios de pago** |
+| Poner una oferta con precio especial por el día | **Promo del día** |
+| Vender cuentas de Free Fire | **Cuentas** |
+| Ver cuánto se vendió | **Resumen** y **Ventas** |
+| Revisar la entrega automática, el saldo del proveedor y cuándo vence su acceso | **Integraciones** |
+
+## Qué se cambia en el código
+
+Esto sí se hace editando archivos (ver la [Guía para el dueño](GUIA-DEL-DUENO.md)):
+
+| Quiero cambiar… | Dónde está |
+|---|---|
+| Los textos de la página de inicio | `index.html` |
+| Las preguntas frecuentes | `index.html` y `soporte.html` (están en las dos) |
+| Los Términos y la Política de privacidad | `terminos.html` y `privacidad.html`. Si cambias el fondo de esos textos, sube `VERSION_LEGAL` en `register.html`. |
+| Los colores de la tienda | `style.css` (los colores principales están al comienzo, en `:root`) |
+| El logo y el ícono | `logo.svg` y `favicon.svg` (reemplázalos con el mismo nombre) |
+| Las imágenes de los catálogos | `banner-*.jpg` y `banner-promo.jpeg` (reemplázalas con el mismo nombre) |
+| El **WhatsApp de contacto** (botón flotante, pie de página…) | Está escrito en unos 12 archivos. Usa "buscar y reemplazar en todo el proyecto" de Visual Studio Code con `51901150296` y `901 150 296`. **No** cambies `README.md` ni `supabase/schema.sql`. Los datos de Yape y Plin se cambian en el panel, no aquí. |
+| Los enlaces del pie de página o las redes | `scripts/footer.html` y luego `python3 scripts/sincronizar-footer.py` |
+| Las respuestas del asistente (la burbuja de chat) | `ASISTENTE_FAQ` en `sesion.js` |
+| Los montos rápidos de recarga (10, 20, 50…) | `recargar-saldo.html` |
+| El mensaje de WhatsApp que se arma al comprar o recargar | `catalogo.html` y `recargar-saldo.html` (busca `Vengo de MZ'Recargas`) |
+| Los correos de "confirmar cuenta" y "recuperar contraseña" | `supabase/plantillas-correo/` y se pegan en Supabase → Authentication → Emails → Templates |
+
+## Mapa de archivos
+
+| Archivo | Qué es |
+|---|---|
+| `index.html` | Página de inicio. |
+| `catalogo.html` | Catálogos y compra de paquetes y cuentas. |
+| `recargar-saldo.html` + `recargar.css` | Asistente de 3 pasos para recargar saldo, y sus estilos. |
+| `historial.html` | "Mis pedidos" del cliente. |
+| `perfil.html` | Perfil del cliente: nickname, WhatsApp, contraseña, puntos y su enlace de referidos. |
+| `login.html`, `register.html`, `restablecer-contrasena.html` | Entrar, crear cuenta y recuperar la contraseña. |
+| `ranking.html` | Ranking público de puntos. |
+| `soporte.html` | Ayuda y preguntas frecuentes. |
+| `terminos.html`, `privacidad.html` | Textos legales. |
+| `404.html` | Página "no encontrada". |
+| `admin.html` + `admin.css` | Panel de administración. |
+| `style.css` | Estilos generales de toda la tienda. |
+| `sesion.js` | Código compartido por todas las páginas: conexión con Supabase, sesión, saldo en la barra, tema oscuro/claro, asistente, "compras en vivo" y la ventana que pide el WhatsApp. |
+| `logo.svg`, `favicon.svg`, `banner-*`, `login-bg.mp4` | Logo, ícono, imágenes de los catálogos y video de fondo. |
+| `qr-yape.jpeg`, `qr-plin.jpeg` | Los QR de siempre. Los nuevos que suba el dueño desde el panel se guardan en Supabase. |
+| `robots.txt`, `sitemap.xml` | Le dicen a Google qué páginas mostrar. |
+| `CNAME` | Le dice a GitHub que la web se llama `mzrecargas.com`. **No lo borres.** |
+| `.nojekyll`, `.gitignore` | Archivos técnicos. No se tocan. |
+| `scripts/` | Ayudas: abrir la tienda en tu computadora, subir el número de versión, sincronizar el pie de página y cambiar de dominio. |
+| `supabase/schema.sql` | La descripción completa de la base de datos: tablas, reglas y funciones. Sirve de documentación y para reconstruirla si hiciera falta. |
+| `supabase/functions/integracion/` | La función de entrega automática y de consulta de nickname (habla con el proveedor). |
+| `supabase/plantillas-correo/` | El diseño de los correos que manda Supabase. |
+
+## Qué hay que renovar o vigilar
+
+- **El acceso a la API del proveedor** vence cada cierto tiempo. El panel (*Integraciones* y *Resumen*) lo avisa. Al renovar no cambia la llave: solo pulsa *Probar conexión*.
+- **El saldo en el proveedor:** si llega a cero, las entregas automáticas fallan y quedan para reintentar. El panel lo avisa.
+- **El dominio `mzrecargas.com`:** se renueva donde lo compraste (normalmente cada año).
+- **Supabase:** revisa de vez en cuando que el proyecto esté activo y dentro de los límites de su plan.
+- **Lo pendiente del día:** el *Resumen* del panel muestra cuántas solicitudes y pedidos esperan atención.
+
+## Reglas de oro
+
+1. **Lo que se guarda en `main` se publica solo**, en 1 o 2 minutos. No hay borrador: cambia una cosa a la vez y revisa.
+2. **Los datos no están en el código.** Usuarios, saldos y pedidos viven en Supabase. Un error en el código puede hacer que la tienda se vea mal, pero no borra datos, y todo cambio en el código se puede deshacer.
+3. **Abrir la tienda en tu computadora usa la base de datos real.** Una compra o un cambio hecho desde ahí es de verdad.
+4. **Este repositorio es público**: cualquiera puede leer el código. Por eso aquí nunca se guardan llaves ni contraseñas (están en Supabase → Secrets).
+5. **Los precios se cambian en el panel.** El servidor revisa cada compra contra el precio real, así que cambiar un número en el código no cambia lo que se cobra.
+6. **Si dudas, pregunta antes de tocar.**
+
+---
+
+# Referencia técnica (para quien programa)
 
 ## Stack
 
-- **Frontend**: HTML + CSS + JavaScript sin build (igual que CarzaD'Cross), pensado para publicarse con **GitHub Pages**.
+- **Frontend**: HTML + CSS + JavaScript sin build, pensado para publicarse con **GitHub Pages**.
 - **Backend**: [Supabase](https://supabase.com) — Auth (registro/login/recuperar contraseña) + Postgres (perfiles, catálogo, pedidos) con Row Level Security.
 
 ## Cómo está armado
 
 - `sesion.js` — módulo compartido: crea el cliente de Supabase, verifica la sesión real en cada página, pinta el saldo/nickname en la barra de navegación y maneja el tema (arranca siempre en oscuro; el claro es opcional con el botón de la barra).
 - `supabase/schema.sql` — todo el esquema de base de datos (tablas, políticas RLS, triggers). Se pega **una sola vez** en el SQL Editor de Supabase.
-- `style.css` — identidad visual propia de MZ'Recargas (paleta ámbar/rojo tipo "fuego"), sin nada reutilizado del diseño de CarzaD'Cross.
+- `scripts/` — ayudas para quien edita: `servidor-local.py` (abrir la tienda en tu computadora; con doble clic: `abrir-en-mac.command` / `abrir-en-windows.bat`), `actualizar-version.py` (subir el número de versión antes de publicar estilos), `sincronizar-footer.py` + `footer.html` (pie de página) y `configurar-dominio.py` (cambiar de dominio).
+- `supabase/plantillas-correo/` — el diseño de los correos que manda Supabase (confirmar cuenta y restablecer contraseña).
+- `style.css` — identidad visual propia de MZ'Recargas (paleta ámbar/rojo tipo "fuego").
 
 ### Cómo funciona el saldo y los pedidos
 
@@ -63,7 +197,7 @@ Ya no hace falta ir a Supabase: la sección **Usuarios** de `admin.html` lo mues
 
 ### Puntos, ranking, compras en vivo, promo del día y asistente
 
-Ideas tomadas de CarzaD'Cross pero con estilo propio (nada de morado ni de sus textos):
+Funciones que le dan vida a la tienda:
 - **Puntos**: cada usuario gana 1 punto por cada sol que recarga o gasta (columna `puntos` en `perfiles`, se suma sola en los mismos triggers que ya movían el saldo). Se ve en `perfil.html`.
 - **Ranking** (`ranking.html`): página pública (no hace falta iniciar sesión) con podio top 3 y tabla de los que más puntos tienen, vía `obtener_ranking()`. Enlazada desde el pie de página y desde el perfil.
 - **Compras en vivo**: franja debajo del navbar en todas las páginas (menos `admin.html`) con las últimas compras/recargas reales, nickname parcialmente oculto (`ad***`). Se inyecta sola desde `sesion.js`, vía `compras_recientes()` — si no hay compras todavía, simplemente no aparece.
@@ -91,7 +225,7 @@ La web se conecta a la API de un proveedor de recargas, con **su llave**, para d
 1. **Nickname por ID**: al validar el ID, la web muestra una tarjeta del jugador con su nickname, su ID y los datos de su cuenta (nivel, servidor y likes, si el proveedor los da) para que el cliente confirme que es su cuenta, con un botón *Cambiar ID* (y si el ID no existe, no lo deja comprar). El proveedor solo ofrece esta consulta para **Free Fire**.
 2. **Entrega automática**: al comprar, el pedido se entrega solo, sin que tú hagas nada, y pasa a `completado`.
 
-**Estado actual: todo escrito y probado con respuestas de mentira; apagada hasta poner los secrets.** Mientras no se pongan, todo funciona exactamente igual que antes (el ID se acepta sin nickname y tú entregas a mano). El **adaptador** (`supabase/functions/integracion/proveedor.ts`, sección "MODO REAL") sigue la documentación del proveedor: acciones `saldo`, `validar_id`, `comprar` y `pedido`. Todavía nadie ha llamado a su API de verdad desde aquí: la primera conexión real es el botón *Probar conexión*.
+**Estado actual: conectada y funcionando en modo real** (los *Secrets* ya están puestos en Supabase; el panel → *Integraciones* lo confirma al pulsar *Probar conexión*). Si esa conexión se apaga o nunca se puso, todo funciona igual que antes: el ID se acepta sin nickname y tú entregas a mano. El **adaptador** (`supabase/functions/integracion/proveedor.ts`, sección "MODO REAL") sigue la documentación del proveedor: acciones `saldo`, `validar_id`, `comprar` y `pedido`.
 
 **Cómo está armado**
 - La web **nunca** habla con el proveedor ni ve la llave. Todo pasa por una función de Supabase (Edge Function) llamada `integracion`, que exige sesión iniciada y valida quién llama. La llave solo existe en los *Secrets* de Supabase.
@@ -100,6 +234,7 @@ La web se conecta a la API de un proveedor de recargas, con **su llave**, para d
 - Estados de la entrega de un pedido (`pedidos.entrega`): `manual` (de siempre), `auto_pendiente`, `auto_en_proceso` (la función está hablando con el proveedor), `auto_confirmando` (el proveedor la aceptó y la está aplicando), `auto_entregado`, `auto_fallo` (el proveedor dejó claro que no la hizo ni la cobró) y `auto_revisar` (no hubo respuesta: no sabemos si la hizo).
 - El adaptador traduce lo que responda el proveedor a pocos resultados: **entregado** (el proveedor lo confirma), **en proceso** (la aceptó y la está aplicando), **fallo** (dice claramente que no lo hizo ni cobró) y **desconocido** (cualquier duda: timeout, error 5xx, respuesta rara). Así nunca se da por entregado algo sin confirmar.
 - El motivo real de un rechazo (por ejemplo "saldo insuficiente") va solo al **registro de actividad** del panel; el pedido guarda un texto genérico que sí puede leer el cliente.
+- **Para publicar la función**: con la CLI de Supabase (`supabase functions deploy integracion`) o pegando sus 4 archivos (`index.ts`, `comun.ts`, `logica.ts`, `proveedor.ts`) en Supabase → Edge Functions. Debe quedar con *Verify JWT* activado.
 - Cada intento de entrega viaja con su propia clave (`MZ-<pedido>`, `MZ-<pedido>-2`...): el proveedor la recuerda, repetirla no vuelve a cobrar ni a entregar, y una orden rechazada no se puede repetir con la misma clave.
 
 **Garantías que ya cumple**
@@ -138,7 +273,7 @@ La web se conecta a la API de un proveedor de recargas, con **su llave**, para d
 
 1. ✅ **Base de datos**: ya aplicado — `supabase/schema.sql` está corrido en el proyecto de Supabase de MZ'Recargas (tablas, RLS y triggers listos, con revisión de seguridad hecha con el Advisor de Supabase).
 2. ✅ **Conectar el sitio a Supabase**: `sesion.js` ya tiene la Project URL y la clave publishable reales del proyecto.
-3. **Configurar Auth** (pendiente, hazlo tú): en Supabase, Authentication → URL Configuration, agrega la URL donde publiques el sitio (la de GitHub Pages o tu dominio) en "Site URL" y "Redirect URLs" — si no, el enlace de "recuperar contraseña" no va a funcionar.
+3. **Revisar Auth**: en Supabase, Authentication → URL Configuration, comprueba que la URL donde está publicado el sitio esté (la de GitHub Pages o tu dominio) en "Site URL" y "Redirect URLs" — si no, el enlace de "recuperar contraseña" no funciona. Los correos de confirmar cuenta y recuperar contraseña salen de `supabase/plantillas-correo/` (se pegan en Authentication → Emails → Templates).
 4. **Publicar con GitHub Pages**: en este repositorio, Settings → Pages → Source: "Deploy from a branch" → rama `main`, carpeta `/ (root)`.
 
 ## Pendiente antes de lanzarlo a clientes reales
@@ -157,22 +292,22 @@ La web se conecta a la API de un proveedor de recargas, con **su llave**, para d
   - Las cuentas ya registradas antes del 5/10/2026 no tienen constancia de consentimiento (`perfiles.acepto_terminos_at` es `null` para ellas).
   - Vender cuentas de Free Fire va contra los términos de Garena; los Términos de MZ'Recargas advierten ese riesgo al comprador.
   - Si cambias el fondo de los textos legales, sube `VERSION_LEGAL` en `register.html` para que quede registrado qué versión aceptó cada persona.
-- [ ] **Anti-bots / captcha** en login y registro — no se incluyó en esta primera versión (CarzaD'Cross usa Cloudflare Turnstile, que requiere una cuenta de Cloudflare propia para este dominio). Se puede agregar después si empieza a haber spam de registros.
+- [ ] **Anti-bots / captcha** en login y registro — no se incluyó en esta primera versión (Cloudflare Turnstile es una buena opción y requiere una cuenta de Cloudflare propia para este dominio). Se puede agregar después si empieza a haber spam de registros.
 - [x] **Panel de administración** — `admin.html`, ver sección de arriba.
 
 ## Direcciones sin ".html"
 
-Todos los enlaces del sitio son limpios: `mzrecargas.com/catalogo`, `/terminos`, `/login`, y el inicio es solo `mzrecargas.com/`. GitHub Pages sirve cada archivo `.html` también sin la extensión, así que no hay que configurar nada. Si alguien entra con un enlace o favorito viejo que trae `.html` (sigue funcionando), `sesion.js` le limpia la dirección en la barra. Al crear páginas nuevas, enlázalas sin `.html` (el inicio como `./`) y usa también la dirección limpia en el `canonical`, el `og:url` y `sitemap.xml`. Para probar en local con estas direcciones hace falta un servidor que las entienda (el `python3 -m http.server` común solo abre las que llevan `.html`).
+Todos los enlaces del sitio son limpios: `mzrecargas.com/catalogo`, `/terminos`, `/login`, y el inicio es solo `mzrecargas.com/`. GitHub Pages sirve cada archivo `.html` también sin la extensión, así que no hay que configurar nada. Si alguien entra con un enlace o favorito viejo que trae `.html` (sigue funcionando), `sesion.js` le limpia la dirección en la barra. Al crear páginas nuevas, enlázalas sin `.html` (el inicio como `./`) y usa también la dirección limpia en el `canonical`, el `og:url` y `sitemap.xml`. Para probar en tu computadora con estas direcciones hace falta un servidor que las entienda (el `python3 -m http.server` común solo abre las que llevan `.html`): usa `scripts/servidor-local.py`, o los accesos con doble clic `scripts/abrir-en-mac.command` y `scripts/abrir-en-windows.bat`. Ojo: esa copia usa la base de datos real.
 
 ## Al cambiar estilos o scripts (`?v=`)
 
-GitHub Pages deja los archivos en la caché del navegador unos 10 minutos. Si cambias un `.css` o `sesion.js` junto con el HTML que lo usa, quien ya tenía la copia vieja vería la página sin estilos o mezclada hasta que pase ese rato. Para evitarlo, cada página carga esos archivos con un número de versión (`style.css?v=20261102a`, `admin.css?v=...`, `recargar.css?v=...`, `sesion.js?v=...`). **Cada vez que cambies uno de esos cuatro archivos, sube ese número en todos los HTML** (el mismo en todos), por ejemplo:
+GitHub Pages deja los archivos en la caché del navegador unos 10 minutos. Si cambias un `.css` o `sesion.js` junto con el HTML que lo usa, quien ya tenía la copia vieja vería la página sin estilos o mezclada hasta que pase ese rato. Para evitarlo, cada página carga esos archivos con un número de versión (`style.css?v=…`, `admin.css?v=…`, `recargar.css?v=…`, `sesion.js?v=…`). **Cada vez que cambies uno de esos cuatro archivos, antes de publicar corre:**
 
-```bash
-sed -i '' 's/?v=[0-9a-z]*"/?v=20261103a"/g' *.html
+```
+python3 scripts/actualizar-version.py        (en Windows: py -3 scripts\actualizar-version.py)
 ```
 
-(En Linux es `sed -i` sin las comillas vacías.) Los cambios solo en HTML no lo necesitan.
+Pone el mismo número nuevo (la fecha de hoy y una letra: `20261106a`, `20261106b`…) en todas las páginas y en `scripts/footer.html`. Con `--prueba` solo muestra qué cambiaría. Los cambios solo en HTML no lo necesitan.
 
 ## Pie de página (una sola fuente)
 
